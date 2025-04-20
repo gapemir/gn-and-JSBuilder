@@ -1,0 +1,33 @@
+
+.gn-tileContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 100%;
+  color: #fff;
+  float: left;
+}
+.gn-tileItem,
+.gn-fakeTileItem,
+.gn-tileSubItemContainer {
+  border: 1px solid #000;
+  height: 350px;
+  flex-basis: 350px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+}
+
+
+.gn-tooltip{
+  position: absolute;
+  z-index: 99;
+  background-color: #333;
+  color: #fff;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: small;
+}
+
