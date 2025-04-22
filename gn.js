@@ -4,11 +4,17 @@ if(!gn) gn = {};
 if(!gn.lang) gn.lang = {};
 if(!gn.event) gn.event = {};
 if(!gn.core) gn.core = {};
-if(!gn.model) gn.model = {};
+if(!gn.model) gn.model = {}; //for holding data used by ui tile and list
 if(!gn.ui) gn.ui = {};
 if(!gn.ui.basic) gn.ui.basic = {};
 if(!gn.ui.tile) gn.ui.tile = {};
+//TODO gn.ui.list
+//TODO input class and subclasses, general input >subclasiran na input, multiline, checkbox, radio, button
+//TODO breadcrumb
+//todo popup menus
+
 //abaout geomerty some is in Widget.tooltip
+//todo geometry, object widget has getGeometry
 
 //gn.model abstract model, list model tree model
 //gn.ui ui elements like lists,
@@ -28,7 +34,7 @@ gn.lang.Var = class {
         return value instanceof Array;
     }
     static isString(value){
-        return typeof "" == 'string';
+        return typeof value == 'string';
     }
 }
 gn.lang.Array = class {
@@ -38,15 +44,26 @@ gn.lang.Array = class {
         return false;
     }
 }
+gn.lang.String = class{
+    static isEmpty (string){
+        if(gn.lang.Var.isNull(string) || string.length == 0)
+            return true;
+        return false;
+    }
+}
 gn.core.Object = class{
     constructor(parent){
-        this._parent = parent//what should the parent be? 
-        // the element in witch this is in so dom parent? 
-        // or mby just obj that created this one?
+        this._parent = parent//topology parent, can be null
+        //in gn.ui.basic.widget there is property _domParent for ui parent
         this._internalId = this.internalId;
     }
     _destructor(){
-
+    }
+    set parent(parent){
+        this._parent = parent
+    }
+    get parent(){
+        return this._parent
     }
     get internalId()
     {
@@ -207,6 +224,7 @@ gn.ui.basic.Widget = class extends gn.core.Object{
         this.addClasses(classList);
         this._tooltip = null;
         this._tooltipContent = null;
+        this._domParent = null;
         //todo add more listeners
         this._element.addEventListener("click", function(){this.sendEvent("click")}.bind(this));
         this._element.addEventListener("mouseover", function(){
@@ -220,6 +238,17 @@ gn.ui.basic.Widget = class extends gn.core.Object{
             }   
             this.sendEvent("mouseout")}.bind(this));
     }
+    _destructor(){
+        if(!gn.lang.Var.isNull(this._domParent)){
+            this._domParent.remove(this);
+        }
+    }
+    set domParent(domParent){
+        this._domParent = domParent;
+    }
+    get domParent(){
+        return this._domParent;
+    }
     get element(){
         return this._element;
     }
@@ -232,24 +261,27 @@ gn.ui.basic.Widget = class extends gn.core.Object{
     addClasses(classNames){
         if(!gn.lang.Var.isArray(classNames)){
             if(gn.lang.Var.isString(classNames)){
-                this.addClass(classNames);
+                this.addClasses(classNames.split(" "));
             }
             return;
         }
-        classNames.forEach((className) => {
-            this._element.classList.add(className);
-        });
+        for(let i = 0; i<classNames.length; i++){
+            this.addClass(classNames[i]);
+        }
     }
     removeClass(className){
         this._element.classList.remove(className);
     }
     removeClasses(classNames){
         if(!gn.lang.Var.isArray(classNames)){
+            if(gn.lang.Var.isString(classNames)){
+                this.removeClasses(classNames.split(" "));
+            }
             return;
         }
-        classNames.forEach((className) => {
-            this._element.classList.remove(className);
-        });
+        for(let i = 0; i<classNames.length; i++){
+            this.removeClass(classNames[i]);
+        }
     }
     setStyle(styleName, value = null){
         this._element.style[styleName] = value;
@@ -299,26 +331,31 @@ gn.ui.basic.Widget = class extends gn.core.Object{
               tooltipRect = this._tooltip.element.getBoundingClientRect();
               let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x
               this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
+              this._tooltip._wasMoved = true;
             }
             else if(tooltipRect.left < 0){
-                this._tooltip.setStyle("right", "auto");
-                this._tooltip.setStyle("left", "5px");
-                //tooltipRect = this._tooltip.element.getBoundingClientRect();
-                //this._tooltip.setStyle("left", `${tooltipRect.right - viewportWidth}px`);
+                //this._tooltip.setStyle("right", "auto");
+                this._tooltip.setStyle("left", "0px");
+                tooltipRect = this._tooltip.element.getBoundingClientRect();
+                this._tooltip.setStyle("left", `${-tooltipRect.left}px`);
                 tooltipRect = this._tooltip.element.getBoundingClientRect();
                 let arrowMargin = (triggerRect.x+triggerRect.width/2);
                 this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
+                this._tooltip._wasMoved = true;
             }
         }
     }
     hideTooltip(){
         if(!gn.lang.Var.isNull(this._tooltip)){
             this.remove(this._tooltip);
-            this._tooltip.setStyle("right");
-            this._tooltip.setStyle("top");
-            this._tooltip.setStyle("left");
-            this._tooltip.setStyle("bottom");
-            this._tooltip.element.style.removeProperty("--arrow-left")
+            if(this._tooltip._wasMoved){
+                this._tooltip.setStyle("right");
+                this._tooltip.setStyle("top");
+                this._tooltip.setStyle("left");
+                this._tooltip.setStyle("bottom");
+                this._tooltip.element.style.removeProperty("--arrow-left")
+                delete this._tooltip._wasMoved
+            }
         }
     }
     add(element){
@@ -328,18 +365,21 @@ gn.ui.basic.Widget = class extends gn.core.Object{
         if(gn.lang.Var.isNull(element.element)){
             throw new Error('Element element cannot be null');
         }
+        element.domParent = this;
         this._element.appendChild(element.element);
     }
     addBefore(element){
         if(gn.lang.Var.isNull(element)){
             throw new Error('Element cannot be null');
         }
+        element.domParent = this;
         this._element.parentNode.insertBefore(element, this._element);
     }
     addAfter(element){
         if(gn.lang.Var.isNull(element)){
             throw new Error('Element cannot be null');
         }
+        element.domParent = this;
         this._element.parentNode.insertBefore(element, this._element.nextSibling);
     }
     remove(element){
@@ -349,6 +389,7 @@ gn.ui.basic.Widget = class extends gn.core.Object{
         if(gn.lang.Var.isNull(element.element)){
             throw new Error('Element elementcannot be null');
         }
+        element.domParent = null;
         this._element.removeChild(element.element);
     }
     dispose(){
@@ -376,14 +417,16 @@ gn.ui.basic.Label = class extends gn.ui.basic.Widget{
 }
 gn.ui.basic.Icon = class extends gn.ui.basic.Widget{
     constructor(size, iconName, iconSet){
-        super("i");
+        super("i", "gn-icon");
         this._size = size;
         this._iconName = iconName;
         if(!gn.lang.Var.isNull(iconSet) && !gn.lang.Var.isArray(iconSet)){
             throw new Error('Icon set must be an array');
         }
         this._iconSet = iconSet || [];
-        this._element.className = 'gn-icon';
+        if(!gn.lang.Var.isArray(this._iconSet)){
+            this._iconSet = [this._iconSet];
+        }
         this.addClasses([this._iconName, ...this._iconSet]);
         this.setStyle('font-size', this._size + 'px');
     }
@@ -538,44 +581,52 @@ gn.model.TreeModel = class extends gn.model.Model{
         }
     }
     getChildren(id){
-        if(gn.lang.Var.isNull(id)){
-            throw new Error('Id cannot be null');
-        }
         if(this._parentMap.has(id)){
             return this._parentMap.get(id);
         }else{
             return null;
         }
     }
-    getParents(id){
+    getParent(id){
         if(gn.lang.Var.isNull(id)){
             throw new Error('Id cannot be null');
         }
-        let parents = [];
         for(let [key, value] of this._parentMap.entries()){
             if(value.includes(id)){
-                parents.push(key);
+                return key;
             }
         }
-        return parents;
+        throw new Error('This should not happen, contact me');
     }
     reset(){
         this._data = new Map();
         this._parentMap = new Map();
         this._currLevel = null;
+        this.sendEvent("reset");
     }
 }
-//try using grid for tiles
+// try using grid for tiles
 gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
     constructor(parent){
         super("div", "gn-tileContainer");
         this._parent = parent;
         this._model = null;
         this._idElementMap = new Map();
+        this._groups = new Map();// id group -> [id elements]
+        this._currentGroup = null;
         this._fakeTiles = [];
         this._tileClass = gn.ui.tile.TileItem;
         this._fakeTileClass = gn.ui.tile.FakeTileItem;
         this._subItemContClass = gn.ui.tile.TileSubItemContainer
+        this._header = new gn.ui.basic.Widget("div", "gn-tileContainerHeader");
+        let back = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"])
+        back.addEventListener("click", function(){
+            if(!gn.lang.Var.isNull(this._currentGroup)){
+                this.openGroup(this.model.getParent(this._currentGroup));
+            }
+        }, this);
+        this._header.add(back);
+        this.add(this._header);
     }
     set tileClass(value){
         if(gn.lang.Var.isNull(value)){
@@ -585,6 +636,12 @@ gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
     }
     get tileClass(){
         return this._tileClass;
+    }
+    set subItemContClass(value){
+        this._subItemContClass = value;
+    }
+    get subItemContClass(){
+        return this._subItemContClass;
     }
     set fakeTileClass(value){
         if(gn.lang.Var.isNull(value)){
@@ -602,18 +659,26 @@ gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
         this._model = value;
         this._model.addEventListener('dataSet', this._onDataSet, this);
         this._model.addEventListener('dataAdded', this._onDataAdded, this);
+        this._model.addEventListener('reset', this._onDataAdded, this);
     }
     get model(){
         return this._model;
     }
     _onDataSet(){
-        this._direct();
+        this.openGroup();
     }
     _onDataAdded(data){
-        throw new Error('Method "_onDataAdded" must be implemented in subclass');
+        throw new Error('Method "_onDataAdded" is not yet implemented');
     }
-    _direct(){
-        let tmpIds = this._model._parentMap.get(null);
+    _onReset(){
+        throw new Error('Method "_onReset" is not yet implemented');
+    }
+    _makeGroup(id){
+        if(gn.lang.Var.isNull(id)){
+            id = null;
+        }
+        this._groups.set(id, []);
+        let tmpIds = this._model._parentMap.get(id);
         if(gn.lang.Var.isNull(tmpIds)){
             return;
         }
@@ -624,10 +689,12 @@ gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
                 item = new this._tileClass(data, this);
             }else if(data.type == gn.model.Type.group){
                 item = new this._subItemContClass(data, this);
+                item.addEventListener("openGroup", this.openGroup, this);
             }else{
                 throw ("Invalid type of item in Tile Container");
             }
             this._idElementMap.set(tmpIds[i], item);
+            this._groups.get(id).push(tmpIds[i]);
             this.add(item);
         }
         this.genFakeTileItems();
@@ -637,15 +704,42 @@ gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
             this.remove(this._fakeTiles[i]);
         };
         this._fakeTiles = [];
-        var perLine = Math.floor(this.element.clientWidth / parseInt(getComputedStyle(this._idElementMap.entries().next().value[1].element).flexBasis).flexBasis);
-        var n = this._idElementMap.size % perLine;
-        if(n)
-            n = perLine - n;
+        var perLine = Math.floor(this.element.clientWidth / parseInt(getComputedStyle(this._idElementMap.entries().next().value[1].element).flexBasis));
+        var n = this._groups.get(this._currentGroup).length % perLine;
+        if(n == 0){
+            n = perLine;
+        }else{
+            n = n % perLine;
+        }
         for(let i = 0; i < n; i++){
             let item = new this._fakeTileClass(this);
             this._fakeTiles.push(item);
             this.add(this._fakeTiles.at(-1));
         }
+    }
+    openGroup(id){
+        if(gn.lang.Var.isNull(id)){
+            id = null;
+        }
+        if(!this._groups.has(this._currentGroup)){
+            this._makeGroup(this._currentGroup);
+            return;
+        }
+        let ids = this._groups.get(this._currentGroup)
+        for(let i = 0; i<ids.length; i++){
+            this._idElementMap.get(ids[i]).setStyle("display", "none");
+        }
+        this._currentGroup = id;
+        if(this._groups.has(this._currentGroup)){
+            ids = this._groups.get(this._currentGroup)
+            for(let i = 0; i<ids.length; i++){
+                this._idElementMap.get(ids[i]).setStyle("display", "flex");
+            }
+        }else{
+            this._makeGroup(this._currentGroup);
+        }
+        this.sendEvent("groupOpened", this._currentGroup);
+        this.genFakeTileItems();
     }
 }
 gn.ui.tile.TileItem = class extends gn.ui.basic.Widget{
@@ -662,8 +756,9 @@ gn.ui.tile.FakeTileItem = class extends gn.ui.basic.Widget{
     }
 }
 gn.ui.tile.TileSubItemContainer = class extends gn.ui.basic.Widget{ //data.type = "group"
-    constructor(parent){
+    constructor(data, parent){
         super("div", "gn-tileSubItemContainer"); 
         this._parent = parent;
+        this._data = data;
     }
 }
