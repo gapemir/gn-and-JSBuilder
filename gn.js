@@ -40,12 +40,30 @@ gn.lang.Array = class {
 }
 gn.core.Object = class{
     constructor(parent){
-        this._parent = parent
+        this._parent = parent//what should the parent be? 
+        // the element in witch this is in so dom parent? 
+        // or mby just obj that created this one?
+        this._internalId = this.internalId;
+    }
+    _destructor(){
+
+    }
+    get internalId()
+    {
+        if ( !this._internalId ) {
+            this._internalId = gn.core.Object.getInternalId( this );
+        }
+        return this._internalId;
     }
     tr(text, ...extra){
         return text;
     }
     dispose(){
+        gn.event.Emitter.instance().removeAllEventListeners(this);
+        //remove it from dom
+        gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
+        this._destructor();
+        delete this;
     }
     addEventListener(type, callback, thisObj){
         gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
@@ -59,48 +77,45 @@ gn.core.Object = class{
     sendDataEvent(type, data){
         gn.event.Emitter.instance().sendDataEvent(this, type, data);
     }
+    static getInternalId(obj){
+        var id = obj._internalId;
+        if ( id != null && id != undefined ) return id;
+        if ( gn.core.Object._idCache.length > 0 ) {
+            id = gn.core.Object._idCache.pop();
+        }
+        else {
+            id = gn.core.Object._nextId++ + "";
+        }
+        return obj._internalId = id;
+    }
 }
+gn.core.Object._idCache = [];
+gn.core.Object._nextId = 0;
 gn.event.Emitter = class{
     constructor() {
         this._listeners = new Map(); // Use a Map to store listeners
         this._instance = null; // Singleton instance
     }
-
     static instance(){
         if(!this._instance){
             this._instance = new gn.event.Emitter();
         }
         return this._instance;
     }
-  
-    /**
-     * Registers a listener function to be called with a specific context
-     * when a specific event is sent by a given object.
-     * @param {object} object - The object instance to listen for events from.
-     * @param {string} eventName - The name of the event to subscribe to.
-     * @param {function} listener - The function to execute when the event is sent.
-     * It will be called with 'context' as its 'this' value.
-     * It will receive (data, sourceObject) as arguments.
-     * @param {object} [context] - The object to use as 'this' when calling the listener.
-     * If not provided, the listener's default 'this' will be used (often undefined in strict mode).
-     */
     addEventListener(object, eventName, listener, context) {
+        let internalId = gn.core.Object.getInternalId(object);
         if (typeof listener !== 'function') {
             throw(new TypeError(`Listener for event "${eventName}" on object must be a function.`));
         }
-
-        if (!this._listeners.has(object)) {
-            this._listeners.set(object, new Map()); // Map: event -> Array<{...}>
+        if (!this._listeners.has(internalId)) {
+            this._listeners.set(internalId, new Map()); // Map: event -> Array<{...}>
         }
-        const objectEvents = this._listeners.get(object);
+        const objectEvents = this._listeners.get(internalId);
 
-        // Get the array of listeners for this event, or create it
         if (!objectEvents.has(eventName)) {
             objectEvents.set(eventName, []);
         }
         const eventListeners = objectEvents.get(eventName);
-
-        // Store the listener function AND its context as an object
         const listenerEntry = { listener: listener, context: context };
 
         // Add the listener entry if a matching listener+context is not already present
@@ -110,65 +125,37 @@ gn.event.Emitter = class{
             eventListeners.push(listenerEntry);
         }
     }
-
-    /**
-     * Unsubscribe a listener function with a specific context from a specific event for a given object.
-     * Both the listener function AND the context must match for removal.
-     * @param {object} object - The object instance to remove the listener from.
-     * @param {string} eventName - The name of the event to unsubscribe from.
-     * @param {function} listener - The listener function to remove.
-     * @param {object} [context] - The context object originally used when adding the listener.
-     */
     removeEventListener(object, eventName, listener, context) {
-        const objectEvents = this._listeners.get(object);
-        if (!objectEvents) {
+        let internalId = gn.core.Object.getInternalId(object);
+        const objectEvents = this._listeners.get(internalId);
+        if (!objectEvents || !objectEvents.get(eventName)) {
             return;
         }
-
-        const eventListeners = objectEvents.get(eventName);
-        if (!eventListeners) {
-            return;
-        }
-
-        // Filter out the specific listener+context entry
-        const filteredListeners = eventListeners.filter(
+        const filteredListeners = objectEvents.get(eventName).filter(
             (entry) => !(entry.listener === listener && entry.context === context)
         );
 
         if (filteredListeners.length === 0) {
             objectEvents.delete(eventName);
             if (objectEvents.size === 0) {
-                this._listeners.delete(object);
+                this._listeners.delete(internalId);
             }
         } else {
             objectEvents.set(eventName, filteredListeners);
         }
     }
-
-    /**
-     * Emits an event for a specific object, calling all registered listeners
-     * for that object and event type with their specified contexts.
-     * @param {object} object - The object instance that is emitting the event.
-     * @param {string} eventName - The name of the event to emit.
-     */
     sendEvent(object, eventName) {
-        const objectEvents = this._listeners.get(object);
-        if (!objectEvents) {
+        let internalId = gn.core.Object.getInternalId(object);
+        const objectEvents = this._listeners.get(internalId);
+        if (!objectEvents || !objectEvents.get(eventName)) {
             return;
         }
-        const eventListeners = objectEvents.get(eventName);
-        if (!eventListeners) {
-            return;
-        }
-        // Create a shallow copy of the listener entries array to avoid issues
-        const listenersToExecute = [...eventListeners];
+        const listenersToExecute = [...objectEvents.get(eventName)];
 
-        // Execute each listener entry
         listenersToExecute.forEach((entry) => {
             try {
-                // Call the listener using .call() to set the 'this' context
-                // Arguments passed: sourceObject
-                entry.listener.call(entry.context, object);
+                //should pass new object gn.event.Event that has some unique id, sender, receiver, timestamp,...
+                entry.listener.call(entry.context);
             } catch (error) {
                 console.error(`Error executing listener for event "${eventName}" on object:`, object, error);
                 console.error(`Listener:`, entry.listener);
@@ -176,32 +163,18 @@ gn.event.Emitter = class{
             }
         });
     }
-
-    /**
-     * Emits an data event for a specific object, calling all registered listeners
-     * for that object and event type with their specified contexts.
-     * @param {object} object - The object instance that is emitting the event.
-     * @param {string} eventName - The name of the event to emit.
-     * @param {*} [data] - Optional data to pass to the listener functions.
-     */
     sendDataEvent(object, eventName, data) {
-        const objectEvents = this._listeners.get(object);
-        if (!objectEvents) {
+        let internalId = gn.core.Object.getInternalId(object);
+        const objectEvents = this._listeners.get(internalId);
+        if (!objectEvents || !objectEvents.get(eventName)) {
             return;
         }
-        const eventListeners = objectEvents.get(eventName);
-        if (!eventListeners) {
-            return;
-        }
-        // Create a shallow copy of the listener entries array to avoid issues
-        const listenersToExecute = [...eventListeners];
+        const listenersToExecute = [...objectEvents.get(eventName)];
 
-        // Execute each listener entry
         listenersToExecute.forEach((entry) => {
             try {
-                // Call the listener using .call() to set the 'this' context
-                // Arguments passed: data, sourceObject
-                entry.listener.call(entry.context, data, object);
+                //should pass new object gn.event.Event that has some unique id, sender, receiver, timestamp,...
+                entry.listener.call(entry.context, data);
             } catch (error) {
                 console.error(`Error executing listener for event "${eventName}" on object:`, object, error);
                 console.error(`Listener:`, entry.listener);
@@ -209,15 +182,22 @@ gn.event.Emitter = class{
             }
         });
     }
-
-    // Optional: Add a method to check if any listeners are registered for debugging
     hasListeners(object, eventName) {
-        const objectEvents = this._listeners.get(object);
+        let internalId = gn.core.Object.getInternalId(object);
+        const objectEvents = this._listeners.get(internalId);
         if (!objectEvents) {
             return false;
         }
         const eventListeners = objectEvents.get(eventName);
         return eventListeners ? eventListeners.length > 0 : false;
+    }
+    removeAllEventListeners(object){
+        let internalId = gn.core.Object.getInternalId(object);
+        if (!this._listeners.has(internalId)) {
+            return
+        }
+        this._listeners.delete(internalId);
+        //TODO we should check if removed object is saved somewhere in the context
     }
 }
 gn.ui.basic.Widget = class extends gn.core.Object{
@@ -278,10 +258,12 @@ gn.ui.basic.Widget = class extends gn.core.Object{
         if(value instanceof gn.ui.basic.Widget){
             this._tooltip = value;
             this._tooltip.addClass("gn-tooltip");
+            this.addClass("gn-tooltip-parent");
         }
         else if(!gn.lang.Var.isNull(value)){
             this._tooltip = new gn.ui.basic.Widget("div");
             this._tooltip.addClass("gn-tooltip");
+            this.addClass("gn-tooltip-parent");
             this._tooltipContent = value;
             this._tooltip.label = new gn.ui.basic.Label(value);
             this._tooltip.add(this._tooltip.label)
@@ -304,11 +286,29 @@ gn.ui.basic.Widget = class extends gn.core.Object{
     showTooltip(){
         if(!gn.lang.Var.isNull(this._tooltip)){
             this.add(this._tooltip);
-            let rect = this._tooltip.element.getBoundingClientRect();
-            if (rect.right > window.innerWidth){
-                this._tooltip.setStyle("right", "0px");
+
+            let triggerRect = this._element.getBoundingClientRect();
+            let tooltipRect = this._tooltip.element.getBoundingClientRect();
+            let viewportWidth = document.documentElement.clientWidth;
+          
+            if (tooltipRect.right > viewportWidth) {
+              this._tooltip.setStyle("left", "auto");
+              this._tooltip.setStyle("right", "0px");
+              tooltipRect = this._tooltip.element.getBoundingClientRect();
+              this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth}px`);
+              tooltipRect = this._tooltip.element.getBoundingClientRect();
+              let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x
+              this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
             }
-            this._tooltip.setStyle("top", (this._element.getBoundingClientRect().top - rect.height) + "px");
+            else if(tooltipRect.left < 0){
+                this._tooltip.setStyle("right", "auto");
+                this._tooltip.setStyle("left", "5px");
+                //tooltipRect = this._tooltip.element.getBoundingClientRect();
+                //this._tooltip.setStyle("left", `${tooltipRect.right - viewportWidth}px`);
+                tooltipRect = this._tooltip.element.getBoundingClientRect();
+                let arrowMargin = (triggerRect.x+triggerRect.width/2);
+                this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
+            }
         }
     }
     hideTooltip(){
@@ -316,6 +316,9 @@ gn.ui.basic.Widget = class extends gn.core.Object{
             this.remove(this._tooltip);
             this._tooltip.setStyle("right");
             this._tooltip.setStyle("top");
+            this._tooltip.setStyle("left");
+            this._tooltip.setStyle("bottom");
+            this._tooltip.element.style.removeProperty("--arrow-left")
         }
     }
     add(element){
