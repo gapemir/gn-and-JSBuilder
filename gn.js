@@ -7,7 +7,9 @@ if(!gn.core) gn.core = {};
 if(!gn.model) gn.model = {}; //for holding data used by ui tile and list
 if(!gn.ui) gn.ui = {};
 if(!gn.ui.basic) gn.ui.basic = {};
+if(!gn.ui.container) gn.ui.container = {};
 if(!gn.ui.tile) gn.ui.tile = {};
+if(!gn.ui.input) gn.ui.input = {};
 //TODO gn.ui.list
 //TODO input class and subclasses, general input >subclasiran na input, multiline, checkbox, radio, button
 //TODO breadcrumb
@@ -217,26 +219,21 @@ gn.event.Emitter = class{
         //TODO we should check if removed object is saved somewhere in the context
     }
 }
-gn.ui.basic.Widget = class extends gn.core.Object{
+gn.ui.basic.Widget = class extends gn.core.Object{ //widget primarly means div has adders for elements
     constructor(type, classList){
         super();
-        this._element = document.createElement(type?type:"div");
+        this._element = this._createElement(type);
         this.addClasses(classList);
         this._tooltip = null;
         this._tooltipContent = null;
         this._domParent = null;
+        this._children = [];
         //todo add more listeners
-        this._element.addEventListener("click", function(){this.sendEvent("click")}.bind(this));
-        this._element.addEventListener("mouseover", function(){
-            if(!gn.lang.Var.isNull(this._tooltip)){
-                this.showTooltip();
-            }   
-            this.sendEvent("mouseover")}.bind(this));
-        this._element.addEventListener("mouseout", function(){
-            if(!gn.lang.Var.isNull(this._tooltip)){
-                this.hideTooltip();
-            }   
-            this.sendEvent("mouseout")}.bind(this));
+        this._element.addEventListener("click", this.onClick.bind(this));
+        this._element.addEventListener("mouseover", this.onMouseOver.bind(this));
+        this._element.addEventListener("mouseout", this.onMouseOut.bind(this));
+        this._element.addEventListener("focusin", this.onFocusIn.bind(this));
+        this._element.addEventListener("focusout", this.onFocusOut.bind(this));
     }
     _destructor(){
         if(!gn.lang.Var.isNull(this._domParent)){
@@ -358,39 +355,97 @@ gn.ui.basic.Widget = class extends gn.core.Object{
             }
         }
     }
+    addNativeElement(nativeElement){
+        this.element.appendChild(nativeElement);
+        this._children.push("nativeElement");
+    }
+    removeNativeElement(nativeElement){
+        let index = [...this._element.children].indexOf(nativeElement)
+        this.element.removeChild(nativeElement);
+        this._children.splice(index, 1);
+    }
     add(element){
+        this._addInternal(element);
+    }
+    addBefore(element, refElement){
+        this._addInternal(element, refElement, "before");
+    }
+    addAfter(element, refElement){
+        this._addInternal(element, refElement, "after");
+    }
+    _addInternal(element, refElement, where){
         if(gn.lang.Var.isNull(element)){
             throw new Error('Element cannot be null');
         }
         if(gn.lang.Var.isNull(element.element)){
             throw new Error('Element element cannot be null');
         }
-        element.domParent = this;
-        this._element.appendChild(element.element);
-    }
-    addBefore(element){
-        if(gn.lang.Var.isNull(element)){
-            throw new Error('Element cannot be null');
+        let index = this._element.childElementCount
+        if(!gn.lang.Var.isNull(where)){
+            if(gn.lang.Var.isNull(refElement)){
+                throw new Error('refElement cannot be null on '+where);
+            }
+            if(gn.lang.Var.isNull(refElement.element)){
+                throw new Error('Element element cannot be null on ' +where);
+            }
+            index = [...this._element.children].indexOf(refElement.element)
+            if(index == -1){
+                throw new TypeError("refElement is not a child of this node");
+            }
         }
-        element.domParent = this;
-        this._element.parentNode.insertBefore(element, this._element);
-    }
-    addAfter(element){
-        if(gn.lang.Var.isNull(element)){
-            throw new Error('Element cannot be null');
+        switch(where){
+            case "before":
+                refElement.element.before(element.element);
+                break;
+            case "after":
+                refElement.element.after(element.element);
+                index++
+                break;
+            default:
+                this._element.appendChild(element.element);
+                break;
         }
+        this._children.splice(index, 0, element)
         element.domParent = this;
-        this._element.parentNode.insertBefore(element, this._element.nextSibling);
     }
     remove(element){
         if(gn.lang.Var.isNull(element)){
             throw new Error('Element cannot be null');
         }
         if(gn.lang.Var.isNull(element.element)){
-            throw new Error('Element elementcannot be null');
+            throw new Error('Element element cannot be null');
         }
-        element.domParent = null;
+        let index = [...this._element.children].indexOf(element.element)
+        if(index == -1){
+            throw new TypeError("Element is not part of this element");
+        }
         this._element.removeChild(element.element);
+        this._children.splice(index, 1);
+        element.domParent = null;
+    }
+    _createElement(type){
+        return document.createElement(type?type:"div");
+    }
+    onClick(){
+        this.sendEvent("click");
+    }
+    onMouseOver(){
+        this.sendEvent("mouseover");
+        if(!gn.lang.Var.isNull(this._tooltip)){
+            this.showTooltip();
+        }   
+    }
+    onMouseOut(){
+        this.sendEvent("mouseout");
+        if(!gn.lang.Var.isNull(this._tooltip)){
+            this.hideTooltip();
+        }    
+    }
+    onFocusIn(){
+        this.sendEvent("focusin")
+    }
+    onFocusOut(){
+        this.sendEvent("focusout")
     }
     dispose(){
         if(this._element){
@@ -472,6 +527,91 @@ gn.ui.basic.Image = class extends gn.ui.basic.Widget{
     }
     get alt(){
         return this._element.alt;
+    }
+}
+gn.ui.input.AbstractInput = class extends gn.ui.basic.Widget{
+    constructor(type, classList){
+        switch(type){
+            case "button":
+                super("button", "gn-button");
+            break
+            default:
+                super("input", "gn-input");
+                this._element.type = type;
+                break
+        }
+        this.addClasses(classList);
+        this._placeholder = null;//not all have placeholder
+        this._readonly;
+        this.element.addEventListener("input", this.onInput, this);
+    }
+    get type(){
+        return this._element.type;
+    }
+    get value(){
+        throw new TypeError("Abstract class");
+    }
+    set value(value){
+        throw new TypeError("Abstract class");
+    }
+    set placeholder(value){
+        if(!["text", "url", "tel", "email", "password"].includes(this.type)){
+            throw new TypeError("Placeholder for this input type is not supported by standard html")
+        }
+        this._placeholder = value;
+        this._element.placeholder = value;
+    }
+    get placeholder(){
+        return this._placeholder;
+    }
+    set readonly(value){
+        if(typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)){
+            throw new TypeError("Readonly property can be boolan or 0&1");
+        }
+        this._readonly = value;
+        this._element.readonly = value;
+    }
+    get readonly(){
+        return this._readonly;
+    }
+    onInput(){
+        this.sendDataEvent("input", this._element.value);
+    }
+}
+gn.ui.input.Line = class extends gn.ui.input.AbstractInput{
+    constructor(classList, placeholder){
+        super("text", classList);
+        this.placeholder = placeholder;
+    }
+    get value(){
+        return this._element.value;
+    }
+    set value(value){
+        this.element.value = value;
+    }
+}
+gn.ui.input.Button = class extends gn.ui.input.AbstractInput{
+    constructor( classList, text){
+        super("button", classList);
+        this.value = text;
+    }
+    set value(value){
+        this._element.textContent = value;
+    }
+    set value(value){
+        this._element.textContent = value;
+    }
+}
+gn.ui.container.Row = class extends gn.ui.basic.Widget{
+    constructor(classList){
+        super("div", classList);
+        this.addClass("gn-container-row")
+    }
+}
+gn.ui.container.Column = class extends gn.ui.basic.Widget{
+    constructor(classList){
+        super("div", classList);
+        this.addClass("gn-container-column")
     }
 }
 
@@ -709,7 +849,7 @@ gn.ui.tile.TileContainer = class extends gn.ui.basic.Widget{
         if(n == 0){
             n = perLine;
         }else{
-            n = n % perLine;
+            n = perLine - (n % perLine);
         }
         for(let i = 0; i < n; i++){
             let item = new this._fakeTileClass(this);
