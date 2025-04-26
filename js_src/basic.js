@@ -236,10 +236,9 @@ namespace gn.ui.basic {
     }
     class Label extends gn.ui.basic.Widget{
         constructor(text, classList){
-            super("span");
+            super("label", "gn-label");
             this._text = text;
             this._element.innerText = this._text;
-            this._element.className = 'gn-span';
             this.addClasses(classList);
         }
         set text(value){

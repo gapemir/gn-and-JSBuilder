@@ -26,8 +26,8 @@ namespace gn.model {
             throw new Error('Method "setData" must be implemented in subclass');
         }
 
-        addDataEntry(data) {
-            throw new Error('Method "addDataEntry" must be implemented in subclass');
+        addData(data) {
+            throw new Error('Method "addData" must be implemented in subclass');
         }
 
         data(id, type) {
@@ -50,19 +50,17 @@ namespace gn.model {
     class TreeModel extends gn.model.Model {
         constructor(identifier, parent) {
             super(identifier, parent);
-            this._data = new Map();
+            this._data = new Map();// id -> data
             this._parentMap = new Map(); // id -> children ids
             this._currLevel = null;
             this._parentIdentifier = null;
         }
-
         set parentIdentifier(value) {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Parent identifier cannot be null');
             }
             this._parentIdentifier = value;
         }
-
         setData(data) {
             this._data = new Map();
             if (gn.lang.Var.isArray(data)) {
@@ -72,12 +70,32 @@ namespace gn.model {
             }
             this.sendEvent('dataSet');
         }
-
-        addDataEntry(data) {
+        addData(data) {
             this._addData(data);
-            this.sendDataEvent('dataAdded', data);
+            this.sendDataEvent('dataAdded', data[this._dataIdentifier]);
         }
-
+        removeData(id) {
+            if (gn.lang.Var.isNull(id)) {
+                throw new Error('Id cannot be null');
+            }
+            if (!this._data.has(id)) {
+                throw new Error('Data not found in model');
+            }
+            if(this._parentMap.has(id)) {
+                let children = this._parentMap.get(id);
+                children.forEach((childId) => {
+                    this.removeData(childId);
+                });
+            }
+            this.sendDataEvent('toRemoveData', id);
+            this._data.delete(id);
+            this._parentMap.forEach((value, key) => {
+                let index = value.indexOf(id);
+                if (index > -1) {
+                    value.splice(index, 1);
+                }
+            });
+        }
         _addData(data) {
             if (gn.lang.Var.isNull(data)) {
                 throw new Error('Data cannot be null');
@@ -99,7 +117,6 @@ namespace gn.model {
                 this._parentMap.set(parentId, [data[this._dataIdentifier]]);
             }
         }
-
         data(id, type) {
             if (gn.lang.Var.isNull(id)) {
                 throw new Error('Data identifier cannot be null');
@@ -114,7 +131,6 @@ namespace gn.model {
                 throw new Error('Invalid type');
             }
         }
-
         getChildren(id) {
             if (this._parentMap.has(id)) {
                 return this._parentMap.get(id);
@@ -122,7 +138,6 @@ namespace gn.model {
                 return null;
             }
         }
-
         getParent(id) {
             if (gn.lang.Var.isNull(id)) {
                 throw new Error('Id cannot be null');
@@ -134,7 +149,6 @@ namespace gn.model {
             }
             throw new Error('This should not happen, contact me');
         }
-
         reset() {
             this._data = new Map();
             this._parentMap = new Map();

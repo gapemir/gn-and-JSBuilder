@@ -13,21 +13,17 @@ namespace gn.ui.input {
             this.addClasses(classList);
             this._placeholder = null;//not all have placeholder
             this._readonly;
-            this.element.addEventListener("input", this.onInput, this);
+            this.element.addEventListener("input", this.onInput.bind(this));
         }
-
         get type() {
             return this._element.type;
         }
-
         get value() {
             throw new TypeError("Abstract class");
         }
-
         set value(value) {
             throw new TypeError("Abstract class");
         }
-
         set placeholder(value) {
             if (!["text", "url", "tel", "email", "password"].includes(this.type)) {
                 throw new TypeError("Placeholder for this input type is not supported by standard html")
@@ -35,11 +31,9 @@ namespace gn.ui.input {
             this._placeholder = value;
             this._element.placeholder = value;
         }
-
         get placeholder() {
             return this._placeholder;
         }
-
         set readonly(value) {
             if (typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)) {
                 throw new TypeError("Readonly property can be boolan or 0&1");
@@ -47,13 +41,11 @@ namespace gn.ui.input {
             this._readonly = value;
             this._element.readonly = value;
         }
-
         get readonly() {
             return this._readonly;
         }
-
         onInput() {
-            this.sendDataEvent("input", this._element.value);
+            this.sendDataEvent("input", this.value);
         }
     }
 
@@ -62,13 +54,23 @@ namespace gn.ui.input {
             super("text", classList);
             this.placeholder = placeholder;
         }
-
         get value() {
             return this._element.value;
         }
-
         set value(value) {
             this.element.value = value;
+        }
+    }
+    class CheckBox extends gn.ui.input.AbstractInput {
+        constructor(classList, value = false) {
+            super("checkbox", classList);
+            this.value = value;
+        }
+        get value() {
+            return this._element.checked;
+        }
+        set value(value) {
+            this._element.checked = value;
         }
     }
     class Button extends gn.ui.input.AbstractInput {
@@ -76,11 +78,9 @@ namespace gn.ui.input {
             super("button", classList);
             this.value = text;
         }
-
         set value(value) {
             this._element.textContent = value;
         }
-
         set value(value) {
             this._element.textContent = value;
         }

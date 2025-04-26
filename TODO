@@ -1,0 +1,18 @@
+layout manager so complex types eg TileContainer can have
+elemt be container.Row or Column
+
+
+//TODO gn.ui.list
+//TODO input class and subclasses, general input >subclasiran na input, multiline, checkbox, radio, button
+//TODO breadcrumb
+//todo popup menus
+
+//abaout geomerty some is in Widget.tooltip
+//todo geometry, object widget has getGeometry
+
+//gn.model abstract model, list model tree model
+//gn.ui ui elements like lists,
+// >.basic images, buttons, inputs, etc
+//gn.ui.list.List, ListItem
+//gn.ui.tree.Tree, TreeItem
+//gn.ui.tile.TileContaier, TileIte
