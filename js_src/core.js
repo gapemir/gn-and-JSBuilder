@@ -63,7 +63,6 @@ namespace gn.core {
             return obj._internalId = id;
         }
     }
-
-    gn.core.Object._idCache = [];
-    gn.core.Object._nextId = 0;
+    Object._idCache = [];
+    Object._nextId = 0;
 }
