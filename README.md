@@ -1,6 +1,6 @@
 # Welcome to my simple JS framework/UI library
 It has classes for many simple things in UI including event system.<br/>
-Project also has my JSBuilder which combines js files into one so we dont have to mess with modulesbecouse they suck.<br/>
+Project also has my JSBuilder which combines js files into one so we dont have to mess with modules becouse they suck.<br/>
 JS files that JSBuilder works with are not typical as they have namespaces defined at the top line.
 If you want to use the JSBuilder note that you need to format source files exactly as these here are as Builder is simple and was written in a couple hours.</br>
 Example code in pure js.
