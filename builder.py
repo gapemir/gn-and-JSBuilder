@@ -21,26 +21,34 @@ def calc_file_sha256(filename):
     return md5.hexdigest(), sha1.hexdigest()
 #NO SPACES
 def print_help():
-    print("JS_builder...")
     print("Usage: JS_builder [OPTIONS]...")
     print("Options:")
+    print("  -d, --rundir Dir in which JSBuilder is located")
+    print("  -c, --config Confil gile for JSBuilder, default builder.conf")
+    print("       note that -d is appended to -d")
     print("  -h, --help  Show this help message")
     print("  -v, --version  Show version")
-    print("  -q, --quiet   Quiet mode")
-    print("There must be builder.conf.old file present in working directory. example:")
+    #print("  -q, --quiet   Quiet mode")
+    print("Example of Builder.conf:")
+    print(" version=1.0.0")
+    print(" strict=true")
+    print(" src=js_src/")
+    print(" out=gn.js\n")
+    print(" file1.js")
+    print(" file2.js")
 def print_version():
     print("JS_builder: "+VERSION)
-def readBuilderBinary():
+def readBuilderBinary(runDir):
+    privFold = runDir + ".bdata/"
     map = {}
-    if not os.path.isdir(".bdata/"):
-        os.mkdir(".bdata")
-    if not os.path.isfile(".bdata/data"):
+    if not os.path.isfile(privFold+".data"):
         return map
-    with open(".bdata/data", "r") as f:
+    with open(privFold+".data", "r") as f:
         map = json.load(f)
     return map
-def writeBuilderBinary(map):
-    with open(".bdata/data", "w") as f:
+def writeBuilderBinary(map, runDir):
+    privFold = runDir + ".bdata/"
+    with open(privFold+".data", "w") as f:
         json.dump(map, f, indent=2)
 
 def find_all(a_str, sub):
@@ -52,13 +60,13 @@ def find_all(a_str, sub):
         start += len(sub)
 
 
-def build(files: list[str], out):
+def build(files: list[str], out, runDir):
     defNamespaces = []
     currNamespace = ""
-    spacesToRem = 0;
-    with (open(".bdata/tmp", "w", encoding='utf-8') as fout):
+    spacesToRem = 0
+    with (open(runDir+".bdata/tmp", "w", encoding='utf-8') as fout):
         for filename in files:
-            with open(filename, "r", encoding='utf-8') as fin:
+            with open(runDir+filename, "r", encoding='utf-8') as fin:
                 while line := fin.readline():
                     if line.strip().startswith("//") or not line.strip():
                         continue
@@ -90,22 +98,21 @@ def build(files: list[str], out):
                         fout.write(line+"\n")
                         print(line)
     defNamespaces.sort()
-    print(defNamespaces)
-    with open(out, "w", encoding='utf-8') as fout:
+    print("writing to " + runDir+out)
+    with open(runDir+out, "w", encoding='utf-8') as fout:
         for namespace in defNamespaces:
             fout.write("if (!"+namespace + ") "+namespace+" = {}\n")
         fout.write("\n\n")
-        with open(".bdata/tmp", "r", encoding='utf-8') as ftmp:
+        with open(runDir+".bdata/tmp", "r", encoding='utf-8') as ftmp:
             while line := ftmp.readline():
                 fout.write(line)
 
 
 
 def main():
-    #if len(sys.argv)==1:
-        #print_help()
-        #return
-    i=1;
+    conf = "builder.conf"
+    runDir = "./"
+    i = 1
     while i<len(sys.argv):
         match sys.argv[i].lower():
             case "-h" | "--help":
@@ -114,17 +121,28 @@ def main():
             case "-v" | "--version":
                 print_version()
                 return
+            case "-c" | "--config":
+                conf = sys.argv[i]
+                i+=1
+            case "-d" | "--rundir":
+                i+=1
+                runDir = sys.argv[i]
             case _:
                 print_help()
                 return
+        i+=1
+    
+    if runDir[-1] != "/":
+        runDir = runDir + "/"
 
-    #if ".bdata" not in os.listdir("."):
-    #    os.mkdir(".bdata")
+    if not os.path.isdir(runDir+".bdata"):
+        os.mkdir(runDir+".bdata")
 
-    oldHashes = readBuilderBinary()
+    #oldHashes = readBuilderBinary(runDir)
+    oldHashes = {}
     newHashes = {}
 
-    configFile = open("./builder.conf","r", encoding="utf-8")
+    configFile = open(runDir+conf,"r", encoding="utf-8")
     multilineComment = False
     version = None
     src = "."
@@ -152,7 +170,7 @@ def main():
             out = line.split("=")[1].strip()
         elif ".js" in line:
             files.append(src+line)
-            newHashes[line]= calc_file_sha256(src+line)
+            newHashes[line]= calc_file_sha256(runDir+src+line)
             if not oldHashes.get(line) or newHashes.get(line)[0] != oldHashes.get(line)[0] or not oldHashes.get(line) or newHashes.get(line)[1] != oldHashes.get(line)[1]:
                 needToBuild=True
         else:
@@ -161,9 +179,9 @@ def main():
             return
 
     if needToBuild:
-        #writeBuilderBinary(newHashes)
+        writeBuilderBinary(newHashes, runDir)
         print("Building " + out)
-        build(files, out)
+        build(files, out, runDir)
     else:
         print("nothing to be done")
 
