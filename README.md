@@ -37,7 +37,7 @@ cont.addNativeElement(this._firstItem.fileInput);
 cont.add(new gn.ui.basic.Label("Rename file (optional):"))
 this._firstItem.nameOfFile = new gn.ui.input.Line("", "file whitout extension");
 cont.add(this._firstItem.nameOfFile);
-let but1 = new gn.ui.input.Button("", "Upload");
+let but1 = new gn.ui.control.Button("", "Upload");
 but1.addEventListener("click", this._uploadFile, this);
 cont.add(but1);
 ```

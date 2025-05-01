@@ -1,12 +1,26 @@
-namespace gn.application {
-    class Application {
+namespace gn.app {
+    class App {
         constructor() {
-            this._instance = null; // Singleton instance
         }
         static instance() {
-            throw new Error("Abstract class cannot be instantiated directly");
+            if (gn.app.App._instance == null) {
+                throw new Error("Application class not initialized. Call startup() first.");
+            }
+            return gn.app.App._instance;
         }
-        async _phpRequest(url, data) {
+        static startup(appClass) {
+            if (gn.app.App._instance == null) {
+                if (appClass == null) {
+                    throw new Error("Application class cannot be null");
+                }
+                if(  appClass == gn.app.App) {
+                    throw new Error("Application class cannot be the abstract class");
+                }
+                gn.app.App._instance = new appClass();
+            }
+            return gn.app.App._instance;
+        }
+        async phpRequest(url, data) {
             let promise = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -17,4 +31,5 @@ namespace gn.application {
             return await promise.json();
         }
     }
+    App._instance = null;
 }
