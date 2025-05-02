@@ -1,6 +1,9 @@
 namespace gn.app {
     class App {
         constructor() {
+            this._root = null;
+            this._header = null
+            this._footer = null;
         }
         static instance() {
             if (gn.app.App._instance == null) {
@@ -17,8 +20,23 @@ namespace gn.app {
                     throw new Error("Application class cannot be the abstract class");
                 }
                 gn.app.App._instance = new appClass();
+
             }
             return gn.app.App._instance;
+        }
+        set root(root) {
+            this._root = root;
+            document.body.appendChild(root.element);
+        }
+        get root() {
+            return this._root;
+        }
+        set header(header) {
+            document.body.prepend(header.element);
+            this._header = header;
+        }
+        get header() {
+            return this._header;
         }
         async phpRequest(url, data) {
             let promise = await fetch(url, {
@@ -28,7 +46,19 @@ namespace gn.app {
             if(!promise.ok){
                 throw new Error('Network response was not ok' + promise.statusText);
             }
+            return promise;
+        }
+        async phpRequestJ(url, data) {
+            let promise = await this.phpRequest(url, data);
             return await promise.json();
+        }
+        async phpRequestT(url, data) {
+            let promise = await this.phpRequest(url, data);
+            return await promise.text();
+        }
+        async phpRequestA(url, data) {
+            let promise = await this.phpRequest(url, data);
+            return await promise.arrayBuffer();
         }
     }
     App._instance = null;

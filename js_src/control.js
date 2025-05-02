@@ -1,8 +1,11 @@
 namespace gn.ui.control {
     class Button extends gn.ui.basic.Widget {
-        constructor(classList, text) {
+        constructor(classList, text, callback) {
             super("button", classList);
             this.text = text;
+            if(!gn.lang.Var.isNull(callback) && callback instanceof Function) {
+                this.addEventListener("click", callback, this);
+            }
         }
         set text(value) {
             this._element.innerText = value;

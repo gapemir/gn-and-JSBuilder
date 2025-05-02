@@ -147,38 +147,40 @@ namespace gn.ui.basic {
         add(element){
             this._addInternal(element);
         }
+        addFirst(element){
+            if(this._children.length){
+                this._addInternal(element, "before", this._children[0]);
+            }else{
+                this._addInternal(element);
+            }
+        }
         addBefore(element, refElement){
-            this._addInternal(element, refElement, "before");
+            this._addInternal(element, "before", refElement);
         }
         addAfter(element, refElement){
-            this._addInternal(element, refElement, "after");
+            this._addInternal(element, "after", refElement);
         }
-        _addInternal(element, refElement, where){
+        _addInternal(element, where = null, refElement = null){
             if(gn.lang.Var.isNull(element)){
                 throw new Error('Element cannot be null');
             }
             if(gn.lang.Var.isNull(element.element)){
                 throw new Error('Element element cannot be null');
             }
-            let index = this._element.childElementCount
+            let index = this._element.childElementCount;
             if(!gn.lang.Var.isNull(where)){
                 if(gn.lang.Var.isNull(refElement)){
-                    throw new Error('refElement cannot be null on '+where);
-                }
-                if(gn.lang.Var.isNull(refElement.element)){
-                    throw new Error('Element element cannot be null on ' +where);
-                }
-                index = [...this._element.children].indexOf(refElement.element)
-                if(index == -1){
-                    throw new TypeError("refElement is not a child of this node");
+                    where = null;
+                } else {
+                    index = [...this._element.children].indexOf(refElement.element);
                 }
             }
             switch(where){
                 case "before":
-                    refElement.element.before(element.element);
+                    this._element.insertBefore(element.element, refElement.element);
                     break;
                 case "after":
-                    refElement.element.after(element.element);
+                    this._element.insertBefore(element.element, refElement.element.nextSibling);
                     index++
                     break;
                 default:

@@ -14,7 +14,6 @@
   width: 100%;
   height: 100%;
 }
-
 .gn-icon{
   cursor: pointer
 }
@@ -89,3 +88,55 @@
 }
 
 
+.gn-header{
+  height: 60px;
+}
+.gn-header-left{
+  float: left;
+  justify-content: flex-start;
+}
+.gn-header-right{
+  float: right;
+  justify-content: flex-end;
+}
+
+
+.gn-popup-base{
+  position: absolute;
+  z-index: 1000;
+  width: auto;
+  height: auto;
+  background-color: aliceblue;
+}
+.gn-popup{
+  border-radius: 10px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.gn-popup button,
+.gn-popup label,
+.gn-popup i{
+  margin: 5px;
+}
+.gn-popup-header,
+.gn-popup-footer{
+  width: 100%;
+  height: 30px;
+}
+.gn-popup-header{
+  justify-content: space-between;
+  border-bottom: 1px solid #111111;
+}
+.gn-popup-footer{
+  justify-content: flex-end;
+}
+.gn-popup-body{
+  width: 100%;
+  min-height: 120px;
+  height: auto;
+  overflow-y: auto;
+}
+.gn-popup-menu div{
+  border-bottom: 1px solid #000;
+}
