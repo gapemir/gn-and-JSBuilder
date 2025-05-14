@@ -1,5 +1,4 @@
 namespace gn.ui.tile {
-    // try using grid for tiles
     class TileContainer extends gn.ui.basic.Widget {
         constructor(parent) {
             super("div", "gn-tileContainer");

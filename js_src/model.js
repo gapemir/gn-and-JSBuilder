@@ -1,13 +1,4 @@
 namespace gn.model {
-    DataType = {
-        view: 1,
-        edit: 2,
-        all: 3,
-    }
-    Type = {
-        item: 1,
-        group: 2
-    }
     class Model extends gn.core.Object {
         constructor(identifier, parent) {
             super(parent);
@@ -156,4 +147,13 @@ namespace gn.model {
             this.sendEvent("reset");
         }
     }
+    Model.DataType = gn.lang.Enum({
+        view: 1,
+        edit: 2,
+        all: 3,
+    });
+    Model.Type = gn.lang.Enum({
+        item: 1,
+        group: 2
+    });
 }

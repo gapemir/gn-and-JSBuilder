@@ -1,9 +1,7 @@
 namespace gn.lang {
     class Var {
         static isNull(value){
-            if(value == undefined || value == null || value == '')
-                return true;
-            return false;
+            return value === undefined || value == null || value === "";
         }
         static isArray(value){
             return value instanceof Array;
@@ -14,16 +12,17 @@ namespace gn.lang {
     }
     class Array {
         static isEmpty (array){
-            if(gn.lang.Var.isNull(array) || array.length == 0)
-                return true;
-            return false;
+            return !!(gn.lang.Var.isNull(array) || array.length === 0);
+
         }
     }
     class String {
         static isEmpty (string){
-            if(gn.lang.Var.isNull(string) || string.length == 0)
-                return true;
-            return false;
+            return !!(gn.lang.Var.isNull(string) || string.length === 0);
+
         }
     }
+    Enum = function( obj ) {
+        return Object.freeze ? ( Object.freeze( obj ) ) : obj;
+    };
 }

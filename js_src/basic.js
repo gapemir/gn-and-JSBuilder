@@ -90,7 +90,7 @@ namespace gn.ui.basic {
             }
         }
         get tooltipContent(){
-            return this._tooltipContentM
+            return this._tooltipContent
         }
         showTooltip(){
             if(!gn.lang.Var.isNull(this._tooltip)){
