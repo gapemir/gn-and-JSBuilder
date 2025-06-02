@@ -81,7 +81,7 @@ namespace gn.ui.basic {
                 delete this._tooltip;
             }
         }
-        set tooltipContent(value){
+        set tooltipContent(value){ //TODO redo, just create tooltip, upper function 
             this._tooltipContent = value;
             if(!gn.lang.Var.isNull(this._tooltip) && !gn.lang.Var.isNull(this._tooltip.label)){
                 this._tooltip.label.text = value;
@@ -107,12 +107,13 @@ namespace gn.ui.basic {
                   this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth}px`);
                   tooltipRect = this._tooltip.element.getBoundingClientRect();
                   let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x
-                  this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
+                  this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
                   this._tooltip._wasMoved = true;
                 }
                 else if(tooltipRect.left < 0){
-                    //this._tooltip.setStyle("right", "auto");
+                    //this._tooltip.setStyle("right", "auto");    
                     this._tooltip.setStyle("left", "0px");
+                    this._tooltip.setStyle("transform", "none");
                     tooltipRect = this._tooltip.element.getBoundingClientRect();
                     this._tooltip.setStyle("left", `${-tooltipRect.left}px`);
                     tooltipRect = this._tooltip.element.getBoundingClientRect();
@@ -130,6 +131,7 @@ namespace gn.ui.basic {
                     this._tooltip.setStyle("top");
                     this._tooltip.setStyle("left");
                     this._tooltip.setStyle("bottom");
+                    this._tooltip.setStyle("transform");
                     this._tooltip.element.style.removeProperty("--arrow-left")
                     delete this._tooltip._wasMoved
                 }

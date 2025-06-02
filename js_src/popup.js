@@ -1,17 +1,18 @@
 namespace gn.ui.popup {
+    //TODO popups stay if user scrolls or size of webside is changed
     class PopupBase extends gn.ui.container.Column {
         constructor(classList){
             super("gn-popup-base");
             this.addClasses(classList);
         }
-        close() {
+        hide() {
             document.body.removeChild(this.element);
         }
         show() {
             document.body.appendChild(this.element);
         }
     }
-    class Popup extends gn.ui.popup.PopupBase {
+    class Popup extends gn.ui.popup.PopupBase { //TODO bug it shows on top of page(if page is scrolled it wont show in the middle, we should also lock scroll when we have a popup)
         constructor(buttons) {
             super("gn-popup");
             this.header = new gn.ui.container.Row("gn-popup-header");
@@ -21,7 +22,7 @@ namespace gn.ui.popup {
                 let button = new gn.ui.control.Button("", "OK");
                 button.addEventListener("click", function () {
                     this.sendEvent("ok");
-                    this.close();
+                    this.dispose();
                 }, this);
                 this.footer.add(button);
             }
@@ -29,7 +30,7 @@ namespace gn.ui.popup {
                 let close = new gn.ui.basic.Icon(14, "fa-xmark", ["fa-solid"]);
                 close.addEventListener("click", function () {
                     this.sendEvent("close");
-                    this.close();
+                    this.dispose();
                 }, this);
                 this.header.add(close);
             }
@@ -37,7 +38,7 @@ namespace gn.ui.popup {
                 let button = new gn.ui.control.Button("", "CANCEL");
                 button.addEventListener("click", function () {
                     this.sendEvent("cancel");
-                    this.close();
+                    this.dispose();
                 }, this);
                 this.footer.add(button);
             }
@@ -45,7 +46,7 @@ namespace gn.ui.popup {
                 let button = new gn.ui.control.Button("", "YES");
                 button.addEventListener("click", function () {
                     this.sendEvent("yes");
-                    this.close();
+                    this.dispose();
                 }, this);
                 this.footer.add(button);
             }
@@ -53,7 +54,7 @@ namespace gn.ui.popup {
                 let button = new gn.ui.control.Button("", "NO");
                 button.addEventListener("click", function () {
                     this.sendEvent("no");
-                    this.close();
+                    this.dispose();
                 }, this);
                 this.footer.add(button);
             }
@@ -124,6 +125,18 @@ namespace gn.ui.popup {
             let trect = this.element.getBoundingClientRect();
             this.setStyle("top", rect.bottom + "px");
             this.setStyle("left", rect.right - trect.width + "px");
+            this._windowClickBound = this._windowClick.bind(this)
+            document.addEventListener("click", this._windowClickBound);
+        }
+        _windowClick(event){ //TODO this works for simple one layer menus, for complex we need to rethink how we handle where user clicked
+            if(!this.c){ // we remove first click
+                this.c = true;
+                return;
+            }
+            if (event.target !== this.element && !this.element.contains(event.target)) {
+                this.hide();
+                document.removeEventListener("click", this._windowClickBound);
+            }
         }
     }
     OK = 1;

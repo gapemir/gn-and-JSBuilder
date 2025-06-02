@@ -25,7 +25,7 @@ namespace gn.core {
         }
 
         tr(text, ...extra) {
-            return text;
+            return text.toLowerCase();
         }
 
         dispose() {

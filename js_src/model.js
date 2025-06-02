@@ -4,27 +4,29 @@ namespace gn.model {
             super(parent);
             this._data = null;
             this._dataIdentifier = identifier;
+            this._viewId = "view";
         }
-
         set dataIdentifier(value) {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Data identifier cannot be null');
             }
             this._dataIdentifier = value;
         }
-
+        set viewId(value){
+            if (gn.lang.Var.isNull(value)) {
+                throw new Error('View identifier cannot be null');
+            }
+            this._viewId = value;
+        }
         setData(data) {
             throw new Error('Method "setData" must be implemented in subclass');
         }
-
         addData(data) {
             throw new Error('Method "addData" must be implemented in subclass');
         }
-
         data(id, type) {
             throw new Error('Method "data" must be implemented in subclass');
         }
-
         reset() {
             throw new Error('Method "reset" must be implemented in subclass');
         }
@@ -55,9 +57,23 @@ namespace gn.model {
         setData(data) {
             this._data = new Map();
             if (gn.lang.Var.isArray(data)) {
-                data.forEach((item) => {
-                    this._addData(item);
-                });
+                let cpy = [...data];
+                let i = 0;
+                while(cpy.length){
+                    if(i >= cpy.length) {
+                        i = 0;
+                    }
+                    if(this._data.has(cpy[i][this._parentIdentifier]) || cpy[i][this._parentIdentifier] == null){
+                        this._addData(cpy[i])
+                        cpy.splice(i,1);
+                        i = 0;
+                    } else {
+                        i++;
+                    }
+                }
+                //data.forEach((item) => {
+                //    this._addData(item);
+                //});
             }
             this.sendEvent('dataSet');
         }
@@ -112,9 +128,13 @@ namespace gn.model {
             if (gn.lang.Var.isNull(id)) {
                 throw new Error('Data identifier cannot be null');
             }
+            if(gn.lang.Var.isNull(type)){
+                type = gn.model.DataType.view;
+            }
             if (type == gn.model.DataType.view) {
-                return this._data.get(id);
+                return this._data.get(id)[this._viewId];
             } else if (type == gn.model.DataType.edit) {
+                throw new TypeError("We are considering removing this one and replacing it with type(item, group)")
                 return this._data.get(id);
             } else if (type == gn.model.DataType.all) {
                 return this._data.get(id);
@@ -147,12 +167,12 @@ namespace gn.model {
             this.sendEvent("reset");
         }
     }
-    Model.DataType = gn.lang.Enum({
+    DataType = gn.lang.Enum({
         view: 1,
-        edit: 2,
+        edit: 2, //! NOT NEEDED???
         all: 3,
     });
-    Model.Type = gn.lang.Enum({
+    Type = gn.lang.Enum({
         item: 1,
         group: 2
     });

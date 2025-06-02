@@ -7,6 +7,7 @@ namespace gn.ui.tile {
             this._idElementMap = new Map();
             this._groups = new Map();// id group -> [id elements]
             this._currentGroup = null;
+            this._breadcrumb = null;
             this._fakeTiles = [];
             this._tileClass = gn.ui.tile.TileItem;
             this._fakeTileClass = gn.ui.tile.FakeTileItem;
@@ -58,6 +59,13 @@ namespace gn.ui.tile {
         }
         get model() {
             return this._model;
+        }
+        set breadcrumb(value){
+            this._breadcrumb = value;
+            this._breadcrumb.addEventListener("triggered", this.openGroup, this)
+        }
+        get breadcrumb(){
+            return this._breadcrumb;
         }
         onDataSet() {
             this.openGroup();
@@ -172,6 +180,9 @@ namespace gn.ui.tile {
                 this._makeGroup(this._currentGroup);
             }
             this.sendEvent("groupOpened", this._currentGroup);
+            if(this._breadcrumb){
+                this._breadcrumb.setIndex(this._currentGroup);
+            }
             this.genFakeTileItems();
         }
     }

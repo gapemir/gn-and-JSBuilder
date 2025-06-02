@@ -2,7 +2,11 @@ namespace gn.ui{
     class Header extends gn.ui.container.Row{
         constructor(options){
             super("gn-header");
-            this.options = options || {};
+            this.options = Object.assign({
+                    "left":true,
+                    "center":true,
+                    "right":true,
+                }, options);
             this._left = null;
             this._center = null;
             this._right = null;
