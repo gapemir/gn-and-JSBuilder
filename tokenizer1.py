@@ -57,7 +57,7 @@ def tokenize(stream):
     octrange = range(ord('0'), ord('7') + 1)
     hexrange = chain(range(ord('a'), ord('f') + 1), range(ord('A'), ord('F') + 1), numrange)
 
-    whitespace = [' ', '\n', '\t', '\r', '"', "'"]
+    whitespace = [' ', '\n', '\t', '\r', '"', "'", "`"]
     get_operators_for = lambda c: list(filter(lambda x: ord(c) is ord(x[0]), operators))
     is_operator = lambda c: c is not None and any(get_operators_for(c))
     is_separator = lambda c: c is None or (c in whitespace or is_operator(c))
@@ -271,7 +271,7 @@ def tokenize(stream):
                         stri = []
                         continue
 
-                if character == '"' or character == "'":
+                if character == '"' or character == "'" or character == "`":
                     in_string = character
                 elif character == '/' and (next(1) == '/' or next(1) == '*'):
                     in_comment = character + next(1)

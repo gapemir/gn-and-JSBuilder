@@ -124,7 +124,10 @@ def build(files: list[str], runDir):
             elif token.type == Token.String:
                 if "\"" in token.value:
                     token.value = token.value.replace("\"", "\\\"")
-                formated += "\"" + token.value + "\" "
+                if "${" in token.value and "}" in token.value:
+                    formated += "`" + token.value + "` "
+                else:
+                    formated += "\"" + token.value + "\" "
             elif token.type == Token.Number:
                 formated += token.value + " "
             else:
