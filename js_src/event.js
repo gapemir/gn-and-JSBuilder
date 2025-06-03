@@ -1,5 +1,7 @@
 namespace gn.event {
     class Emitter {
+        //TODO add bubble support, so that events can bubble up the object hierarchy
+        //TODO add support for event propagation, so that events can be stopped from propagating
         constructor() {
             this._listeners = new Map(); // Use a Map to store listeners
             this._instance = null; // Singleton instance

@@ -19,8 +19,9 @@ namespace gn.app {
                 if(  appClass == gn.app.App) {
                     throw new Error("Application class cannot be the abstract class");
                 }
-                gn.app.App._instance = new appClass();
 
+                gn.app.App._instance = new appClass();
+                gn.locale.LocaleManager.instance().locale = "en"; //default locale
             }
             return gn.app.App._instance;
         }
@@ -59,6 +60,9 @@ namespace gn.app {
         async phpRequestA(url, data) {
             let promise = await this.phpRequest(url, data);
             return await promise.arrayBuffer();
+        }
+        getLocalePath() {
+            return "./gn/translations/";
         }
     }
     App._instance = null;

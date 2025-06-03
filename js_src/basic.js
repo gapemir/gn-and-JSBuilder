@@ -77,16 +77,22 @@ namespace gn.ui.basic {
                 this._tooltip.label = new gn.ui.basic.Label(value);
                 this._tooltip.add(this._tooltip.label)
             }else{
-                this._tooltip.dispose();
-                delete this._tooltip;
+                if(!gn.lang.Var.isNull(this._tooltip)){
+                    this._tooltip.dispose();
+                    delete this._tooltip;
+                }
             }
         }
-        set tooltipContent(value){ //TODO redo, just create tooltip, upper function 
-            this._tooltipContent = value;
-            if(!gn.lang.Var.isNull(this._tooltip) && !gn.lang.Var.isNull(this._tooltip.label)){
-                this._tooltip.label.text = value;
-            }else{
-                throw ("Trying to set tooltip content but toltip label doesn't exist");
+        set tooltipContent(value){ // only accepts null(to erase) or string (also localizedString)
+            if( gn.lang.Var.isNull(value) ){
+                this.tooltip = null;
+            }
+            else if( gn.lang.Var.isString(value) ){
+                console.log("aa");
+                this.tooltip = value;
+            }
+            else{
+                throw new TypeError("gn.ui.basic.Widget.tooltipContent must be a string, localizedString or null");
             }
         }
         get tooltipContent(){
@@ -244,6 +250,11 @@ namespace gn.ui.basic {
             this._text = text;
             this._element.innerText = this._text;
             this.addClasses(classList);
+
+            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+        destructor(){
+            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
         }
         set text(value){
             this._text = value;
@@ -251,6 +262,11 @@ namespace gn.ui.basic {
         }
         get text(){
             return this._text;
+        }
+        _onLocaleChanged(){
+            if(this._text instanceof gn.locale.LocaleString) {
+                this.text = this._text.translate();
+            }
         }
     }
     class Icon extends gn.ui.basic.Widget{

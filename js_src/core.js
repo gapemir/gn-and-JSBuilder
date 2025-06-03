@@ -25,6 +25,7 @@ namespace gn.core {
         }
 
         tr(text, ...extra) {
+            return gn.locale.LocaleManager.instance().translate(text, text, extra);
             return text.toLowerCase();
         }
 

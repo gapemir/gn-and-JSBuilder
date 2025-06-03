@@ -96,10 +96,10 @@ namespace gn.ui.popup {
     class Menu extends gn.ui.popup.PopupBase {
         constructor(parent) {// we need parent in order to position the menu correctly
             super("gn-popup-menu");
-            this._items = null;
+            this._items = [];
             this._parent = parent;
         }
-        set items(items) {
+        /*set items(items) {
             this._items = items;
             this._items.forEach(item => {
                 let div = new gn.ui.container.Row();
@@ -108,13 +108,26 @@ namespace gn.ui.popup {
                 let text = item.label;
                 div.add(text)
                 div.addEventListener("click", function () {
-                    this.close();
+                    this._hideUnmount();
                     if (item.action) {
                         item.action();
                     }
                 }, this);
                 this.add(div);
             });
+        }*/
+        addItem(item){
+            if(!(item instanceof gn.ui.popup.MenuItem)){
+                throw new Error("Item must be instance of MenuItem");
+            }
+            this._items.push(item);
+            this.add(item);
+            item.addEventListener("click", function () {
+                this._hideUnmount();
+                if (item.action) {
+                    item.action();
+                }
+            }, this);
         }
         get items() {
             return this._items;
@@ -137,6 +150,43 @@ namespace gn.ui.popup {
                 this.hide();
                 document.removeEventListener("click", this._windowClickBound);
             }
+        }
+        _hideUnmount(){
+            this.hide();
+            document.removeEventListener("click", this._windowClickBound);
+        }
+    }
+    class MenuItem extends gn.ui.container.Row {
+        constructor(label, icon, action) {
+            super("gn-popup-menu-item");
+            this._label = label;
+            this._icon = icon;
+            this._action = action;
+            this.add(this._icon);
+            this.add(this._label);
+            this.setStyle("cursor", "pointer");
+            this.addEventListener("click", function () {
+                if (this._action) {
+                    this._action();
+                }
+            }, this);
+            gn.locale.LocaleManager.instance().addEventListener("localeChange", function () {
+                if(this._label instanceof gn.locale.LocaleString) {
+                    this.label = this._label.translate();
+                }
+            }, this);
+        }
+        set label(label) {
+            this._label = label;
+        }
+        get label() {
+            return this._label;
+        }
+        set icon(icon) {
+            this._icon = icon;
+        }
+        get icon() {
+            return this._icon;
         }
     }
     OK = 1;
