@@ -14,5 +14,4 @@ elemt be container.Row or Column
 //gn.ui ui elements like lists,
 // >.basic images, buttons, inputs, etc
 //gn.ui.list.List, ListItem
-//gn.ui.tree.Tree, TreeItem
 //gn.ui.tile.TileContaier, TileIte
