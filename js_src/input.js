@@ -3,10 +3,10 @@ namespace gn.ui.input {
         constructor(type, classList) {
             switch (type) {
                 case "text-area":
-                    super("textarea", "gn-text-area");
+                    super(null, "textarea", "gn-text-area");
                     break;
                 default:
-                    super("input", "gn-input");
+                    super(null, "input", "gn-input");
                     this._element.type = type;
                     break;
             }

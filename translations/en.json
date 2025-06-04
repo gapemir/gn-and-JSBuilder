@@ -1,0 +1,26 @@
+{
+    "BACK": "Back",
+    "FORWARD": "Forward",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm",
+    "DELETE": "Delete",
+    "EDIT": "Edit",
+    "SAVE": "Save",
+    "SEARCH": "Search",
+    "SUBMIT": "Submit",
+    "YES": "Yes",
+    "NO": "No",
+    "ERROR": "Error",
+    "LOADING": "Loading",
+    "SUCCESS": "Success",
+    "LOGIN": "Login",
+    "LOGOUT": "Logout",
+
+    "PODFOLIO": "Podfolio",
+    "YOUR_PERSONAL_PASTEBIN" : "Your personal pastebin",
+
+
+
+
+    "TMP": "TMP"
+}

@@ -1,6 +1,6 @@
 namespace gn.ui.basic {
     class Widget extends gn.core.Object{ //widget primarly means div has adders for elements
-        constructor(type, classList){
+        constructor(layout, type, classList){
             super();
             this._element = this._createElement(type);
             this.addClasses(classList);
@@ -8,6 +8,11 @@ namespace gn.ui.basic {
             this._tooltipContent = null;
             this._domParent = null;
             this._children = [];
+
+            this._layoutManager = null;
+            if(layout){
+                this.layoutManager = layout
+            }
             //todo add more listeners
             this._element.addEventListener("click", this.onClick.bind(this));
             this._element.addEventListener("mouseover", this.onMouseOver.bind(this));
@@ -28,6 +33,27 @@ namespace gn.ui.basic {
         }
         get element(){
             return this._element;
+        }
+        set layoutManager(value){
+            if(gn.lang.Var.isNull(value)){
+                if(!gn.lang.Var.isNull(this._layoutManager)){
+                    this._layoutManager.dispose();
+                    this._layoutManager = null;
+                }
+                return;
+            }
+            if(!(value instanceof gn.ui.layout.AbstractLayout)){
+                throw new TypeError("Layout manager must be instance of AbstractLayout");
+            }
+            this._layoutManager = value;
+            this._layoutManager.widget = this;
+            if(!(value instanceof gn.ui.layout.AbstractLayout)){
+                throw new TypeError("Layout manager must be instance of AbstractLayout");
+            }
+            this._layoutManager = value;
+        }
+        get layoutManager(){
+            return this._layoutManager;
         }
         addClass(className){
             if(gn.lang.Var.isNull(className)){
@@ -70,7 +96,7 @@ namespace gn.ui.basic {
                 this.addClass("gn-tooltip-parent");
             }
             else if(!gn.lang.Var.isNull(value)){
-                this._tooltip = new gn.ui.basic.Widget("div");
+                this._tooltip = new gn.ui.basic.Widget(null, "div");
                 this._tooltip.addClass("gn-tooltip");
                 this.addClass("gn-tooltip-parent");
                 this._tooltipContent = value;
@@ -246,7 +272,7 @@ namespace gn.ui.basic {
     }
     class Label extends gn.ui.basic.Widget{
         constructor(text, classList){
-            super("label", "gn-label");
+            super(null, "label", "gn-label");
             this._text = text;
             this._element.innerText = this._text;
             this.addClasses(classList);
@@ -271,7 +297,7 @@ namespace gn.ui.basic {
     }
     class Icon extends gn.ui.basic.Widget{
         constructor(size, iconName, iconSet){
-            super("i", "gn-icon");
+            super(null, "i", "gn-icon");
             this._size = size;
             this._iconName = iconName;
             if(!gn.lang.Var.isNull(iconSet) && !gn.lang.Var.isArray(iconSet)){
@@ -310,7 +336,7 @@ namespace gn.ui.basic {
     }
     class Image extends gn.ui.basic.Widget{
         constructor(src, classList){
-            super("img");
+            super(null, "img");
             this._element.src = src;
             this._element.className = 'gn-img';
             this.addClasses(classList);

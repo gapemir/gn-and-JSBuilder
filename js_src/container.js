@@ -1,14 +1,12 @@
 namespace gn.ui.container {
     class Row extends gn.ui.basic.Widget {
         constructor(classList) {
-            super("div", classList);
-            this.addClass("gn-container-row")
+            super(new gn.ui.layout.Row(), "div", classList);
         }
     }
     class Column extends gn.ui.basic.Widget {
         constructor(classList) {
-            super("div", classList);
-            this.addClass("gn-container-column")
+            super(new gn.ui.layout.Column(), "div", classList);
         }
     }
 }

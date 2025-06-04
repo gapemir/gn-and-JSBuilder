@@ -1,7 +1,7 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
         constructor(parent) {
-            super("div", "gn-tileContainer");
+            super(null, "div", "gn-tileContainer");
             this._parent = parent;
             this._model = null;
             this._idElementMap = new Map();
@@ -12,7 +12,7 @@ namespace gn.ui.tile {
             this._tileClass = gn.ui.tile.TileItem;
             this._fakeTileClass = gn.ui.tile.FakeTileItem;
             this._subItemContClass = gn.ui.tile.TileSubItemContainer
-            this._header = new gn.ui.basic.Widget("div", "gn-tileContainerHeader");
+            this._header = new gn.ui.basic.Widget(new gn.ui.layout.Row(), "div", "gn-tileContainerHeader");
             /*let back = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"])
             back.addEventListener("click", function () {
                 if (!gn.lang.Var.isNull(this._currentGroup)) {
@@ -188,20 +188,20 @@ namespace gn.ui.tile {
     }
     class TileItem extends gn.ui.basic.Widget {
         constructor(data, parent) {
-            super("div", "gn-tileItem");
+            super(null, "div", "gn-tileItem");
             this._parent = parent;
             this._data = data;
         }
     }
     class FakeTileItem extends gn.ui.basic.Widget {
         constructor(parent) {
-            super("div", "gn-fakeTileItem");
+            super(null, "div", "gn-fakeTileItem");
             this._parent = parent;
         }
     }
     class TileSubItemContainer extends gn.ui.basic.Widget { //data.type = "group"
         constructor(data, parent) {
-            super("div", "gn-tileSubItemContainer");
+            super(null, "div", "gn-tileSubItemContainer");
             this._parent = parent;
             this._data = data;
         }

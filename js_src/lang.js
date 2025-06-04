@@ -9,6 +9,12 @@ namespace gn.lang {
         static isString(value){
             return typeof value == 'string';
         }
+        static isNumber(value){
+            return typeof value == 'number' && !isNaN(value);
+        }
+        static isBoolean(value){
+            return typeof value == 'boolean';
+        }
     }
     class Array {
         static isEmpty (array){

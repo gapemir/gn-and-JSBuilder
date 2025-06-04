@@ -1,0 +1,26 @@
+{
+    "BACK": "Zurück",
+    "FORWARD": "Vorwärts",
+    "CANCEL": "Abbrechen",
+    "CONFIRM": "Bestätigen",
+    "DELETE": "Löschen",
+    "EDIT": "Bearbeiten",
+    "SAVE": "Speichern",
+    "SEARCH": "Suche",
+    "SUBMIT": "Absenden",
+    "YES": "Ja",
+    "NO": "Nein",
+    "ERROR": "Fehler",
+    "LOADING": "Laden",
+    "SUCCESS": "Erfolg",
+    "LOGIN": "Anmelden",
+    "LOGOUT": "Logout",
+
+    "PODFOLIO": "Podfolio",
+    "YOUR_PERSONAL_PASTEBIN" : "Dein persönlicher Pastebin",
+
+
+
+
+    "TMP": "TMP"
+}

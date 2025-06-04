@@ -1,7 +1,7 @@
 namespace gn.ui.control {
     class Button extends gn.ui.basic.Widget {
         constructor(classList, text, callback) {
-            super("button", classList);
+            super(null, "button", classList);
             this.text = text;
             if(!gn.lang.Var.isNull(callback) && callback instanceof Function) {
                 this.addEventListener("click", callback, this);
@@ -18,7 +18,7 @@ namespace gn.ui.control {
         constructor(classList, options, multiple) {
             //TODO how will we handle multiple select options? nativly this doesnt work as it returnes first selected value
             //maybe we need to create a custom select element that handles multiple select
-            super("select", classList);
+            super(null, "select", classList);
             this._options = null;
             //this._element.innerHTML = options.map(option => `<option value="${option.value}">${option.text}</option>`).join('');
             if(multiple) {
