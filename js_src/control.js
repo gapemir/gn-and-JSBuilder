@@ -14,6 +14,31 @@ namespace gn.ui.control {
             return this._element.innerText;
         }
     }
+    class Switch extends gn.ui.basic.Widget {
+        constructor(classList, checked) {
+            super(null, "label", "gn-switch " + classList);
+            this._input = new gn.ui.input.CheckBox(null , checked);
+            this.add(this._input);
+            this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
+            this.add(this._span);
+            this.checked = checked || false;
+            this._input.addEventListener("change", () => {
+                this.sendDataEvent("change", this.checked);
+            }, this);
+        }
+        set checked(value) {
+            this._input.value = value;
+        }
+        get checked() {
+            return this._input.value;
+        }
+        set value(value) {
+            this.checked = value;
+        }
+        get value() {
+            return this.checked;
+        }
+    }
     class Select extends gn.ui.basic.Widget {
         constructor(classList, options, multiple) {
             //TODO how will we handle multiple select options? nativly this doesnt work as it returnes first selected value

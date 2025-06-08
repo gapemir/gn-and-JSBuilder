@@ -9,10 +9,14 @@ namespace gn.event {
         static instance(){
             if(!this._instance){
                 this._instance = new gn.event.Emitter();
+                window.addEventListener("resize", function(){this.sendEvent("windowResized")}.bind(this._instance));
             }
             return this._instance;
         }
         addEventListener(object, eventName, listener, context) {
+            if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
+                return this.addEventListener(this, object, eventName, listener);
+            }
             let internalId = gn.core.Object.getInternalId(object);
             if (typeof listener !== 'function') {
                 throw(new TypeError(`Listener for event "${eventName}" on object must be a function.`));
@@ -36,6 +40,9 @@ namespace gn.event {
             }
         }
         removeEventListener(object, eventName, listener, context) {
+                if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
+                return this.removeEventListener(this, object, eventName, listener);
+            }
             let internalId = gn.core.Object.getInternalId(object);
             const objectEvents = this._listeners.get(internalId);
             if (!objectEvents || !objectEvents.get(eventName)) {
@@ -55,6 +62,9 @@ namespace gn.event {
             }
         }
         sendEvent(object, eventName) {
+            if( gn.lang.Var.isString(object) ){
+                return this.sendEvent(this, object);
+            }
             let internalId = gn.core.Object.getInternalId(object);
             const objectEvents = this._listeners.get(internalId);
             if (!objectEvents || !objectEvents.get(eventName)) {
@@ -74,6 +84,9 @@ namespace gn.event {
             });
         }
         sendDataEvent(object, eventName, data) {
+            if( gn.lang.Var.isString(object) ){
+                return this.sendEvent(this, object, data);
+            }
             let internalId = gn.core.Object.getInternalId(object);
             const objectEvents = this._listeners.get(internalId);
             if (!objectEvents || !objectEvents.get(eventName)) {
@@ -93,6 +106,9 @@ namespace gn.event {
             });
         }
         hasListeners(object, eventName) {
+            if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
+                return this.hasListeners(this, object);
+            }
             let internalId = gn.core.Object.getInternalId(object);
             const objectEvents = this._listeners.get(internalId);
             if (!objectEvents) {
@@ -101,7 +117,7 @@ namespace gn.event {
             const eventListeners = objectEvents.get(eventName);
             return eventListeners ? eventListeners.length > 0 : false;
         }
-        removeAllEventListeners(object){
+        removeAllEventListeners(object = this){
             let internalId = gn.core.Object.getInternalId(object);
             if (!this._listeners.has(internalId)) {
                 return

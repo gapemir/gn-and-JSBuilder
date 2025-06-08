@@ -12,6 +12,7 @@ namespace gn.ui.input {
             }
             this.addClasses(classList);
             this.element.addEventListener("input", this.onInput.bind(this));
+            this.element.addEventListener("change", this.onChange.bind(this));
         }
         get type() {
             return this._element.type;
@@ -42,6 +43,9 @@ namespace gn.ui.input {
         }
         onInput() {
             this.sendDataEvent("input", this.value);
+        }
+        onChange() {
+            this.sendDataEvent("change", this.value);
         }
     }
 

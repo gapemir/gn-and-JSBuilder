@@ -13,13 +13,6 @@ namespace gn.ui.tile {
             this._fakeTileClass = gn.ui.tile.FakeTileItem;
             this._subItemContClass = gn.ui.tile.TileSubItemContainer
             this._header = new gn.ui.basic.Widget(new gn.ui.layout.Row(), "div", "gn-tileContainerHeader");
-            /*let back = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"])
-            back.addEventListener("click", function () {
-                if (!gn.lang.Var.isNull(this._currentGroup)) {
-                    this.openGroup(this.model.getParent(this._currentGroup));
-                }
-            }, this);
-            this._header.add(back);*/
             this.add(this._header);
         }
         set tileClass(value) {

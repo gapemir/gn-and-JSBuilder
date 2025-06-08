@@ -86,7 +86,7 @@ namespace gn.ui.basic {
                 this.removeClass(classNames[i]);
             }
         }
-        setStyle(styleName, value = null){
+        setStyle(styleName, value = ""){
             this._element.style[styleName] = value;
         }
         set tooltip(value){
@@ -136,9 +136,9 @@ namespace gn.ui.basic {
                   this._tooltip.setStyle("left", "auto");
                   this._tooltip.setStyle("right", "0px");
                   tooltipRect = this._tooltip.element.getBoundingClientRect();
-                  this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth}px`);
+                  this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth - 10}px`);
                   tooltipRect = this._tooltip.element.getBoundingClientRect();
-                  let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x
+                  let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x + 15;
                   this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
                   this._tooltip._wasMoved = true;
                 }
@@ -147,10 +147,10 @@ namespace gn.ui.basic {
                     this._tooltip.setStyle("left", "0px");
                     this._tooltip.setStyle("transform", "none");
                     tooltipRect = this._tooltip.element.getBoundingClientRect();
-                    this._tooltip.setStyle("left", `${-tooltipRect.left}px`);
+                    this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
                     tooltipRect = this._tooltip.element.getBoundingClientRect();
                     let arrowMargin = (triggerRect.x+triggerRect.width/2);
-                    this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px");
+                    this._tooltip.element.style.setProperty("--arrow-left", arrowMargin-5+"px");
                     this._tooltip._wasMoved = true;
                 }
             }

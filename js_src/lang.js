@@ -15,6 +15,9 @@ namespace gn.lang {
         static isBoolean(value){
             return typeof value == 'boolean';
         }
+        static isFunction(value){
+            return typeof value == 'function';
+        }
     }
     class Array {
         static isEmpty (array){
