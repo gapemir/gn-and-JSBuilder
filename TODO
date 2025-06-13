@@ -15,3 +15,9 @@ elemt be container.Row or Column
 // >.basic images, buttons, inputs, etc
 //gn.ui.list.List, ListItem
 //gn.ui.tile.TileContaier, TileIte
+
+//general window switching, so we can have login form, main app, sub pages, about ...
+//some form of focus manager
+//event bubbling
+
+//WHAT IS DONE:

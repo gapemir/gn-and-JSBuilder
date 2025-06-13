@@ -15,6 +15,7 @@ namespace gn.ui.basic {
             }
             //todo add more listeners
             this._element.addEventListener("click", this.onClick.bind(this));
+            this._element.addEventListener("dblclick", this.onClick.bind(this));
             this._element.addEventListener("mouseover", this.onMouseOver.bind(this));
             this._element.addEventListener("mouseout", this.onMouseOut.bind(this));
             this._element.addEventListener("focusin", this.onFocusIn.bind(this));

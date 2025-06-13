@@ -146,7 +146,7 @@ namespace gn.ui.popup {
                 this.c = true;
                 return;
             }
-            if (event.target !== this.element && !this.element.contains(event.target)) {
+            else if (event.target !== this.element && !this.element.contains(event.target)) {
                 this.hide();
                 document.removeEventListener("click", this._windowClickBound);
             }
