@@ -1,8 +1,8 @@
 # Welcome to my simple JS framework/UI library
-It has classes for many simple things in UI including event system.<br/>
-Project also has my JSBuilder which combines js files into one so we dont have to mess with modules becouse they suck.<br/>
+It has classes for many simple things in UI including event system and translating.<br/>
+Project also has my JSBuilder which combines js files into one so we dont have to mess with modules because they suck.<br/>
 JS files that JSBuilder works with are not typical as they have namespaces defined at the top line.
-If you want to use the JSBuilder note that you need to format source files exactly as these here are as Builder is simple and was written in a couple hours.</br>
+</br>
 Example code in pure js.
 ```js
 let cont = document.createElement("div");
@@ -31,9 +31,8 @@ Example in gn.js
 ```js
 let cont = new gn.ui.container.Column("fileCont fileTileFirst");
 cont.add(new gn.ui.basic.Label("Upload a file"))
-this._firstItem.fileInput = document.createElement("input"); //note that file imput is not yet implemented so we add it via addNativeElement()
-this._firstItem.fileInput.type = "file";
-cont.addNativeElement(this._firstItem.fileInput);
+this._firstItem.fileInput = new gn.ui.input.File();
+cont.add(this._firstItem.fileInput);
 cont.add(new gn.ui.basic.Label("Rename file (optional):"))
 this._firstItem.nameOfFile = new gn.ui.input.Line("", "file whitout extension");
 cont.add(this._firstItem.nameOfFile);
