@@ -44,14 +44,10 @@ namespace gn.ui.basic {
                 return;
             }
             if(!(value instanceof gn.ui.layout.AbstractLayout)){
-                throw new TypeError("Layout manager must be instance of AbstractLayout");
+                throw new TypeError("Layout manager must be a subclass of AbstractLayout");
             }
             this._layoutManager = value;
             this._layoutManager.widget = this;
-            if(!(value instanceof gn.ui.layout.AbstractLayout)){
-                throw new TypeError("Layout manager must be instance of AbstractLayout");
-            }
-            this._layoutManager = value;
         }
         get layoutManager(){
             return this._layoutManager;
@@ -87,8 +83,15 @@ namespace gn.ui.basic {
                 this.removeClass(classNames[i]);
             }
         }
-        setStyle(styleName, value = ""){
-            this._element.style[styleName] = value;
+        setStyle(styleName, value = "", important = false){
+            this._element.style[styleName] = value + (important ? " !important" : "");
+        }
+        setStyles(map){
+            for(let key in map){
+                if(map.hasOwnProperty(key)){
+                    this.setStyle(key, map[key]);
+                }
+            }
         }
         set tooltip(value){
             if(value instanceof gn.ui.basic.Widget){

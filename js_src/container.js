@@ -9,4 +9,9 @@ namespace gn.ui.container {
             super(new gn.ui.layout.Column(), "div", classList);
         }
     }
+    class Grid extends gn.ui.basic.Widget {
+        constructor(classList) {
+            super(new gn.ui.layout.Grid(), "div", classList);
+        }
+    }
 }

@@ -11,6 +11,11 @@
 .gn-layout-column{
   flex-direction: column;
 }
+.gn-layout-grid{
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
 .gn-icon{
   cursor: pointer
 }
@@ -100,11 +105,8 @@
 
 
 .gn-tileContainer {
-  display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
   gap: 5px;
-  width: 100%;
   color: #fff;
   float: left;
 }
@@ -121,12 +123,10 @@
 .gn-tileItem,
 .gn-fakeTileItem,
 .gn-tileSubItemContainer {
-  border: 1px solid #000;
-  height: 350px;
   flex-basis: 350px;
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+  height: 350px;
+  border: 1px solid #000;
   border-radius: 10px;
 }
 .gn-fakeTileItem{

@@ -40,16 +40,9 @@ namespace gn.ui.control {
         }
     }
     class Select extends gn.ui.basic.Widget {
-        constructor(classList, options, multiple) {
-            //TODO how will we handle multiple select options? nativly this doesnt work as it returnes first selected value
-            //maybe we need to create a custom select element that handles multiple select
+        constructor(classList, options) {
             super(null, "select", classList);
             this._options = null;
-            //this._element.innerHTML = options.map(option => `<option value="${option.value}">${option.text}</option>`).join('');
-            if(multiple) {
-                throw new Error("Multiple select not supported yet");
-            }
-            //this._element.multiple = multiple || false;
             this.options = options;
         }
         set value(value) { // sets to selected value if multiple is true, sets to array of selected values
