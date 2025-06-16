@@ -3,6 +3,7 @@ namespace gn.ui.basic {
         constructor(layout, type, classList){
             super();
             this._element = this._createElement(type);
+            this._element.setAttribute("gn_name", this.constructor.name);
             this.addClasses(classList);
             this._tooltip = null;
             this._tooltipContent = null;

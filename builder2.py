@@ -32,7 +32,7 @@ def build(file: str, runDir, src):
                 i+=1 #skip namespace {
                 continue
             elif token.value == "class":
-                formated += currNamespace + "." + tokens[i+1].value + " = class "
+                formated += currNamespace + "." + tokens[i+1].value + " = class " + currNamespace.replace(".", "_") + "_" + tokens[i+1].value + " "
                 bClass = True
                 i+=2
                 continue
