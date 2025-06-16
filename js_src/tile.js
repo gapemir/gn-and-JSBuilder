@@ -1,7 +1,7 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
         constructor(parent) {
-            super(null, "div", "gn-tileContainer");
+            super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
             this._parent = parent;
             this._model = null;
             this._idElementMap = new Map();

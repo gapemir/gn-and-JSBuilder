@@ -7,16 +7,16 @@ namespace gn.lang {
             return value instanceof Array;
         }
         static isString(value){
-            return typeof value == 'string';
+            return typeof value === 'string';
         }
         static isNumber(value){
-            return typeof value == 'number' && !isNaN(value);
+            return typeof value === 'number' && !isNaN(value);
         }
         static isBoolean(value){
-            return typeof value == 'boolean';
+            return typeof value === 'boolean';
         }
         static isFunction(value){
-            return typeof value == 'function';
+            return typeof value === 'function';
         }
     }
     class Array {
