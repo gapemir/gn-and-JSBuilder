@@ -93,11 +93,11 @@ namespace gn.ui.tile {
             }
         }
         _makeItem(id){
-            let data = this._model.data(id, gn.model.DataType.all);
+            let data = this._model.data(id, gn.model.Model.DataType.all);
             let item = null
-            if(data.type == gn.model.Type.item) {
+            if(data.type == gn.model.Model.Type.item) {
                 item = new this._tileClass(data, this);
-            }else if(data.type == gn.model.Type.group) {
+            }else if(data.type == gn.model.Model.Type.group) {
                 item = new this._subItemContClass(data, this);
                 item.addEventListener("openGroup", this.openGroup, this);
             }else {
@@ -117,11 +117,11 @@ namespace gn.ui.tile {
                 return;
             }
             for (let i = 0; i < tmpIds.length; i++) {
-                let data = this._model.data(tmpIds[i], gn.model.DataType.all);
+                let data = this._model.data(tmpIds[i], gn.model.Model.DataType.all);
                 let item = null
-                if (data.type == gn.model.Type.item) {
+                if (data.type == gn.model.Model.Type.item) {
                     item = new this._tileClass(data, this);
-                } else if (data.type == gn.model.Type.group) {
+                } else if (data.type == gn.model.Model.Type.group) {
                     item = new this._subItemContClass(data, this);
                     item.addEventListener("openGroup", this.openGroup, this);
                 } else {

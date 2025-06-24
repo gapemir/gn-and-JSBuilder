@@ -68,3 +68,6 @@ namespace gn.ui.container {
     }
 }
 ```
+
+### Known issues
+builder js doesnt recognize well switch statements so each case/default should have its own break

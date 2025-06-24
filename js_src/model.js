@@ -2,15 +2,21 @@ namespace gn.model {
     class Model extends gn.core.Object {
         constructor(identifier, parent) {
             super(parent);
-            this._data = null;
-            this._dataIdentifier = identifier;
+            this._data = new Map(); // id -> data
+            this._dataId = identifier || "id";
             this._viewId = "view";
+
+            this._filterText = "";
+            this._filterCb = null;
+            this._filterCtx = null;
+            this._sortCb = null;
+            this._sortCtx = null;
         }
-        set dataIdentifier(value) {
+        set dataId(value) {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Data identifier cannot be null');
             }
-            this._dataIdentifier = value;
+            this._dataId = value;
         }
         set viewId(value){
             if (gn.lang.Var.isNull(value)) {
@@ -19,40 +25,141 @@ namespace gn.model {
             this._viewId = value;
         }
         setData(data) {
-            throw new Error('Method "setData" must be implemented in subclass');
+            this._data = new Map();
+            if(gn.lang.Var.isArray(data)) {
+                data.forEach((item) => {
+                    if (gn.lang.Var.isNull(item[this._dataId])) {
+                        throw new Error('Data item does not have identifier used in this model');
+                    }
+                    this._data.set(item[this._dataId], item);
+                });
+            }
+            this.sendEvent('dataSet');
         }
         addData(data) {
-            throw new Error('Method "addData" must be implemented in subclass');
+            if (gn.lang.Var.isNull(data)) {
+                throw new Error('Data cannot be null');
+            }
+            if (gn.lang.Var.isNull(data[this._dataId])) {
+                throw new Error('Data does not have identifier used in this model');
+            }
+            this._data.set(data[this._dataId], data);
+            this.sendDataEvent('dataAdded', data[this._dataId]);
         }
-        data(id, type) {
-            throw new Error('Method "data" must be implemented in subclass');
+        removeData(id){
+            if (gn.lang.Var.isNull(id)) {
+                throw new Error('Id cannot be null');
+            }
+            if (!this._data.has(id)) {
+                throw new Error('Data not found in model');
+            }
+            this.sendDataEvent('toRemoveData', id);
+            this._data.delete(id);
+            this.sendDataEvent('dataRemoved', id);
+        }
+        fAllData(type = gn.model.Model.DataType.view) {
+            let tmp = Array.from(this._data.values());
+            if (gn.lang.Var.isFunction(this._filterCb)) {
+                for (let val in tmp) {
+                    if (this._filter.call(this._filterCtx, this._filterText, val, this)) {
+                        tmp.push(val);
+                    }
+                }
+            }
+            if (gn.lang.Var.isFunction(this._sort)) {
+                tmp.sort((a, b) => this._sort.call(this._sortCtx, a, b, this));
+            }
+            let ret = [];
+            switch (type) {
+                case gn.model.Model.DataType.view:
+                    ret = tmp.map(item => item[this._viewId]);
+                    break;
+                case gn.model.Model.DataType.edit:
+                    new TypeError("We are considering removing this one")
+                    break;
+                case gn.model.DataType.all:
+                    ret = tmp;
+                    break;
+                default:
+                    break
+            }
+            return ret;
+        }
+        fData(id, type = gn.model.Model.DataType.view) {
+            if (gn.lang.Var.isNull(id)) {
+                throw new Error('Data identifier cannot be null');
+            }
+            let ret = this._data.get(id);
+            if (gn.lang.Var.isFunction(this._filter)) {
+                if (!this._filter.call(this._filterCtx, this._filterText, ret, this)) {
+                        return null;
+                }
+            }
+            switch (type) {
+                case gn.model.Model.DataType.view:
+                    ret = ret[this._viewId];
+                    break;
+                case gn.model.Model.DataType.edit:
+                    new TypeError("We are considering removing this one")
+                    break;
+                case gn.model.Model.DataType.all:
+                    break;
+                default:
+                    throw new Error('Invalid type');
+                    break;
+            }
+            return ret;
+        }
+        data(id, type = gn.model.Model.DataType.view) {
+            if (gn.lang.Var.isNull(id)) {
+                throw new Error('Data identifier cannot be null');
+            }
+            let ret =  this._data.get(id)[this._viewId];
+            switch (type) {
+                case gn.model.Model.DataType.all:
+                    ret = this._data.get(id);
+                    break;
+                case gn.model.Model.DataType.edit:
+                    new TypeError("We are considering removing this one")
+                    break;
+                default:
+                    break;
+            }
+            return ret;
         }
         reset() {
-            throw new Error('Method "reset" must be implemented in subclass');
-        }
-    }
-    class SortModel extends gn.model.Model {
-        constructor(identifier, parent) {
-            throw new Error('SortModel is not implemented yet');
-            super(identifier, parent);
             this._data = new Map();
-            this._currLevel = null;
-            this._parentIdentifier = null;
+            this.sendEvent('reset');
+        }
+        setAcceptFilter(cb, ctx){
+            if (gn.lang.Var.isNull(cb) || !gn.lang.Var.isFunction(cb)) {
+                throw new Error('Filter callback must be a function');
+            }
+            this._filterCb = cb;
+            this._filterCtx = ctx;
+            this.sendEvent('filterSet');
+        }
+        setAcceptSort(cb, ctx){
+            if (gn.lang.Var.isNull(cb) || !gn.lang.Var.isFunction(cb)) {
+                throw new Error('Sort callback must be a function');
+            }
+            this._sortCb = cb;
+            this._sortCtx = ctx;
+            this.sendEvent('sortSet');
         }
     }
     class TreeModel extends gn.model.Model {
         constructor(identifier, parent) {
             super(identifier, parent);
-            this._data = new Map();// id -> data
             this._parentMap = new Map(); // id -> children ids
-            this._currLevel = null;
-            this._parentIdentifier = null;
+            //this._currLevel = null;
+            this._parentId = null;
         }
-        set parentIdentifier(value) {
+        set parentId(value) {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Parent identifier cannot be null');
             }
-            this._parentIdentifier = value;
+            this._parentId = value;
         }
         setData(data) {
             this._data = new Map();
@@ -63,7 +170,7 @@ namespace gn.model {
                     if(i >= cpy.length) {
                         i = 0;
                     }
-                    if(this._data.has(cpy[i][this._parentIdentifier]) || cpy[i][this._parentIdentifier] == null){
+                    if(this._data.has(cpy[i][this._parentId]) || cpy[i][this._parentId] == null){
                         this._addData(cpy[i])
                         cpy.splice(i,1);
                         i = 0;
@@ -71,15 +178,51 @@ namespace gn.model {
                         i++;
                     }
                 }
-                //data.forEach((item) => {
-                //    this._addData(item);
-                //});
             }
             this.sendEvent('dataSet');
         }
+        _addData(data) {
+            if (gn.lang.Var.isNull(data)) {
+                throw new Error('Data cannot be null');
+            }
+            if (gn.lang.Var.isNull(data[this._dataId])) {
+                throw new Error('Data doesnt have identifier used in this model');
+            }
+            if(!this._data.has(data[this._parentId]) && !gn.lang.Var.isNull(data[this._parentId])){
+                throw new Error('Parent data not found in model');
+            }
+            this._data.set(data[this._dataId], data);
+
+            let parentId = data[this._parentId];
+            if (gn.lang.Var.isNull(parentId)) {
+                parentId = null;
+            }
+            if (this._parentMap.has(parentId)) {
+                this._parentMap.get(parentId).push(data[this._dataId]);
+            } else {
+                this._parentMap.set(parentId, [data[this._dataId]]);
+            }
+        }
         addData(data) {
-            this._addData(data);
-            this.sendDataEvent('dataAdded', data[this._dataIdentifier]);
+            if( gn.lang.Var.isNull(data)) {
+                throw new Error('Data cannot be null');
+            }
+            if (gn.lang.Var.isNull(data[this._dataId])) {
+                throw new Error('Data does not have identifier used in this model');
+            }
+            if(!this._data.has(data[this._parentId]) && !gn.lang.Var.isNull(data[this._parentId])){
+                throw new Error('Parent data not found in model');
+            }
+            let parentId = data[this._parentId];
+            if (gn.lang.Var.isNull(parentId)) {
+                parentId = null;
+            }
+            if (this._parentMap.has(parentId)) {
+                this._parentMap.get(parentId).push(data[this._dataId]);
+            } else {
+                this._parentMap.set(parentId, [data[this._dataId]]);
+            }
+            super.addData(data);
         }
         removeData(id) {
             if (gn.lang.Var.isNull(id)) {
@@ -93,54 +236,14 @@ namespace gn.model {
                 children.forEach((childId) => {
                     this.removeData(childId);
                 });
-            }
-            this.sendDataEvent('toRemoveData', id);
-            this._data.delete(id);
+            }            
             this._parentMap.forEach((value, key) => {
                 let index = value.indexOf(id);
                 if (index > -1) {
                     value.splice(index, 1);
                 }
             });
-        }
-        _addData(data) {
-            if (gn.lang.Var.isNull(data)) {
-                throw new Error('Data cannot be null');
-            }
-            if (gn.lang.Array.isEmpty(data[this._dataIdentifier])) {
-                throw new Error('Data doesnt have identifier used in this model');
-            }
-            this._data.set(data[this._dataIdentifier], data);
-            if (!this._data.has(data[this._parentIdentifier]) && !gn.lang.Var.isNull(data[this._parentIdentifier])) {
-                throw new Error('Parent data not found in model');
-            }
-            let parentId = data[this._parentIdentifier];
-            if (gn.lang.Var.isNull(parentId)) {
-                parentId = null;
-            }
-            if (this._parentMap.has(parentId)) {
-                this._parentMap.get(parentId).push(data[this._dataIdentifier]);
-            } else {
-                this._parentMap.set(parentId, [data[this._dataIdentifier]]);
-            }
-        }
-        data(id, type) {
-            if (gn.lang.Var.isNull(id)) {
-                throw new Error('Data identifier cannot be null');
-            }
-            if(gn.lang.Var.isNull(type)){
-                type = gn.model.DataType.view;
-            }
-            if (type == gn.model.DataType.view) {
-                return this._data.get(id)[this._viewId];
-            } else if (type == gn.model.DataType.edit) {
-                throw new TypeError("We are considering removing this one and replacing it with type(item, group)")
-                return this._data.get(id);
-            } else if (type == gn.model.DataType.all) {
-                return this._data.get(id);
-            } else {
-                throw new Error('Invalid type');
-            }
+            super.removeData(id);
         }
         getChildren(id) {
             if (this._parentMap.has(id)) {
@@ -161,18 +264,17 @@ namespace gn.model {
             throw new Error('This should not happen, contact me');
         }
         reset() {
-            this._data = new Map();
             this._parentMap = new Map();
-            this._currLevel = null;
-            this.sendEvent("reset");
+            //this._currLevel = null;
+            super.reset();
         }
     }
-    DataType = gn.lang.Enum({
+    Model.DataType = gn.lang.Enum({
         view: 1,
         edit: 2, //! NOT NEEDED???
         all: 3,
     });
-    Type = gn.lang.Enum({
+    Model.Type = gn.lang.Enum({
         item: 1,
         group: 2
     });

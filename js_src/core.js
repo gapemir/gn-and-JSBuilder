@@ -2,7 +2,7 @@ namespace gn.core {
     class Object {
         constructor(parent) {
             this._parent = parent//topology parent, can be null
-            //in gn.ui.basic.widget there is property _domParent for ui parent
+            //in gn.ui.basic.widget there is property _layoutParent for ui parent
             this._internalId = this.internalId;
         }
 
@@ -31,9 +31,8 @@ namespace gn.core {
 
         dispose() {
             gn.event.Emitter.instance().removeAllEventListeners(this);
-            //remove it from dom
-            gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
             this._destructor();
+            gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
             delete this;
         }
 

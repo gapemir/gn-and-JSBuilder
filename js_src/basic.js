@@ -7,31 +7,43 @@ namespace gn.ui.basic {
             this.addClasses(classList);
             this._tooltip = null;
             this._tooltipContent = null;
-            this._domParent = null;
             this._children = [];
+            this.geometry = new gn.util.Geometry(this);
 
             this._layoutManager = null;
+            this._layoutParent = null;
             if(layout){
                 this.layoutManager = layout
             }
             //todo add more listeners
             this._element.addEventListener("click", this.onClick.bind(this));
-            this._element.addEventListener("dblclick", this.onClick.bind(this));
+            this._element.addEventListener("dblclick", this.onDblClick.bind(this));
             this._element.addEventListener("mouseover", this.onMouseOver.bind(this));
             this._element.addEventListener("mouseout", this.onMouseOut.bind(this));
             this._element.addEventListener("focusin", this.onFocusIn.bind(this));
             this._element.addEventListener("focusout", this.onFocusOut.bind(this));
         }
         _destructor(){
-            if(!gn.lang.Var.isNull(this._domParent)){
-                this._domParent.remove(this);
+            if(!gn.lang.Var.isNull(this._layoutParent)){
+                this._layoutParent.remove(this);
             }
         }
-        set domParent(domParent){
-            this._domParent = domParent;
+        get layoutParent(){
+            return this._layoutParent;
         }
-        get domParent(){
-            return this._domParent;
+        set layoutParent(value){
+            if(gn.lang.Var.isNull(value)){
+                this._layoutParent = null;
+            }
+            else if(!(value instanceof gn.ui.basic.Widget)){
+                throw new TypeError("Layout parent must be a gn.ui.basic.Widget");
+            }
+            else if(value === this){
+                throw new Error("Widget cannot be its own layout parent");
+            }
+            else {
+                this._layoutParent = value;
+            }            
         }
         get element(){
             return this._element;
@@ -54,14 +66,14 @@ namespace gn.ui.basic {
             return this._layoutManager;
         }
         addClass(className){
-            if(gn.lang.Var.isNull(className)){
+            if(gn.lang.Var.isEmpty(className)){
                 return;
             }
             this._element.classList.add(className);
         }
         addClasses(classNames){
             if(!gn.lang.Var.isArray(classNames)){
-                if(gn.lang.Var.isString(classNames)){
+                if(gn.lang.Var.isString(classNames) && !gn.lang.Var.isEmpty(classNames)){
                     this.addClasses(classNames.split(" "));
                 }
                 return;
@@ -119,7 +131,6 @@ namespace gn.ui.basic {
                 this.tooltip = null;
             }
             else if( gn.lang.Var.isString(value) ){
-                console.log("aa");
                 this.tooltip = value;
             }
             else{
@@ -131,29 +142,29 @@ namespace gn.ui.basic {
         }
         showTooltip(){
             if(!gn.lang.Var.isNull(this._tooltip)){
-                this.add(this._tooltip);
-
-                let triggerRect = this._element.getBoundingClientRect();
-                let tooltipRect = this._tooltip.element.getBoundingClientRect();
                 let viewportWidth = document.documentElement.clientWidth;
 
+                this.add(this._tooltip);
+                let triggerRect = this.geometry.geometry;
+                let tooltipRect = this._tooltip.geometry.geometry;
+
                 if (tooltipRect.right > viewportWidth) {
-                  this._tooltip.setStyle("left", "auto");
-                  this._tooltip.setStyle("right", "0px");
-                  tooltipRect = this._tooltip.element.getBoundingClientRect();
-                  this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth - 10}px`);
-                  tooltipRect = this._tooltip.element.getBoundingClientRect();
-                  let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x + 15;
-                  this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
-                  this._tooltip._wasMoved = true;
+                    this._tooltip.setStyle("left", "auto");
+                    this._tooltip.setStyle("right", "0px");
+
+                    tooltipRect = this._tooltip.geometry.geometry;
+                    this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth +5}px`);
+                    tooltipRect = this._tooltip.geometry.geometry;
+                    let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x + 15;
+                    this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
+                    this._tooltip._wasMoved = true;
                 }
                 else if(tooltipRect.left < 0){
                     //this._tooltip.setStyle("right", "auto");    
                     this._tooltip.setStyle("left", "0px");
                     this._tooltip.setStyle("transform", "none");
-                    tooltipRect = this._tooltip.element.getBoundingClientRect();
+                    tooltipRect = this._tooltip.geometry.geometry;
                     this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
-                    tooltipRect = this._tooltip.element.getBoundingClientRect();
                     let arrowMargin = (triggerRect.x+triggerRect.width/2);
                     this._tooltip.element.style.setProperty("--arrow-left", arrowMargin-5+"px");
                     this._tooltip._wasMoved = true;
@@ -164,11 +175,13 @@ namespace gn.ui.basic {
             if(!gn.lang.Var.isNull(this._tooltip)){
                 this.remove(this._tooltip);
                 if(this._tooltip._wasMoved){
-                    this._tooltip.setStyle("right");
-                    this._tooltip.setStyle("top");
-                    this._tooltip.setStyle("left");
-                    this._tooltip.setStyle("bottom");
-                    this._tooltip.setStyle("transform");
+                    this._tooltip.setStyles({
+                        "left": "",
+                        "right": "",
+                        "top": "",
+                        "bottom": "",
+                        "transform": ""
+                    })
                     this._tooltip.element.style.removeProperty("--arrow-left")
                     delete this._tooltip._wasMoved
                 }
@@ -227,7 +240,7 @@ namespace gn.ui.basic {
                     break;
             }
             this._children.splice(index, 0, element)
-            element.domParent = this;
+            element.layoutParent = this;
         }
         remove(element){
             if(gn.lang.Var.isNull(element)){
@@ -238,17 +251,21 @@ namespace gn.ui.basic {
             }
             let index = [...this._element.children].indexOf(element.element)
             if(index == -1){
-                throw new TypeError("Element is not part of this element");
+                return false;
             }
             this._element.removeChild(element.element);
             this._children.splice(index, 1);
-            element.domParent = null;
+            element.layoutParent = null;
+            return true;
         }
         _createElement(type){
             return document.createElement(type?type:"div");
         }
         onClick(){
             this.sendEvent("click");
+        }
+        onDblClick(){
+            this.sendEvent("dblclick");
         }
         onMouseOver(){
             this.sendEvent("mouseover");

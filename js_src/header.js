@@ -2,7 +2,7 @@ namespace gn.ui{
     class Header extends gn.ui.container.Row{
         constructor(options){
             super("gn-header");
-            this.options = Object.assign({
+            this.options = gn.lang.Object.merge({
                     "left":true,
                     "center":true,
                     "right":true,
