@@ -77,7 +77,7 @@ namespace gn.model {
                 case gn.model.Model.DataType.edit:
                     new TypeError("We are considering removing this one")
                     break;
-                case gn.model.DataType.all:
+                case gn.model.Model.DataType.all:
                     ret = tmp;
                     break;
                 default:

@@ -10,7 +10,7 @@ namespace gn.lang {
             return value instanceof Array;
         }
         static isString(value){
-            return typeof value === 'string';
+            return typeof value === 'string' || value instanceof String;
         }
         static isNumber(value){
             return typeof value === 'number' && !isNaN(value);

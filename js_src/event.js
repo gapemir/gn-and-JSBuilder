@@ -4,7 +4,6 @@ namespace gn.event {
         //TODO add support for event propagation, so that events can be stopped from propagating
         constructor() {
             this._listeners = new Map(); // Use a Map to store listeners
-            this._instance = null; // Singleton instance
         }
         static instance(){
             if(!this._instance){
@@ -126,4 +125,5 @@ namespace gn.event {
             //TODO we should check if removed object is saved somewhere in the context
         }
     }
+    Emitter._instance = null; // Static instance variable
 }

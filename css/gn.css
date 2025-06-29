@@ -19,6 +19,7 @@
 .gn-icon{
   cursor: pointer
 }
+.gn-label{}
 .gn-tooltip-parent{
   position: relative;
 }
