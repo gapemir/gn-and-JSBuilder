@@ -61,19 +61,21 @@ namespace gn.ui.tile {
             return this._breadcrumb;
         }
         onDataSet() {
-            this.openGroup();
+            this._openGroup();
         }
-        onDataAdded(id) {
+        onDataAdded(e) {
+            let id = e.data;
             let parent = this.model.getParent(id);
             if (this._groups.has(parent)) {
                 this._makeItem(id);
-                this.openGroup(parent);
+                this._openGroup(parent);
             }
         }
         onReset() {
             throw new Error('Method "_onReset" is not yet implemented');
         }
-        _onRemoveData(id) {
+        _onRemoveData(e) {
+            let id = e.data;
             if (this._groups.has(id)) {
                 if(this._groups.get(id).length != 0) {
                     throw new Error('Group has children, cannot be removed.');
@@ -151,7 +153,10 @@ namespace gn.ui.tile {
                 this.add(this._fakeTiles.at(-1));
             }
         }
-        openGroup(id) {
+        openGroup( e ) {
+            this._openGroup(e.data);
+        }
+        _openGroup(id) {
             if (gn.lang.Var.isNull(id)) {
                 id = null;
             }

@@ -1,4 +1,21 @@
 namespace gn.event {
+    class Event{
+        constructor(type, sender, data = null) {
+            this._type = type;
+            this._sender = sender;
+            this._data = data;
+            this._timestamp = Date.now();
+        }
+        get type() {
+            return this._type;
+        }
+        get data() {
+            return this._data;
+        }
+        get sender() {
+            return this._sender;
+        }
+    }
     class Emitter {
         //TODO add bubble support, so that events can bubble up the object hierarchy
         //TODO add support for event propagation, so that events can be stopped from propagating
@@ -8,7 +25,9 @@ namespace gn.event {
         static instance(){
             if(!this._instance){
                 this._instance = new gn.event.Emitter();
-                window.addEventListener("resize", function(){this.sendEvent("windowResized")}.bind(this._instance));
+                window.addEventListener("resize", function(){
+                    this.sendEvent(this._instance, "windowResized")
+                }.bind(this._instance));
             }
             return this._instance;
         }
@@ -39,7 +58,7 @@ namespace gn.event {
             }
         }
         removeEventListener(object, eventName, listener, context) {
-                if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
+            if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
                 return this.removeEventListener(this, object, eventName, listener);
             }
             let internalId = gn.core.Object.getInternalId(object);
@@ -64,48 +83,36 @@ namespace gn.event {
             if( gn.lang.Var.isString(object) ){
                 return this.sendEvent(this, object);
             }
-            let internalId = gn.core.Object.getInternalId(object);
-            const objectEvents = this._listeners.get(internalId);
-            if (!objectEvents || !objectEvents.get(eventName)) {
-                return;
-            }
-            const listenersToExecute = [...objectEvents.get(eventName)];
-
-            listenersToExecute.forEach((entry) => {
-                try {
-                    //should pass new object gn.event.Event that has some unique id, sender, receiver, timestamp,...
-                    entry.listener.call(entry.context);
-                } catch (error) {
-                    console.error(`Error executing listener for event "${eventName}" on object:`, object, error);
-                    console.error(`Listener:`, entry.listener);
-                    console.error(`Context:`, entry.context);
-                }
-            });
+            let event = new gn.event.Event(eventName, object);
+            this.dispatchEvent(event);
         }
         sendDataEvent(object, eventName, data) {
             if( gn.lang.Var.isString(object) ){
                 return this.sendEvent(this, object, data);
             }
-            let internalId = gn.core.Object.getInternalId(object);
+            let event = new gn.event.Event(eventName, object, data);
+            this.dispatchEvent(event);
+        }
+        dispatchEvent(event) {
+            let internalId = gn.core.Object.getInternalId(event.sender);
             const objectEvents = this._listeners.get(internalId);
-            if (!objectEvents || !objectEvents.get(eventName)) {
+            if (!objectEvents || !objectEvents.get(event.type)) {
                 return;
             }
-            const listenersToExecute = [...objectEvents.get(eventName)];
-
-            listenersToExecute.forEach((entry) => {
+            const listenersToExecute = [...objectEvents.get(event.type)];
+            for (let i = 0; i < listenersToExecute.length; i++) {
+                const entry = listenersToExecute[i];
                 try {
-                    //should pass new object gn.event.Event that has some unique id, sender, receiver, timestamp,...
-                    entry.listener.call(entry.context, data);
+                    entry.listener.call(entry.context, event);
                 } catch (error) {
-                    console.error(`Error executing listener for event "${eventName}" on object:`, object, error);
+                    console.error(`Error executing listener for event "${event.type}" on object:`, event.sender, error);
                     console.error(`Listener:`, entry.listener);
                     console.error(`Context:`, entry.context);
                 }
-            });
+            }
         }
         hasListeners(object, eventName) {
-            if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){
+            if( gn.lang.Var.isString(object) ){
                 return this.hasListeners(this, object);
             }
             let internalId = gn.core.Object.getInternalId(object);

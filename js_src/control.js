@@ -250,7 +250,8 @@ namespace gn.ui.control {
             let sep = new gn.ui.basic.Icon(20, "fa-angle-right", ["fa-solid"]);
             sep.index = idx;
             sep.parent = this;
-            sep.addEventListener("generateMenu", function(el){
+            sep.addEventListener("generateMenu", function(e){
+                let el = e.data;
                 el._menu = new gn.ui.popup.Menu(el);
                 el._menu.setStyle("min-width", "5rem");
                 el._menu.setStyle("min-height", "1rem");
