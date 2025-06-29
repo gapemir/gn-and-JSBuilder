@@ -120,9 +120,9 @@ namespace gn.ui.control {
             this._model = null;
             this._mode = mode || gn.ui.control.Breadcrumb.Type.history
 
-            if(this._mode == gn.ui.control.Breadcrumb.Type.layer){
+            if(this._mode == gn.ui.control.Breadcrumb.Type.layer) {
                 this._makeUp()
-            }else{
+            } else {
                 this._makeBack();
                 this._makeForward();
             }
@@ -137,6 +137,11 @@ namespace gn.ui.control {
 
             this.up = null;
             this._topLevelName = new gn.ui.basic.Label("", "");
+            this._topLevelName.setStyle("cursor", "pointer");
+            this._topLevelName.addEventListener("click", function(){
+                this._setIndex(null);
+                this.triggered(null);
+            }, this);
             this.add(this._topLevelName);
             this._rootSeparator = this._generateSeparator(null);
             this.add(this._rootSeparator);
@@ -179,6 +184,12 @@ namespace gn.ui.control {
                 let tmp = {};
                 tmp.separator = this._generateSeparator(this._currentIndex);
                 tmp.label = new gn.ui.basic.Label(this.model.data(this._currentIndex));
+                tmp.label.setStyle("cursor", "pointer");
+                var index = this._currentIndex;
+                tmp.label.addEventListener("click", function(){
+                    this._setIndex(index);
+                    this.triggered(index);
+                }, this);
                 this._widgets.set(this._currentIndex, tmp);
             }
             this._openLabels()
@@ -244,16 +255,23 @@ namespace gn.ui.control {
                 el._menu.setStyle("min-width", "5rem");
                 el._menu.setStyle("min-height", "1rem");
                 let children = this.model.getChildren(idx);
-                for (let i = 0; i < children.length; i++) {
-                    let data = this.model.data(children[i], gn.model.DataType.all)
-                    if(data.type == gn.model.Type.group){
-                        let lab = new gn.ui.basic.Label(this.model.data(children[i]));
-                        el._menu.add(lab);
+                if(children){
+                    for (let i = 0; i < children.length; i++) {
+                        let data = this.model.data(children[i], gn.model.Model.DataType.all)
+                        if(data.type == gn.model.Model.Type.group){
+                            let menuItem = new gn.ui.popup.MenuItem(data.name, null, function(){
+                                this._setIndex(children[i]);
+                                this.triggered( children[i] );
+                            }, this);
+                            //let lab = new gn.ui.basic.Label(this.model.data(children[i]));
+                            //el._menu.add(lab);
+                            el._menu.addItem(menuItem);
+                        }
                     }
                 }
             }, this);
             sep.addEventListener("click", function(){
-                if(!this.menu){
+                if(!this._menu){
                     this.sendDataEvent("generateMenu", this);
                 }
                 this._menu.show();

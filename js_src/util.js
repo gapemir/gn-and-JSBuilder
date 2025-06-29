@@ -22,60 +22,48 @@ namespace gn.util{
         }
     }
     class Geometry{
-        constructor(element) {
-            this.gnElement = element;
-            this.domElement = element;
-            if(element.element) {
-                this.domElement = element.element;
+        static _boundingClientRect(element) {
+            let el = element
+            if (el instanceof gn.ui.basic.Widget) {
+                el = element.el;
+            }
+            if (el instanceof HTMLElement) {
+                let rect = el.getBoundingClientRect();
+                return new gn.geometry.Rect(rect.x, rect.y, rect.width, rect.height);
+            } else {
+                throw new Error("Invalid element type for boundingClientRect");
             }
         }
-        get width() {
-            return this.domElement.getBoundingClientRect().width;
-        }
-        set width(value) {
-            this.gnElement.setStyle('width', value + 'px');
-        }
-        get height() {
-            return this.domElement.getBoundingClientRect().height;
-        }
-        set height(value) {
-            this.gnElement.setStyle('height', value + 'px');
-        }
-        get x() {
-            return this.domElement.getBoundingClientRect().left;
-        }
-        get y() {
-            return this.domElement.getBoundingClientRect().top;
-        }
-        get left() {
-            return this.domElement.getBoundingClientRect().left;
-        }
-        get right() {
-            return this.domElement.getBoundingClientRect().right;
-        }
-        get top() {
-            return this.domElement.getBoundingClientRect().top;
-        }
-        get bottom() {
-            return this.domElement.getBoundingClientRect().bottom;
-        }
-        get centerX() {
-            let bound = this.domElement.getBoundingClientRect();
-            return bound.left + (bound.width / 2);
-        }
-        get centerY() {
-            let bound = this.domElement.getBoundingClientRect();
-            return bound.top + (bound.height / 2);
-        }
-        get geometry() {
-            let bound = this.domElement.getBoundingClientRect();
-            let ret = {};
-            for (let key of ["width", "height", "x", "y", "left", "right", "top", "bottom"]) {
-                ret[key] = bound[key];
+        static _outerBoundingClientRect(element){
+            let el = element
+            if (el instanceof gn.ui.basic.Widget) {
+                el = element.el;
             }
-            ret.centerX = bound.left + (bound.width / 2);
-            ret.centerY = bound.top + (bound.height / 2);
-            return ret;
+            let rect = gn.util.Geometry._boundingClientRect(el);
+            let cs = window.getComputedStyle(el);
+            let l = parseInt(cs.getPropertyValue("margin-left")) || 0;
+            let r = parseInt(cs.getPropertyValue("margin-right")) || 0;
+            let t = parseInt(cs.getPropertyValue("margin-top")) || 0;
+            let b = parseInt(cs.getPropertyValue("margin-bottom")) || 0;
+            return new gn.geometry.Rect(rect.x - l, rect.y - t, rect.width + l + r, rect.height + t + b);
+        }
+        static rect(el){
+            return gn.util.Geometry._boundingClientRect(el);
+        }
+        static width(el) {
+            return gn.util.Geometry._boundingClientRect(el).width;
+        }
+        static height(el) {
+            return gn.util.Geometry._boundingClientRect(el).height;
+        }
+        static outerRect(el) {
+            return gn.util.Geometry._outerBoundingClientRect(el);
+        }
+        static outerWidth(el) {
+            return gn.util.Geometry._outerBoundingClientRect(el).width;
+        }
+        static outerHeight(el) {
+            return gn.util.Geometry._outerBoundingClientRect(el).height;
         }
     }
 }

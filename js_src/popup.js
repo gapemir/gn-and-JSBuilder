@@ -123,7 +123,7 @@ namespace gn.ui.popup {
             this._items.push(item);
             this.add(item);
             item.addEventListener("click", function () {
-                this._hideUnmount();
+                this.hide();
                 if (item.action) {
                     item.action();
                 }
@@ -134,12 +134,17 @@ namespace gn.ui.popup {
         }
         show() {
             document.body.appendChild(this.element);
-            let rect = this._parent.element.getBoundingClientRect();
-            let trect = this.element.getBoundingClientRect();
+            let rect = this._parent.rect;
+            let trect = this.rect;
             this.setStyle("top", rect.bottom + "px");
             this.setStyle("left", rect.right - trect.width + "px");
             this._windowClickBound = this._windowClick.bind(this)
             document.addEventListener("click", this._windowClickBound);
+        }
+        hide() {
+            super.hide();
+            this.c = false; // we reset click state so that next click will close the menu
+            document.removeEventListener("click", this._windowClickBound);
         }
         _windowClick(event){ //TODO this works for simple one layer menus, for complex we need to rethink how we handle where user clicked
             if(!this.c){ // we remove first click
@@ -151,23 +156,31 @@ namespace gn.ui.popup {
                 document.removeEventListener("click", this._windowClickBound);
             }
         }
-        _hideUnmount(){
-            this.hide();
-            document.removeEventListener("click", this._windowClickBound);
-        }
     }
     class MenuItem extends gn.ui.container.Row {
-        constructor(label, icon, action) {
+        constructor(label, icon, action, context) {
             super("gn-popup-menu-item");
             this._label = label;
             this._icon = icon;
             this._action = action;
-            this.add(this._icon);
+            this._context = context;
+            if(icon){
+                this.add(this._icon);
+            }
+            if(gn.lang.Var.isString(label)) {
+                this._label = new gn.ui.basic.Label(label);
+            } else if (!label instanceof gn.ui.basic.Label) {
+                throw new Error("Label must be instance of gn.ui.basic.Label or string");
+            }
             this.add(this._label);
             this.setStyle("cursor", "pointer");
             this.addEventListener("click", function () {
                 if (this._action) {
-                    this._action();
+                    if(this._context) {
+                        this._action.call(this._context);
+                    } else {
+                        this._action.call(this);
+                    }
                 }
             }, this);
             gn.locale.LocaleManager.instance().addEventListener("localeChange", function () {

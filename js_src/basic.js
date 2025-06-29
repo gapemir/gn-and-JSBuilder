@@ -8,7 +8,6 @@ namespace gn.ui.basic {
             this._tooltip = null;
             this._tooltipContent = null;
             this._children = [];
-            this.geometry = new gn.util.Geometry(this);
 
             this._layoutManager = null;
             this._layoutParent = null;
@@ -64,6 +63,25 @@ namespace gn.ui.basic {
         }
         get layoutManager(){
             return this._layoutManager;
+        }
+        get rect(){
+            return gn.util.Geometry.rect(this._element);
+        }
+        get width(){
+            return gn.util.Geometry.width(this._element);
+        }
+        set width(value){
+            if(gn.lang.Var.isNumber(value) && value >= 0){
+                this.setStyle("width", value + "px");
+            }
+        }
+        get height(){
+            return gn.util.Geometry.height(this._element);
+        }
+        set height(value){
+            if(gn.lang.Var.isNumber(value) && value >= 0){
+                this.setStyle("height", value + "px");
+            }
         }
         addClass(className){
             if(gn.lang.Var.isEmpty(className)){
@@ -145,16 +163,16 @@ namespace gn.ui.basic {
                 let viewportWidth = document.documentElement.clientWidth;
 
                 this.add(this._tooltip);
-                let triggerRect = this.geometry.geometry;
-                let tooltipRect = this._tooltip.geometry.geometry;
+                let triggerRect = this.rect;
+                let tooltipRect = this._tooltip.rect;
 
                 if (tooltipRect.right > viewportWidth) {
                     this._tooltip.setStyle("left", "auto");
                     this._tooltip.setStyle("right", "0px");
 
-                    tooltipRect = this._tooltip.geometry.geometry;
+                    tooltipRect = this._tooltip.rect;
                     this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth +5}px`);
-                    tooltipRect = this._tooltip.geometry.geometry;
+                    tooltipRect = this._tooltip.rect;
                     let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x + 15;
                     this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
                     this._tooltip._wasMoved = true;
@@ -163,7 +181,7 @@ namespace gn.ui.basic {
                     //this._tooltip.setStyle("right", "auto");    
                     this._tooltip.setStyle("left", "0px");
                     this._tooltip.setStyle("transform", "none");
-                    tooltipRect = this._tooltip.geometry.geometry;
+                    tooltipRect = this._tooltip.rect;
                     this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
                     let arrowMargin = (triggerRect.x+triggerRect.width/2);
                     this._tooltip.element.style.setProperty("--arrow-left", arrowMargin-5+"px");
