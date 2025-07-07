@@ -36,7 +36,7 @@ class UnmatchedToken(Exception):
 
 def tokenize(stream):
     operators = ['>>>=', '>>=', '<<=', '%=', '/=', '*=', '+=', '-=', '===', '==', '!==', '...', '!=', '++', '--',
-                 '>=', '<=', '&=', '|=', '^=', '&&', '||', '=>', '&', '|', '^', '~', '!', '{', '[', ']', '}', '(',
+                 '>=', '<=', '&=', '|=', '^=', '&&', '||', '=>', '??', '&', '|', '^', '~', '!', '{', '[', ']', '}', '(',
                  ')', ':', '*', '/', '%', '+', '-', '?', '<', '>', ';', '=', ',', '.']
     keywords = ["namespace", "constructor", "await", "break", "case", "catch", "class", "const", "continue", "debugger",
                 "default", "delete", "do", "else", "enum", "export", "extends", "false", "finally", "for", "function",

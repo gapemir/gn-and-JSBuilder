@@ -177,13 +177,19 @@ def main():
         elif ".js" in line:
             files.append(line)
             newHashes[line]= calc_file_sha256(runDir+src+line)
-            if not oldHashes.get(line) or newHashes.get(line)[0] != oldHashes.get(line)[0] or not oldHashes.get(line) or newHashes.get(line)[1] != oldHashes.get(line)[1] or not os.path.isfile(runDir + ".bdata/" + line + ".obj"):
+            if not oldHashes.get(line) or not newHashes.get(line) or newHashes.get(line)[0] != oldHashes.get(line)[0] or newHashes.get(line)[1] != oldHashes.get(line)[1] or not os.path.isfile(runDir + ".bdata/" + line + ".obj"):
                 needToBuild.append(line)
                 print("File " + line + " needs to be built")
         else:
             print("error parsing config line:"+line)
             print("exiting")
             return
+            
+    newHashes[runDir+conf] = calc_file_sha256(runDir+conf)
+    if not oldHashes.get(runDir+conf) or not newHashes.get(runDir+conf) or newHashes.get(runDir+conf)[0] != oldHashes.get(runDir+conf)[0]  or newHashes.get(runDir+conf)[1] != oldHashes.get(runDir+conf)[1]:
+        needToBuild.append(runDir+conf)
+        print("Config file " + conf + "has changed so it needs to be built")
+        
 
     if needToBuild:
         writeBuilderBinary(newHashes, runDir)
