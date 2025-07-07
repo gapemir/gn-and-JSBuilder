@@ -14,6 +14,8 @@ namespace gn.ui.tile {
             this._subItemContClass = gn.ui.tile.TileSubItemContainer
             this._header = new gn.ui.basic.Widget(new gn.ui.layout.Row(), "div", "gn-tileContainerHeader");
             this.add(this._header);
+
+            gn.event.Emitter.instance().addEventListener("windowResized", this.genFakeTileItems, this);
         }
         set tileClass(value) {
             if (gn.lang.Var.isNull(value)) {
@@ -45,10 +47,11 @@ namespace gn.ui.tile {
                 throw new Error('Model cannot be null');
             }
             this._model = value;
-            this._model.addEventListener('dataSet', this.onDataSet, this);
-            this._model.addEventListener('dataAdded', this.onDataAdded, this);
-            this._model.addEventListener('reset', this.onDataAdded, this);
-            this._model.addEventListener('toRemoveData', this._onRemoveData, this);
+            this._model.addEventListener("dataSet", this.onDataSet, this);
+            this._model.addEventListener("dataAdded", this.onDataAdded, this);
+            this._model.addEventListener("reset", this.onDataAdded, this);
+            this._model.addEventListener("toRemoveData", this.onRemoveData, this);
+            this._model.addEventListener("dataRemoved", this.onDataRemoved, this );
         }
         get model() {
             return this._model;
@@ -74,7 +77,10 @@ namespace gn.ui.tile {
         onReset() {
             throw new Error('Method "_onReset" is not yet implemented');
         }
-        _onRemoveData(e) {
+        onRemoveData(e) {
+
+        }
+        onDataRemoved(e){
             let id = e.data;
             if (this._groups.has(id)) {
                 if(this._groups.get(id).length != 0) {
@@ -93,6 +99,7 @@ namespace gn.ui.tile {
                     ids.splice(index, 1);
                 }
             }
+            this.genFakeTileItems();
         }
         _makeItem(id){
             let data = this._model.data(id, gn.model.Model.DataType.all);

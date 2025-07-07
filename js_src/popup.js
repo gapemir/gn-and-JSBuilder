@@ -19,7 +19,7 @@ namespace gn.ui.popup {
             this.body = new gn.ui.container.Column("gn-popup-body");
             this.footer = new gn.ui.container.Row("gn-popup-footer");
             if(buttons & gn.ui.popup.OK) {
-                let button = new gn.ui.control.Button("", "OK");
+                let button = new gn.ui.control.Button("OK");
                 button.addEventListener("click", function () {
                     this.sendEvent("ok");
                     this.dispose();
@@ -35,7 +35,7 @@ namespace gn.ui.popup {
                 this.header.add(close);
             }
             if(buttons & gn.ui.popup.CANCEL) {
-                let button = new gn.ui.control.Button("", "CANCEL");
+                let button = new gn.ui.control.Button("CANCEL");
                 button.addEventListener("click", function () {
                     this.sendEvent("cancel");
                     this.dispose();
@@ -43,7 +43,7 @@ namespace gn.ui.popup {
                 this.footer.add(button);
             }
             if(buttons & gn.ui.popup.YES) {
-                let button = new gn.ui.control.Button("", "YES");
+                let button = new gn.ui.control.Button("YES");
                 button.addEventListener("click", function () {
                     this.sendEvent("yes");
                     this.dispose();
@@ -51,7 +51,7 @@ namespace gn.ui.popup {
                 this.footer.add(button);
             }
             if(buttons & gn.ui.popup.NO) {
-                let button = new gn.ui.control.Button("", "NO");
+                let button = new gn.ui.control.Button("NO");
                 button.addEventListener("click", function () {
                     this.sendEvent("no");
                     this.dispose();

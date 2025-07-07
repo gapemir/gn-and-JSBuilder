@@ -236,14 +236,14 @@ namespace gn.model {
                 children.forEach((childId) => {
                     this.removeData(childId);
                 });
-            }            
+            }  
+            super.removeData(id);          
             this._parentMap.forEach((value, key) => {
                 let index = value.indexOf(id);
                 if (index > -1) {
                     value.splice(index, 1);
                 }
             });
-            super.removeData(id);
         }
         getChildren(id) {
             if (this._parentMap.has(id)) {

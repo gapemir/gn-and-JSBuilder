@@ -23,13 +23,13 @@ namespace gn.event {
             this._listeners = new Map(); // Use a Map to store listeners
         }
         static instance(){
-            if(!this._instance){
-                this._instance = new gn.event.Emitter();
+            if(!gn.event.Emitter._instance){
+                gn.event.Emitter._instance = new gn.event.Emitter();
                 window.addEventListener("resize", function(){
-                    this.sendEvent(this._instance, "windowResized")
-                }.bind(this._instance));
+                    this.sendEvent("windowResized")
+                }.bind(this.instance()));
             }
-            return this._instance;
+            return gn.event.Emitter._instance;
         }
         addEventListener(object, eventName, listener, context) {
             if( gn.lang.Var.isString(object) && gn.lang.Var.isFunction(eventName) ){

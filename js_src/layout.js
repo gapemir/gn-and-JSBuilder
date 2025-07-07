@@ -111,7 +111,7 @@ namespace gn.ui.layout {
 
             this.templateColumns = "auto";
             this.templateRows = "auto";
-            if(!gn.lang.Var.isNull(columns)) {
+            if(!gn.lang.Var.isNull(columns)) { 
                 this.templateColumns = columns;
             }
             if(!gn.lang.Var.isNull(rows)) {
@@ -205,7 +205,7 @@ namespace gn.ui.layout {
                 ret["grid-template-rows"] = this.templateRows;
             }
             if (this.spacing != 0) {
-                ret["gap"] = this.spacing + "px";
+                ret["gap"] = this.spacing ?? 0 + "px";
             }
             return ret;
         }

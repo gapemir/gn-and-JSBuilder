@@ -27,10 +27,7 @@ namespace gn.ui.input {
             if (!["text", "textarea","search", "url", "tel", "email", "password", "number"].includes(this.type)) {
                 throw new TypeError("Placeholder for this input type is not supported by standard html")
             }
-            if(gn.lang.Var.isNull(value)){
-                value = "";
-            }
-            this._element.placeholder = value;
+            this._element.placeholder = value || "";
         }
         get placeholder() {
             return this._element.placeholder;
@@ -109,31 +106,33 @@ namespace gn.ui.input {
     }
 
     class Line extends gn.ui.input.AbstractInput {
-        constructor(classList, placeholder) {
+        constructor(value, placeholder, classList) {
             super("text", classList);
             this.placeholder = placeholder;
+            this.value = value;
         }
         get value() {
             return this._element.value;
         }
         set value(value) {
-            this.element.value = value;
+            this.element.value = value || "";
         }
     }
     class MultiLine extends gn.ui.input.AbstractInput {
-        constructor(classList, placeholder, rows, cols) {
+        constructor(value, placeholder, classList, rows, cols) {
             super("textarea", classList);
             this.placeholder = placeholder;
             let rowsValue = rows || 3;
             let colsValue = cols || 20;
             this.rows = rowsValue;
             this.cols = colsValue;
+            this.value = value;
         }
         get value() {
             return this._element.value;
         }
         set value(value) {
-            this._element.value = value;
+            this._element.value = value || "";
         }
         set rows(value) {
             this._element.rows = value;
@@ -159,15 +158,16 @@ namespace gn.ui.input {
     }
 
     class Number extends gn.ui.input.AbstractInput {
-        constructor(classList, placeholder) {
+        constructor(value, placeholder, classList) {
             super("number", classList);
             this.placeholder = placeholder;
+            this.value = value;
         }
         get value() {
             return this._element.value;
         }
         set value(value) {
-            this._element.value = value;
+            this._element.value = value || "";
         }
         get step() {
             return this._element.step;
@@ -198,19 +198,20 @@ namespace gn.ui.input {
         }
     }
     class Password extends gn.ui.input.AbstractInput {
-        constructor(classList, placeholder) {
+        constructor(value, placeholder, classList) {
             super("password", classList);
             this.placeholder = placeholder;
+            value = value;
         }
         get value() {
-            return this._element.value;
+            return this._element.value || "";
         }
         set value(value) {
             this._element.value = value;
         }
     }
     class Color extends gn.ui.input.AbstractInput {
-        constructor(classList, value) {
+        constructor(value, classList) {
             super("color", classList);
             this.value = value;
         }
@@ -218,15 +219,15 @@ namespace gn.ui.input {
             return this._element.value;
         }
         set value(value) {
-            if(gn.lang.isString(value) && value.length == 7){
+            if(gn.lang.Var.isString(value) && value.length == 7){
                 this._element.value = value;
             }else{
-                throw new TypeError("Password must be 7 characters long")
+                throw new TypeError("Color value must be a string in the format '#RRGGBB'");
             }
         }
     }
-    class CheckBox extends gn.ui.input.AbstractInput {
-        constructor(classList, value = false) {
+    class CheckBox extends gn.ui.input.AbstractInput { //* should use gn.ui.control.Switch
+        constructor(value, classList) {
             super("checkbox", classList);
             this.value = value;
         }
@@ -234,56 +235,74 @@ namespace gn.ui.input {
             return this._element.checked;
         }
         set value(value) {
-            this._element.checked = value;
+            this._element.checked = value || false;
         }
     }
     class Range extends gn.ui.input.AbstractInput {
-        constructor(classList, min, max, value) {
+        constructor(value, min, max, classList ) {
             super("range", classList);
+            this.value = value;
             this.min = min;
             this.max = max;
-            this.value = value;
         }
         get value() {
             return this._element.value;
         }
         set value(value) {
-            this._element.value = value;
-        }
-        set min(value) {
-            this._element.min = value;
+            this._element.value = value || 0;
         }
         get min() {
             return this._element.min;
         }
+        set min(value) {
+            this._element.min = value || 0;
+        }
         set max(value) {
-            this._element.max = value;
+            this._element.max = value || 100;
         }
         get max() {
             return this._element.max;
         }
+        get step() {
+            return this._element.step;
+        }
+        set step(value) {
+            if (typeof value !== "number" || value <= 0) {
+                throw new TypeError("Step must be a positive number");
+            }
+            this._element.step = value;
+        }
     }
     //TODO support multiple file upload 
-    class File extends gn.ui.input.AbstractInput {
+    class File extends gn.ui.container.Row {
         constructor(classList) {
-            super("file", classList);
-            this._element.multiple = false;
-            this._element.accept = "*";
+            super(classList);
+            this.addClass("gn-input-file");
+            this._input = new gn.ui.input.AbstractInput("file", "gn-exclude");
+            this._input.element.multiple = false;
+            this._input.element.accept = "*";
+            this.add(this._input);
+            this._button = new gn.ui.control.Button("Select File");
+            this.add(this._button);
+            this._input.element.addEventListener("cancel", this.onCancel.bind(this));
         }
         get value() {
-            return this._element.files[0];
+            return this._input.element.files[0];
         }
         set value(value) {
             if(value){
                 throw new TypeError("File set value is made to clear it.")
             }
-            this._element.files = null;
+            this._input.element.files = null;
         }
         set accept(value) {
-            this._element.accept = value;
+            this._input.element.accept = value;
         }
         get accept() {
-            return this._element.accept;
+            return this._input.element.accept;
+        }
+        onCancel() {
+            this.sendDataEvent("cancel", null);
         }
     }
 }

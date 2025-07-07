@@ -1,10 +1,11 @@
 namespace gn.ui.control {
     class Button extends gn.ui.basic.Widget {
-        constructor(classList, text, callback) {
-            super(null, "button", classList);
+        constructor(text, classList = "", callback, context) {
+            super(null, "button", classList );
+            this.addClass("gn-button");
             this.text = text;
             if(!gn.lang.Var.isNull(callback) && callback instanceof Function) {
-                this.addEventListener("click", callback, this);
+                this.addEventListener("click", callback, context || this );
             }
         }
         set text(value) {
@@ -15,7 +16,7 @@ namespace gn.ui.control {
         }
     }
     class Switch extends gn.ui.basic.Widget {
-        constructor(classList, checked) {
+        constructor(checked, classList) {
             super(null, "label", "gn-switch " + classList);
             this._input = new gn.ui.input.CheckBox(null , checked);
             this.add(this._input);
