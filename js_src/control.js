@@ -1,6 +1,6 @@
 namespace gn.ui.control {
     class Button extends gn.ui.basic.Widget {
-        constructor(text, classList = "", callback, context) {
+        constructor(text, classList, callback, context) {
             super(null, "button", classList );
             this.addClass("gn-button");
             this.text = text;
@@ -17,7 +17,8 @@ namespace gn.ui.control {
     }
     class Switch extends gn.ui.basic.Widget {
         constructor(checked, classList) {
-            super(null, "label", "gn-switch " + classList);
+            super(null, "label", classList);
+            this.addClass("gn-switch");
             this._input = new gn.ui.input.CheckBox(null , checked);
             this.add(this._input);
             this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
@@ -137,7 +138,7 @@ namespace gn.ui.control {
             this._currentIndex = null;
 
             this.up = null;
-            this._topLevelName = new gn.ui.basic.Label("", "");
+            this._topLevelName = new gn.ui.basic.Label();
             this._topLevelName.setStyle("cursor", "pointer");
             this._topLevelName.addEventListener("click", function(){
                 this._setIndex(null);

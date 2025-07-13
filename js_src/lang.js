@@ -37,7 +37,7 @@ namespace gn.lang {
 
         }
     }
-    //class Object is for handling native Objects, it is not designet to handle class objects as inherited properties are skipped
+    //class Object is for handling native Objects, it is not designed to handle class objects as inherited properties are skipped
     class Object{
         static isEmpty(obj){
             return Object.keys(obj).length === 0;

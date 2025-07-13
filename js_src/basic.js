@@ -321,8 +321,8 @@ namespace gn.ui.basic {
     class Label extends gn.ui.basic.Widget{
         constructor(text, classList){
             super(null, "label", "gn-label");
-            this._text = text;
-            this._element.innerText = this._text;
+            this._text = "";
+            this.text = text;
             this.addClasses(classList);
 
             gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);

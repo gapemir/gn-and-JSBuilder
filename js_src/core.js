@@ -1,20 +1,11 @@
 namespace gn.core {
     class Object {
-        constructor(parent) {
-            this._parent = parent//topology parent, can be null
+        constructor() {
             //in gn.ui.basic.widget there is property _layoutParent for ui parent
             this._internalId = this.internalId;
         }
 
         _destructor() {
-        }
-
-        set parent(parent) {
-            this._parent = parent
-        }
-
-        get parent() {
-            return this._parent
         }
 
         get internalId() {
@@ -33,7 +24,7 @@ namespace gn.core {
             gn.event.Emitter.instance().removeAllEventListeners(this);
             this._destructor();
             gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
-            delete this;
+            // we hope js garbage collector does its job
         }
 
         addEventListener(type, callback, thisObj) {

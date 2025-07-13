@@ -38,7 +38,7 @@ namespace gn.locale{
         }
         async _loadLocale(locale){ //i have decided we wont use .po files, we will rather have a json file with key:translation pairs
             try{
-                let loc = await gn.app.App.instance().phpRequestJ(gn.app.App.instance().getLocalePath()+locale+".json");
+                let loc = await gn.app.App.instance().phpRequestJ(gn.app.App.instance().getLocalePath() + locale + ".json");
                 if(!gn.lang.Var.isNull(loc)){
                     this._locales[locale] = loc;
                 }

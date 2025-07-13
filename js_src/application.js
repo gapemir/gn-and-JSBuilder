@@ -1,6 +1,7 @@
 namespace gn.app {
-    class App {
+    class App extends gn.core.Object {
         constructor() {
+            super();
             this._root = null;
             this._header = null
             this._footer = null;

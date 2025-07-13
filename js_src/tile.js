@@ -1,8 +1,7 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
-        constructor(parent) {
+        constructor() {
             super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
-            this._parent = parent;
             this._model = null;
             this._idElementMap = new Map();
             this._groups = new Map();// id group -> [id elements]
@@ -21,12 +20,21 @@ namespace gn.ui.tile {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Tile class cannot be null');
             }
+            if( !(value.prototype instanceof gn.ui.tile.TileItem)) {
+                throw new Error('Tile class must be instance of TileItem');
+            }
             this._tileClass = value;
         }
         get tileClass() {
             return this._tileClass;
         }
         set subItemContClass(value) {
+            if (gn.lang.Var.isNull(value)) {
+                throw new Error('Sub item container class cannot be null');
+            }
+            if (!(value.prototype instanceof gn.ui.tile.TileSubItemContainer)) {
+                throw new Error('Sub item container class must be instance of TileSubItemContainer');
+            }
             this._subItemContClass = value;
         }
 
@@ -36,6 +44,9 @@ namespace gn.ui.tile {
         set fakeTileClass(value) {
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Tile class cannot be null');
+            }
+            if (!(value.prototype instanceof gn.ui.tile.FakeTileItem)) {
+                throw new Error('Tile class must be instance of FakeTileItem');
             }
             this._fakeTileClass = value;
         }
@@ -192,22 +203,19 @@ namespace gn.ui.tile {
         }
     }
     class TileItem extends gn.ui.basic.Widget {
-        constructor(data, parent) {
+        constructor(data) {
             super(null, "div", "gn-tileItem");
-            this._parent = parent;
             this._data = data;
         }
     }
     class FakeTileItem extends gn.ui.basic.Widget {
-        constructor(parent) {
+        constructor() {
             super(null, "div", "gn-fakeTileItem");
-            this._parent = parent;
         }
     }
     class TileSubItemContainer extends gn.ui.basic.Widget { //data.type = "group"
-        constructor(data, parent) {
+        constructor(data) {
             super(null, "div", "gn-tileSubItemContainer");
-            this._parent = parent;
             this._data = data;
         }
     }

@@ -1,7 +1,7 @@
 namespace gn.model {
     class Model extends gn.core.Object {
-        constructor(identifier, parent) {
-            super(parent);
+        constructor(identifier) {
+            super();
             this._data = new Map(); // id -> data
             this._dataId = identifier || "id";
             this._viewId = "view";
@@ -57,7 +57,7 @@ namespace gn.model {
             this._data.delete(id);
             this.sendDataEvent('dataRemoved', id);
         }
-        fAllData(type = gn.model.Model.DataType.view) {
+        fsAllData(type = gn.model.Model.DataType.view) { //* filter sort all data
             let tmp = Array.from(this._data.values());
             if (gn.lang.Var.isFunction(this._filterCb)) {
                 for (let val in tmp) {
@@ -74,33 +74,28 @@ namespace gn.model {
                 case gn.model.Model.DataType.view:
                     ret = tmp.map(item => item[this._viewId]);
                     break;
-                case gn.model.Model.DataType.edit:
-                    new TypeError("We are considering removing this one")
-                    break;
                 case gn.model.Model.DataType.all:
                     ret = tmp;
                     break;
                 default:
-                    break
+                    throw new Error('Invalid type');
+                    break;
             }
             return ret;
         }
-        fData(id, type = gn.model.Model.DataType.view) {
+        fData(id, type = gn.model.Model.DataType.view) { //* filter data by id
             if (gn.lang.Var.isNull(id)) {
                 throw new Error('Data identifier cannot be null');
             }
             let ret = this._data.get(id);
             if (gn.lang.Var.isFunction(this._filter)) {
                 if (!this._filter.call(this._filterCtx, this._filterText, ret, this)) {
-                        return null;
+                    return null;
                 }
             }
             switch (type) {
                 case gn.model.Model.DataType.view:
                     ret = ret[this._viewId];
-                    break;
-                case gn.model.Model.DataType.edit:
-                    new TypeError("We are considering removing this one")
                     break;
                 case gn.model.Model.DataType.all:
                     break;
@@ -110,19 +105,20 @@ namespace gn.model {
             }
             return ret;
         }
-        data(id, type = gn.model.Model.DataType.view) {
+        data(id, type = gn.model.Model.DataType.view) { //* default data getter
             if (gn.lang.Var.isNull(id)) {
                 throw new Error('Data identifier cannot be null');
             }
-            let ret =  this._data.get(id)[this._viewId];
+            let ret = this._data.get(id);
             switch (type) {
+                case gn.model.Model.DataType.view:
+                    ret = ret[this._viewId];
+                    break;
                 case gn.model.Model.DataType.all:
                     ret = this._data.get(id);
                     break;
-                case gn.model.Model.DataType.edit:
-                    new TypeError("We are considering removing this one")
-                    break;
                 default:
+                    throw new Error('Invalid type');
                     break;
             }
             return ret;
@@ -149,8 +145,8 @@ namespace gn.model {
         }
     }
     class TreeModel extends gn.model.Model {
-        constructor(identifier, parent) {
-            super(identifier, parent);
+        constructor(identifier) {
+            super(identifier);
             this._parentMap = new Map(); // id -> children ids
             //this._currLevel = null;
             this._parentId = null;
@@ -271,8 +267,7 @@ namespace gn.model {
     }
     Model.DataType = gn.lang.Enum({
         view: 1,
-        edit: 2, //! NOT NEEDED???
-        all: 3,
+        all: 2,
     });
     Model.Type = gn.lang.Enum({
         item: 1,

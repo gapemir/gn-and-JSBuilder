@@ -94,28 +94,11 @@ namespace gn.ui.popup {
         }
     }
     class Menu extends gn.ui.popup.PopupBase {
-        constructor(parent) {// we need parent in order to position the menu correctly
+        constructor(menuParent) {
             super("gn-popup-menu");
             this._items = [];
-            this._parent = parent;
+            this._menuParent = menuParent; // we need parent in order to position the menu correctly
         }
-        /*set items(items) {
-            this._items = items;
-            this._items.forEach(item => {
-                let div = new gn.ui.container.Row();
-                div.setStyle("cursor", "pointer");
-                div.add(item.icon);
-                let text = item.label;
-                div.add(text)
-                div.addEventListener("click", function () {
-                    this._hideUnmount();
-                    if (item.action) {
-                        item.action();
-                    }
-                }, this);
-                this.add(div);
-            });
-        }*/
         addItem(item){
             if(!(item instanceof gn.ui.popup.MenuItem)){
                 throw new Error("Item must be instance of MenuItem");
@@ -134,7 +117,7 @@ namespace gn.ui.popup {
         }
         show() {
             document.body.appendChild(this.element);
-            let rect = this._parent.rect;
+            let rect = this._menuParent.rect;
             let trect = this.rect;
             this.setStyle("top", rect.bottom + "px");
             this.setStyle("left", rect.right - trect.width + "px");
@@ -147,7 +130,7 @@ namespace gn.ui.popup {
             document.removeEventListener("click", this._windowClickBound);
         }
         _windowClick(event){ //TODO this works for simple one layer menus, for complex we need to rethink how we handle where user clicked
-            if(!this.c){ // we remove first click
+            if(!this.c){ // we remove first click it is a bug that would/will be solved by focus manager
                 this.c = true;
                 return;
             }

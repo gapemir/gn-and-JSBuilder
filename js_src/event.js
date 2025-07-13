@@ -20,7 +20,7 @@ namespace gn.event {
         //TODO add bubble support, so that events can bubble up the object hierarchy
         //TODO add support for event propagation, so that events can be stopped from propagating
         constructor() {
-            this._listeners = new Map(); // Use a Map to store listeners
+            this._listeners = new Map();
         }
         static instance(){
             if(!gn.event.Emitter._instance){
@@ -129,8 +129,7 @@ namespace gn.event {
                 return
             }
             this._listeners.delete(internalId);
-            //TODO we should check if removed object is saved somewhere in the context
         }
     }
-    Emitter._instance = null; // Static instance variable
+    Emitter._instance = null;
 }
