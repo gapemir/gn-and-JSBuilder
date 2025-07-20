@@ -97,6 +97,9 @@ namespace gn.ui.input {
         get pattern() {
             return this._element.pattern;
         }
+        click(){
+            this._element.click();
+        }
         onInput() {
             this.sendDataEvent("input", this.value);
         }
@@ -283,6 +286,9 @@ namespace gn.ui.input {
             this._input.element.accept = "*";
             this.add(this._input);
             this._button = new gn.ui.control.Button("Select File");
+            this._button.addEventListener( "click", function(){
+                this._input.click();
+            }, this )
             this.add(this._button);
             this._input.element.addEventListener("cancel", this.onCancel.bind(this));
         }
