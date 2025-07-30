@@ -131,5 +131,85 @@ namespace gn.event {
             this._listeners.delete(internalId);
         }
     }
+    class Timer extends gn.core.Object{
+        constructor(interval){
+            super();
+            this._enabled = false;
+            this._interval = null;
+            this._singleShot = false;
+            this._intervalId = null;
+            if(interval){
+                this.interval = interval
+            }
+        }
+        destructor(){
+            if(this._intervalId){
+                window.clearInterval(this._intervalId)
+            }
+            this._intervalId = null;
+        }
+        get enabled(){
+            return this._enabled;
+        }
+        set enabled(value){
+            if(this._enabled != value){
+                if(this._enabled){
+                    window.clearInterval(this._intervalId);
+                    this._intervalId = null;
+                }
+                this._enabled = value;
+                if(this._enabled){
+                    this._intervalId = window.setInterval(this.timeout, this._interval, this);
+                }
+            }
+        }
+        get interval(){
+            return this._interval;
+        }
+        set interval(value){
+            if(this.interval != value){
+                this._interval = value;
+                this.restart();
+            }
+        }
+        get singleShot(){
+            return this._singleShot;
+        }
+        set singleShot(value){
+            this._singleShot = value;
+        }
+        start(interval){
+            if(interval){
+                this._interval = interval;
+            }
+            this.enabled = true;
+        }
+        restart(){
+            this.enabled = false;
+            this.enabled = true;
+        }
+        stop(){
+            this.enabled = false;
+        }
+        timeout(self){
+            if(self._enabled){
+                self.sendEvent("timeout");
+            }
+            if(self._singleShot){
+                self.stop();
+            }
+        }
+        static singleShot(obj, func, timeout = 0){
+            if(!gn.lang.Var.isFunction(func)){
+                throw Error("Must be function");
+            }
+            window.setTimeout(function(){
+                if( !obj._disposed ){
+                    func.call(obj);
+                }
+                obj = null;
+            }, timeout)
+        }
+    }
     Emitter._instance = null;
 }

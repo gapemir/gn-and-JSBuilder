@@ -23,6 +23,12 @@ namespace gn.ui.input {
         set value(value) {
             throw new TypeError("Abstract class");
         }
+        set disabled( value ) {
+            this._element.disabled = value;
+        }
+        get disabled(){
+            return this._element.disabled;
+        }
         set placeholder(value) {
             if (!["text", "textarea","search", "url", "tel", "email", "password", "number"].includes(this.type)) {
                 throw new TypeError("Placeholder for this input type is not supported by standard html")
@@ -276,12 +282,22 @@ namespace gn.ui.input {
             this._element.step = value;
         }
     }
+    class FileMin extends gn.ui.input.AbstractInput{
+        constructor(classList){
+            super("file", classList)
+        }
+        get value(){
+            return this._element.files
+        }
+        set value(value){
+        }
+    }
     //TODO support multiple file upload 
     class File extends gn.ui.container.Row {
         constructor(classList) {
             super(classList);
             this.addClass("gn-input-file");
-            this._input = new gn.ui.input.AbstractInput("file", "gn-exclude");
+            this._input = new gn.ui.input.FileMin("gn-exclude");
             this._input.element.multiple = false;
             this._input.element.accept = "*";
             this.add(this._input);

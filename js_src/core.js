@@ -24,6 +24,7 @@ namespace gn.core {
             gn.event.Emitter.instance().removeAllEventListeners(this);
             this._destructor();
             gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
+            this._disposed = true;
             // we hope js garbage collector does its job
         }
 

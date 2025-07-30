@@ -58,11 +58,12 @@ namespace gn.ui.tile {
                 throw new Error('Model cannot be null');
             }
             this._model = value;
-            this._model.addEventListener("dataSet", this.onDataSet, this);
-            this._model.addEventListener("dataAdded", this.onDataAdded, this);
-            this._model.addEventListener("reset", this.onDataAdded, this);
-            this._model.addEventListener("toRemoveData", this.onRemoveData, this);
-            this._model.addEventListener("dataRemoved", this.onDataRemoved, this );
+            this._model.addEventListener("dataSet", this._onDataSet, this);
+            this._model.addEventListener("dataAdded", this._onDataAdded, this);
+            this._model.addEventListener("reset", this._onDataAdded, this);
+            this._model.addEventListener("toRemoveData", this._onRemoveData, this);
+            this._model.addEventListener("dataRemoved", this._onDataRemoved, this );
+            this._model.addEventListener("dataChanged", this._onDataChanged, this );
         }
         get model() {
             return this._model;
@@ -74,10 +75,10 @@ namespace gn.ui.tile {
         get breadcrumb(){
             return this._breadcrumb;
         }
-        onDataSet() {
+        _onDataSet() {
             this._openGroup();
         }
-        onDataAdded(e) {
+        _onDataAdded(e) {
             let id = e.data;
             let parent = this.model.getParent(id);
             if (this._groups.has(parent)) {
@@ -85,13 +86,13 @@ namespace gn.ui.tile {
                 this._openGroup(parent);
             }
         }
-        onReset() {
+        _onReset() {
             throw new Error('Method "_onReset" is not yet implemented');
         }
-        onRemoveData(e) {
-
+        _onRemoveData(e) {
+            throw new Error('Method "_onRemoveData" is not yet implemented');
         }
-        onDataRemoved(e){
+        _onDataRemoved(e) {
             let id = e.data;
             if (this._groups.has(id)) {
                 if(this._groups.get(id).length != 0) {
@@ -111,6 +112,9 @@ namespace gn.ui.tile {
                 }
             }
             this.genFakeTileItems();
+        }
+        _onDataChanged(e){
+            this._idElementMap.get(e.data.index).updateItem(this.model.data(e.data.index, gn.model.Model.DataType.all), e.data.key);
         }
         _makeItem(id){
             let data = this._model.data(id, gn.model.Model.DataType.all);
@@ -207,15 +211,23 @@ namespace gn.ui.tile {
             super(null, "div", "gn-tileItem");
             this._data = data;
         }
+        updateItem( data, key ){
+            this._data = data;
+        }
     }
     class FakeTileItem extends gn.ui.basic.Widget {
         constructor() {
             super(null, "div", "gn-fakeTileItem");
         }
+        updateItem( key ){
+        }
     }
     class TileSubItemContainer extends gn.ui.basic.Widget { //data.type = "group"
         constructor(data) {
             super(null, "div", "gn-tileSubItemContainer");
+            this._data = data;
+        }
+        updateItem( data, key ){
             this._data = data;
         }
     }

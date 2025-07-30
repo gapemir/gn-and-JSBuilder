@@ -129,6 +129,9 @@ input[type="color" i] {
 input[type="color" i]::-webkit-color-swatch {
   border-radius: 5px;
 }
+.gn-text-area{
+  resize: none;
+}
 
 
 

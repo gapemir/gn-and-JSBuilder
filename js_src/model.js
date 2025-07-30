@@ -57,6 +57,16 @@ namespace gn.model {
             this._data.delete(id);
             this.sendDataEvent('dataRemoved', id);
         }
+        changeData(id, key, value){
+            if (gn.lang.Var.isNull(id)) {
+                throw new Error("Data identifier cannot be null");
+            }
+            if(gn.lang.Var.isNull(this._data.has(id))){
+                throw new Error("Data with this id doesn't exist");
+            }
+            this._data.get(id)[key] = value;
+            this.sendDataEvent("dataChanged", {index: id, key: key})
+        }
         fsAllData(type = gn.model.Model.DataType.view) { //* filter sort all data
             let tmp = Array.from(this._data.values());
             if (gn.lang.Var.isFunction(this._filterCb)) {
