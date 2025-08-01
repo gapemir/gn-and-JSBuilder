@@ -293,7 +293,7 @@ namespace gn.ui.input {
         }
     }
     //TODO support multiple file upload 
-    class File extends gn.ui.container.Row {
+    class File extends gn.ui.container.Column {
         constructor(classList) {
             super(classList);
             this.addClass("gn-input-file");
@@ -306,10 +306,14 @@ namespace gn.ui.input {
                 this._input.click();
             }, this )
             this.add(this._button);
+            this._label = new gn.ui.basic.Label( "" );
+            this.add(this._label);
             this._input.element.addEventListener("cancel", this.onCancel.bind(this));
+            this._input.addEventListener( "input", this.onInput, this );
+            this._input.addEventListener( "change", this.onChange, this );
         }
         get value() {
-            return this._input.element.files[0];
+            return this._input.value.length ? this._input.value[0] : null;
         }
         set value(value) {
             if(value){
@@ -323,8 +327,33 @@ namespace gn.ui.input {
         get accept() {
             return this._input.element.accept;
         }
+        get type() {
+            return this._input.type;
+        }
+        set disabled( value ){
+            this._button.disabled = value;
+        }
+        get disabled(){
+            return this._button.disabled;
+        }
+        _updateLabel(){
+            if( this.value ){
+                this._label.text = this.value.name;
+            } else {
+                this._label.text = "";
+            }
+        }
         onCancel() {
+            this._updateLabel();
             this.sendDataEvent("cancel", null);
+        }
+        onInput() {
+            this._updateLabel();
+            this.sendDataEvent("input", this.value);
+        }
+        onChange() {
+            this._updateLabel();
+            this.sendDataEvent("change", this.value);
         }
     }
 }

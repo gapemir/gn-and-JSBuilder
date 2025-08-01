@@ -90,7 +90,6 @@ namespace gn.ui.tile {
             throw new Error('Method "_onReset" is not yet implemented');
         }
         _onRemoveData(e) {
-            throw new Error('Method "_onRemoveData" is not yet implemented');
         }
         _onDataRemoved(e) {
             let id = e.data;

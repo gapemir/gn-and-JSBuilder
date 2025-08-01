@@ -277,12 +277,11 @@ namespace gn.ui.basic {
             element.layoutParent = null;
             return true;
         }
-        exclude(val = true){
-            if(val){
-                this.addClass("gn-exclude");
-            }else{
-                this.removeClass("gn-exclude");
-            }
+        show(){    
+            this.removeClass("gn-exclude");
+        }
+        hide(){
+            this.addClass("gn-exclude");
         }
         _createElement(type){
             return document.createElement(type?type:"div");

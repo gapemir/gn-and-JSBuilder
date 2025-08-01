@@ -14,6 +14,19 @@ namespace gn.ui.control {
         get text() {
             return this._element.innerText;
         }
+        set disabled(value) {
+            this._element.disabled = value;
+        }
+        get disabled() {
+            return this._element.disabled;
+        }
+        set type(value) {
+            if( !["submit", "reset", "button"].includes(value) ) return
+            this._element.type = value;
+        }
+        get type(){
+            return this._element.type;
+        }
     }
     class Switch extends gn.ui.basic.Widget {
         constructor(checked, classList) {
