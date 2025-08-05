@@ -17,6 +17,8 @@ def build(file: str, runDir, src):
     indent = 0
     indentString = "    "
     bClassicFor = False
+    ibuildingBlocksClassicFor = 0
+    ibrackets = 0;
     bSwitch = False
     bClass = False
     while i < len(tokens):
@@ -39,6 +41,7 @@ def build(file: str, runDir, src):
             elif token.value == "for":
                 bClassicFor = True
                 formated += token.value
+                ibuildingBlocksClassicFor = ibrackets
             elif token.value == "case" or token.value == "default":
                 bSwitch = True
                 formated += token.value + " "
@@ -87,12 +90,15 @@ def build(file: str, runDir, src):
             elif token.value == ".":
                 formated = formated.rstrip() + "."
             elif token.value == "(":
+                ibrackets += 1
                 if tokens[i+1].value == ")":
                     formated = formated.rstrip() + token.value
                 else:
                     formated = formated.rstrip() + token.value + " "
             elif token.value == ")":
-                bClassicFor = False
+                if ibuildingBlocksClassicFor == ibrackets:
+                    bClassicFor = False
+                ibrackets -= 1
                 formated += token.value + " "
             elif token.value == "[" and tokens[i+1].value == "]":
                 formated = formated.rstrip() + " " + token.value
@@ -126,6 +132,8 @@ def build(file: str, runDir, src):
                 formated += "\"" + token.value + "\" "
         elif token.type == Token.Number:
             formated += token.value + " "
+        elif token.type == Token.Regex:
+            formated += token.value
         else:
             pass #only EOF
         i+=1

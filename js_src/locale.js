@@ -5,6 +5,13 @@ namespace gn.locale{
             this._origin = origin;
             this._data = data; //data is string key
         }
+        args( ...args ) {
+            let newText = this._text;
+            for(let i = 0; newText.match(/%\\d+/); i++){
+                newText = newText.replace(/%\\d+/, args[i])
+            }
+            return new gn.locale.LocaleString( newText, this._messageId, this._count );
+        }
         translate(){
             return gn.locale.LocaleManager.instance().translate(this._data, this._origin);
         }

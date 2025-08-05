@@ -144,7 +144,7 @@ def tokenize(stream):
                     stri.append(character)
                     #stri.append(unicode(character))
             else:
-                if character == '\\':
+                if character == '\\' and next == in_string:
                     escaped = True
                 elif character == in_string:
                     in_string = False
@@ -230,7 +230,17 @@ def tokenize(stream):
                     tokens.append(Token(ustr, type, line, char))
                     stri = []
 
-                if character == '/' and tokens[-1].type == Token.Operator:
+                if character == '"' or character == "'" or character == "`":
+                    in_string = character
+                elif character == '/' and (next(1) == '/' or next(1) == '*'):
+                    in_comment = character + next(1)
+                elif character in ["(", "{", "["]:
+                    brackets[["(", "{", "["].index(character)] +=1
+                    tokens.append(Token(character, Token.Operator, line, char))
+                elif character in [")", "}", "]"]:
+                    brackets[[")", "}", "]"].index(character)] -= 1
+                    tokens.append(Token(character, Token.Operator, line, char))
+                elif character == '/' and tokens[-1].type == Token.Operator:
                     in_regex = True
                     regex_escape = False
                     skip = 1
@@ -270,17 +280,6 @@ def tokenize(stream):
                         tokens.append(Token(u''.join(stri), Token.Regex, line, char))
                         stri = []
                         continue
-
-                if character == '"' or character == "'" or character == "`":
-                    in_string = character
-                elif character == '/' and (next(1) == '/' or next(1) == '*'):
-                    in_comment = character + next(1)
-                elif character in ["(", "{", "["]:
-                    brackets[["(", "{", "["].index(character)] +=1
-                    tokens.append(Token(character, Token.Operator, line, char))
-                elif character in [")", "}", "]"]:
-                    brackets[[")", "}", "]"].index(character)] -= 1
-                    tokens.append(Token(character, Token.Operator, line, char))
 
                 else:
                     if len(ops):
