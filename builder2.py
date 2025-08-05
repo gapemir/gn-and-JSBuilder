@@ -96,7 +96,7 @@ def build(file: str, runDir, src):
                 else:
                     formated = formated.rstrip() + token.value + " "
             elif token.value == ")":
-                if ibuildingBlocksClassicFor == ibrackets:
+                if ibuildingBlocksClassicFor == ibrackets-1:
                     bClassicFor = False
                 ibrackets -= 1
                 formated += token.value + " "
