@@ -56,12 +56,13 @@
 .gn-tooltip::after{
   content: "";
   position: absolute;
-  top: 100%;
+  top: var(--arrow-top, 100%);
   left: var(--arrow-left, 50%);
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
   border-color: #555 transparent transparent transparent;
+  transform: rotate( var( --arrow-rotation, 0deg ) );
 }
 .gn-tooltip-parent:hover .gn-tooltip {
   visibility: visible;

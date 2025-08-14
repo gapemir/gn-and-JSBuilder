@@ -166,6 +166,13 @@ namespace gn.ui.basic {
                 let triggerRect = this.rect;
                 let tooltipRect = this._tooltip.rect;
 
+                if( tooltipRect.top < 0 ){
+                    this._tooltip.setStyle( "bottom", "-150%" );
+                    this._tooltip.element.style.setProperty("--arrow-rotation", "180deg");
+                    this._tooltip.element.style.setProperty("--arrow-top", "-40%");
+
+                    this._tooltip._wasMoved = true;
+                }
                 if(tooltipRect.left < 0){
                     //this._tooltip.setStyle("right", "auto");    
                     this._tooltip.setStyle("left", "0px");
@@ -201,7 +208,9 @@ namespace gn.ui.basic {
                         "bottom": "",
                         "transform": ""
                     })
-                    this._tooltip.element.style.removeProperty("--arrow-left")
+                    this._tooltip.element.style.removeProperty("--arrow-left");
+                    this._tooltip.element.style.removeProperty("--arrow-rotate");
+                    this._tooltip.element.style.removeProperty("--arrow-top");
                     delete this._tooltip._wasMoved
                 }
             }
