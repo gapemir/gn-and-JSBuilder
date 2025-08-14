@@ -15,8 +15,13 @@ namespace gn.core {
             return this._internalId;
         }
 
-        tr(text, ...extra) {
-            return gn.locale.LocaleManager.instance().translate(text, text, extra);
+        tr(messageId, count) {
+            return new gn.locale.LocaleString(messageId, messageId, count);
+            return text.toLowerCase();
+        }
+
+        static tr(messageId, count) {
+            return new gn.locale.LocaleString(messageId, messageId, count);
             return text.toLowerCase();
         }
 

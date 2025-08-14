@@ -17,14 +17,16 @@ namespace gn.app {
                 if (appClass == null) {
                     throw new Error("Application class cannot be null");
                 }
-                if(  appClass == gn.app.App) {
+                if( appClass == gn.app.App) {
                     throw new Error("Application class cannot be the abstract class");
                 }
 
                 gn.app.App._instance = new appClass();
-                gn.locale.LocaleManager.instance().locale = "en"; //default locale
+                gn.app.App.instance().main();
             }
             return gn.app.App._instance;
+        }
+        main(){
         }
         set root(root) {
             this._root = root;

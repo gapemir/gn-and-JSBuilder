@@ -1,22 +1,53 @@
 namespace gn.locale{
-    class LocaleString extends String {
-        constructor(data, origin){
-            super(data);
-            this._origin = origin;
-            this._data = data; //data is string key
+    /**
+     * we swapped to normal object as Stirings are imutable in js
+     * count is overriden by args parameter, only if there is only one
+     */
+    class LocaleString { // TODO swap for jsonc files so we can have comments, but we need to make a minify function that will remove comments on frontend
+        constructor(messageId, text, count) {
+            //super(text);
+            this._messageId = messageId;
+            this._text = text;
+            this._count = count; // for pluratization
+            this._args = [];
         }
-        args( ...args ) {
-            let newText = this._text;
-            for(let i = 0; newText.match(/%\\d+/); i++){
-                newText = newText.replace(/%\\d+/, args[i])
+        get messageId(){
+            return this._messageId;
+        }
+        get text(){
+            return this._text;
+        }
+        set text(value){
+            this._text = value;
+        }
+        get count(){
+            return this._count;
+        }
+        get argz(){
+            return this._args
+        }
+        translate() {
+            return gn.locale.LocaleManager.instance().translate(this);
+        }
+        args( ...argz ) {
+            this._args = argz;
+            if( this._args.length != 0 ){
+                if( this._args.length == 1 ){
+                    this._count = this._args[0];
+                }
+                let newText = this._text;
+                for(let i = 0; newText.match(/%\d+/); i++){
+                    newText = newText.replace(/%\d+/, this._args[i])
+                }
+                this._text = newText;
             }
-            return new gn.locale.LocaleString( newText, this._messageId, this._count );
+            return this;
         }
-        translate(){
-            return gn.locale.LocaleManager.instance().translate(this._data, this._origin);
+        toString() {
+            return this._text;
         }
     }
-    class LocaleManager extends gn.core.Object { // TODO add support for pluralization
+    class LocaleManager extends gn.core.Object {
         constructor() {
             super();
             this._locale = "";
@@ -48,6 +79,7 @@ namespace gn.locale{
                 let loc = await gn.app.App.instance().phpRequestJ(gn.app.App.instance().getLocalePath() + locale + ".json");
                 if(!gn.lang.Var.isNull(loc)){
                     this._locales[locale] = loc;
+                    this._locales[locale].pluralCB = new Function("n", this._locales['en'].plural)
                 }
                 else{
                     throw new Error("Locale file is empty or not found: " + locale);
@@ -59,22 +91,26 @@ namespace gn.locale{
             this._locale = locale;
             this._changeLocale();
         }
-        _getLocalisedText(text) {
-            if(this._locales[this.locale] && this._locales[this.locale][text]){
-                return this._locales[this.locale][text];
+        _getLocalisedText(text, count) { // for now if locale for language count is not found it defaults to source text, we should to first???
+            if(this._locales[this.locale] && this._locales[this._locale].tr[text]){
+                if( gn.lang.Var.isArray(this._locales[this._locale].tr[text]) ){
+                    let idx = this._locales[this._locale].pluralCB(count||1)
+                    if( this._locales[this._locale].tr[text].length > idx ){
+                        return this._locales[this._locale].tr[text][idx];
+                    } else if(this._locales[this._locale].tr[text].length){
+                        return this._locales[this._locale].tr[text][this._locales[this._locale].tr[text].length-1];
+                    }
+                    return text;
+                }
+                return this._locales[this.locale].tr[text];
             }
             else{
                 return text; //fallback to original text if locale not found
             }
         }
-        translate(data, origin = null, extra = null){ // extra is not used yet, but can be used for pluralization or other features in the future
-            let txt = data
-            if(!gn.lang.Var.isNull(origin)){
-                txt = origin;
-            }
-            txt = this._getLocalisedText(txt);
-            txt = new gn.locale.LocaleString(txt, origin);
-            return txt;
+        translate(ls){
+            ls.text = this._getLocalisedText(ls.messageId, ls.count);
+            return ls.args(ls.argz);
         }
         _changeLocale(){
             this.sendEvent("changeLocale");

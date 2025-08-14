@@ -102,13 +102,13 @@ namespace gn.event {
             const listenersToExecute = [...objectEvents.get(event.type)];
             for (let i = 0; i < listenersToExecute.length; i++) {
                 const entry = listenersToExecute[i];
-                try {
+                //try {
                     entry.listener.call(entry.context, event);
-                } catch (error) {
-                    console.error(`Error executing listener for event "${event.type}" on object:`, event.sender, error);
-                    console.error(`Listener:`, entry.listener);
-                    console.error(`Context:`, entry.context);
-                }
+                //} catch (error) {
+                //    console.error(`Error executing listener for event "${event.type}" on object:`, event.sender, error);
+                //    console.error(`Listener:`, entry.listener);
+                //    console.error(`Context:`, entry.context);
+                //}
             }
         }
         hasListeners(object, eventName) {
