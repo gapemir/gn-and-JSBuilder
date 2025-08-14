@@ -166,7 +166,17 @@ namespace gn.ui.basic {
                 let triggerRect = this.rect;
                 let tooltipRect = this._tooltip.rect;
 
-                if (tooltipRect.right > viewportWidth || window.innerWidth > document.documentElement.clientWidth) {
+                if(tooltipRect.left < 0){
+                    //this._tooltip.setStyle("right", "auto");    
+                    this._tooltip.setStyle("left", "0px");
+                    this._tooltip.setStyle("transform", "none");
+                    tooltipRect = this._tooltip.rect;
+                    this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
+                    let arrowMargin = (triggerRect.x+triggerRect.width/2);
+                    this._tooltip.element.style.setProperty("--arrow-left", arrowMargin-5+"px");
+                    this._tooltip._wasMoved = true;
+                }
+                else if (tooltipRect.right > viewportWidth || tooltipRect.right > document.documentElement.clientWidth) {
                     this._tooltip.setStyle("left", "auto");
                     this._tooltip.setStyle("right", "0px");
 
@@ -176,16 +186,6 @@ namespace gn.ui.basic {
                     let bIsScrollBarVisible = window.innerWidth > document.documentElement.clientWidth;
                     let arrowMargin = (triggerRect.x+triggerRect.width/2)-tooltipRect.x + !bIsScrollBarVisible * 15;
                     this._tooltip.element.style.setProperty("--arrow-left", arrowMargin+"px"); 
-                    this._tooltip._wasMoved = true;
-                }
-                else if(tooltipRect.left < 0){
-                    //this._tooltip.setStyle("right", "auto");    
-                    this._tooltip.setStyle("left", "0px");
-                    this._tooltip.setStyle("transform", "none");
-                    tooltipRect = this._tooltip.rect;
-                    this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
-                    let arrowMargin = (triggerRect.x+triggerRect.width/2);
-                    this._tooltip.element.style.setProperty("--arrow-left", arrowMargin-5+"px");
                     this._tooltip._wasMoved = true;
                 }
             }
