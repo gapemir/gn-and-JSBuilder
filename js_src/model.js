@@ -245,19 +245,21 @@ namespace gn.model {
             if( this._source ) {
                 //TODO
                 this._source.stopForwardEvent( "reset", this );
+                this._source.stopForwardEvent( "dataSet", this );
+                this._source.stopForwardEvent( "dataChanged", this );
+                this._source.stopForwardEvent( "beforeDataRemoved", this );
+                this._source.stopForwardEvent( "dataRemoved", this );
+                this._source.stopForwardEvent( "dataAdded", this );
             }
             this._mapping = { null : [] };
             this._source = value;
             if( this._source ) {
-                //this._source.addEventListener( "reset", () => this.sendEvent( "reset" ), this );
-                this._source.addEventListener( "dataSet", () => this.sendEvent( "dataSet" ), this );
-                this._source.addEventListener( "dataChanged", ( e ) => this.sendEvent( "dataChanged", e.data ), this );
-                this._source.addEventListener( "beforeDataRemoved", ( e ) => this.sendEvent( "beforeDataRemoved", e.data ), this );
-                this._source.addEventListener( "dataRemoved", ( e ) => this.sendEvent( "dataRemoved", e.data ), this );
-                this._source.addEventListener( "dataAdded", ( e ) => this.sendEvent( "dataAdded", e.data ), this );
                 this._source.forwardEvent( "reset", this );
-                //this._source.stopForwardEvent( "reset", this );
-                //this._source.addEventListener( "beforeDataAdded", () => this.sendEvent( "beforeDataAdded" ), this );
+                this._source.forwardEvent( "dataSet", this );
+                this._source.forwardEvent( "dataChanged", this );
+                this._source.forwardEvent( "beforeDataRemoved", this );
+                this._source.forwardEvent( "dataRemoved", this );
+                this._source.forwardEvent( "dataAdded", this );
             }
         }
         set filterCB( value ) {
