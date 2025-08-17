@@ -1,81 +1,14 @@
 namespace gn.model {
-    class AbstractModel extends gn.core.Object {
+    class TreeModel extends gn.core.Object {
         constructor() {
             super();
-            this._key = "id"
             this._data = {}; // index -> value
+            this._mapData = { null : [] }; // parent mappings
+            this._key = "id"
+            this._subKey = "subitems";
         }
         set key(value) {
             this._key = value;
-        }
-        rowCount() {
-            return 0;
-        }
-        columnCount() {
-            return 0;
-        }
-        index( row, parent) { // watch out becouse table models should have row, column, parent
-            throw new TypeError("Abstract class");
-        }
-        setData( data ) { // param array
-            this._reset();
-            this._setData( data );
-            this.sendEvent('dataSet');
-        }
-
-        // some sort of data inserts, movers, deleters
-
-        changeData( index, key, value ){
-            if ( gn.lang.Var.isNull( index ) ) {
-                throw new Error("Data identifier cannot be null");
-            }
-            if( gn.lang.Var.isNull( this._data[ index ] ) ){
-                throw new Error("Data with this id doesn't exist");
-            }
-            this._data[ index ][ key ] = value;
-            this.sendEvent("dataChanged", { index: index, key: key } )
-        }
-        data(index, role = gn.model.Model.DataType.display) {
-            if ( gn.lang.Var.isNull( index ) ) {
-                throw new Error('Data identifier cannot be null');
-            }
-            let ret = this._data[ index ];
-            switch ( role ) {
-                case gn.model.Model.DataType.display:
-                    ret = ret[ "display" ] || ret[ this._key ];
-                    break;
-                case gn.model.Model.DataType.all:
-                    break;
-                default:
-                    throw new Error('Invalid type');
-                    break;
-            }
-            return ret;
-        }
-        reset() {
-            this._reset();
-            this.sendEvent('reset');
-        }
-        _checkIndex( index ) {
-            if ( gn.lang.Var.isNull( index ) ) {
-                throw new Error('Data item does not have identifier');
-            }
-            else if( !gn.lang.Var.isNull( this._data[index] ) ) {
-                throw new Error('Every item must have a unique id');
-            }
-        }
-        _setData() {
-            throw new TypeError("Abstract class");
-        }
-        _reset() {
-            throw new TypeError("Abstract class");
-        }
-    }
-    class TreeModel extends gn.model.AbstractModel {
-        constructor() {
-            super();
-            this._subKey = "subitems";
-            this._mapData = { null : [] }; // parent mappings
         }
         set subKey( value ){
             this._subKey = value;
@@ -113,6 +46,11 @@ namespace gn.model {
             this._setData( data );
             this.sendEvent('dataSet');
         }
+        setData( data ) { // param array
+            this._reset();
+            this._setData( data );
+            this.sendEvent('dataSet');
+        }
         _setData(data, parent = null) {
             if(gn.lang.Var.isArray(data)) {
                 data.forEach( obj => {
@@ -131,7 +69,7 @@ namespace gn.model {
                 throw new Error('Data cannot be null');
             }
             if( row < 0 || row > this.rowCount() ){
-                throw new Error("Row is not good");
+                row = this.rowCount()
             }
             this._checkIndex( obj[ this._key ] );
             //this.sendEvent('beforeDataAdded');
@@ -143,6 +81,16 @@ namespace gn.model {
                 this._setData( obj[ this._subKey ], obj[ this._key ] );
             }
             this.sendEvent('dataAdded', obj[ this._key ]);
+        }
+        changeData( index, key, value ){
+            if ( gn.lang.Var.isNull( index ) ) {
+                throw new Error("Data identifier cannot be null");
+            }
+            if( gn.lang.Var.isNull( this._data[ index ] ) ){
+                throw new Error("Data with this id doesn't exist");
+            }
+            this._data[ index ][ key ] = value;
+            this.sendEvent("dataChanged", { index: index, key: key } )
         }
         moveRow(){
             throw new TypeError("not implemented yet")
@@ -163,6 +111,28 @@ namespace gn.model {
             this._mapData[ index ]?.forEach( idx => this._removeData( idx ) );
             delete this._mapData[ index ];
         }
+        
+        data(index, role = gn.model.Model.DataType.display) {
+            if ( gn.lang.Var.isNull( index ) ) {
+                throw new Error('Data identifier cannot be null');
+            }
+            let ret = this._data[ index ];
+            switch ( role ) {
+                case gn.model.Model.DataType.display:
+                    ret = ret[ "display" ] || ret[ this._key ];
+                    break;
+                case gn.model.Model.DataType.all:
+                    break;
+                default:
+                    throw new Error('Invalid type');
+                    break;
+            }
+            return ret;
+        }
+        reset() {
+            this._reset();
+            this.sendEvent('reset');
+        }
         _reset(){
             this._data = {};
             this._mapData = { null : [] };
@@ -170,6 +140,14 @@ namespace gn.model {
         _ensureChildMapping( index ) {
             if( !this._mapData[ index ] ) {
                 this._mapData[ index ] = [];
+            }
+        }
+        _checkIndex( index ) {
+            if ( gn.lang.Var.isNull( index ) ) {
+                throw new Error('Data item does not have identifier');
+            }
+            else if( !gn.lang.Var.isNull( this._data[index] ) ) {
+                throw new Error('Every item must have a unique id');
             }
         }
         parent( index ){
@@ -189,43 +167,14 @@ namespace gn.model {
     }
     // internal note: insertRow/Colun + move + remove actualy changes structure, first set Data to that, how will we handle index of empty cell, when row is iserted some id is created, but that defeats the puprose of using objects id
     // ok i have an idea, we make insertCell function that takes row, column, parent and obj and returns index this way we can have our idea of createCell, but are APIs between model compatible???
-    class TableModel extends gn.model.AbstractModel {
+    // i have gotten rid of abstract model as i have decided that list/tree views will only work with list/tree model and table view will only work with table models
+    class TableModel extends gn.core.Object {
         constructor() {
             super();
             throw new TypeError("Not implemented yet");
         }
     }
-    class AbstractDecoratorModel extends gn.core.Object {
-        constructor() {
-            super();
-            this._source = null;
-        }
-        set key(value){
-            this._source.key = value;
-        }
-        rowCount() {
-            return 0;
-        }
-        columnCount() {
-            return 0;
-        }
-        index() {
-            throw new TypeError("Abstract class");
-        }
-        setData( data ) { // param array
-            return this._source ? this._source.setData( data ) : null;
-        }
-        changeData( index, key, value ){
-            return this._source ? this._source.changeData( index, key, value ) : null;
-        }
-        data(index, role) {
-            return this._source ? this._source.data( index, role ) : null;
-        }
-        reset() {
-            return this._source ? this._source.reset() : null;
-        }
-    }
-    class FilterSortTreeModel extends gn.model.AbstractDecoratorModel { // for now filterSortModel will only work on TreeModel not on table model
+    class FilterSortTreeModel extends gn.core.Object { // for now filterSortModel will only work on TreeModel not on table model
         constructor( model ) {
             super();
             this._source = null;
@@ -353,7 +302,13 @@ namespace gn.model {
             }
             return ret;
         }
-        // reimplemented
+        // model functions
+        set key(value){
+            this._source.key = value;
+        }
+        set subKey( value ){
+            this._subKey = value;
+        }
         rowCount( row = null ){
             if( gn.lang.Var.isNull( this._filter ) && gn.lang.Var.isNull( this._sort ) ) {
                 return this._source.rowCount( row );
@@ -372,6 +327,18 @@ namespace gn.model {
         setDataFromFlat( ...args ) {
             return this._source ? this._source.setDataFromFlat( ...args ) : null;
         }
+        setData( data ) { // param array
+            return this._source ? this._source.setData( data ) : null;
+        }
+        changeData( index, key, value ){
+            return this._source ? this._source.changeData( index, key, value ) : null;
+        }
+        data(index, role) {
+            return this._source ? this._source.data( index, role ) : null;
+        }
+        reset() {
+            return this._source ? this._source.reset() : null;
+        }
         insertRow( ...args ) { 
             return this._source ? this._source.insertRow( ...args ) : null;
         }
@@ -388,7 +355,13 @@ namespace gn.model {
             return this._source ? this._source.children( index ) : null;
         }
     } 
-    class filterSortTableModel extends gn.model.AbstractDecoratorModel {
+    class filterSortTableModel extends gn.core.Object {
+        constructor() {
+            super();
+            throw new TypeError("Not implemented yet");
+        }
+    }
+    class selectionModel extends gn.core.Object {
         constructor() {
             super();
             throw new TypeError("Not implemented yet");
