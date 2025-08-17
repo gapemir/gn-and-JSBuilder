@@ -33,7 +33,7 @@ namespace gn.model {
                 throw new Error("Data with this id doesn't exist");
             }
             this._data[ index ][ key ] = value;
-            this.sendDataEvent("dataChanged", { index: index, key: key } )
+            this.sendEvent("dataChanged", { index: index, key: key } )
         }
         data(index, role = gn.model.Model.DataType.display) {
             if ( gn.lang.Var.isNull( index ) ) {
@@ -134,7 +134,7 @@ namespace gn.model {
                 throw new Error("Row is not good");
             }
             this._checkIndex( obj[ this._key ] );
-            //this.sendDataEvent('beforeDataAdded');
+            //this.sendEvent('beforeDataAdded');
             this._data[ obj[ this._key ] ] = obj;
             this._ensureChildMapping( parent );
             this._mapData[ parent ].splice( row, 0, obj[ this._key ] );
@@ -142,7 +142,7 @@ namespace gn.model {
                 this._ensureChildMapping( obj[ this._key ] )
                 this._setData( obj[ this._subKey ], obj[ this._key ] );
             }
-            this.sendDataEvent('dataAdded', obj[ this._key ]);
+            this.sendEvent('dataAdded', obj[ this._key ]);
         }
         moveRow(){
             throw new TypeError("not implemented yet")
@@ -151,9 +151,9 @@ namespace gn.model {
             if ( gn.lang.Var.isNull( index ) ) {
                 throw new Error('Data item does not have identifier');
             }
-            this.sendDataEvent( "beforeDataRemoved", index );
+            this.sendEvent( "beforeDataRemoved", index );
             this._removeData( index, this.parent( index ) );
-            this.sendDataEvent( "dataRemoved", index );
+            this.sendEvent( "dataRemoved", index );
         }
         _removeData( index, parent = undefined ){
             delete this._data[ index ];
@@ -225,7 +225,7 @@ namespace gn.model {
             return this._source ? this._source.reset() : null;
         }
     }
-    class filterSortTreeModel extends gn.model.AbstractDecoratorModel { // for now filterSortModel will only work on TreeModel not on table model
+    class FilterSortTreeModel extends gn.model.AbstractDecoratorModel { // for now filterSortModel will only work on TreeModel not on table model
         constructor( model ) {
             super();
             this._source = null;
@@ -244,16 +244,19 @@ namespace gn.model {
         set sourceModel( value ) {
             if( this._source ) {
                 //TODO
+                this._source.stopForwardEvent( "reset", this );
             }
             this._mapping = { null : [] };
             this._source = value;
             if( this._source ) {
-                this._source.addEventListener( "reset", () => this.sendEvent( "reset" ), this );
+                //this._source.addEventListener( "reset", () => this.sendEvent( "reset" ), this );
                 this._source.addEventListener( "dataSet", () => this.sendEvent( "dataSet" ), this );
-                this._source.addEventListener( "dataChanged", ( e ) => this.sendDataEvent( "dataChanged", e.data ), this );
-                this._source.addEventListener( "beforeDataRemoved", ( e ) => this.sendDataEvent( "beforeDataRemoved", e.data ), this );
+                this._source.addEventListener( "dataChanged", ( e ) => this.sendEvent( "dataChanged", e.data ), this );
+                this._source.addEventListener( "beforeDataRemoved", ( e ) => this.sendEvent( "beforeDataRemoved", e.data ), this );
                 this._source.addEventListener( "dataRemoved", ( e ) => this.sendEvent( "dataRemoved", e.data ), this );
-                this._source.addEventListener( "dataAdded", ( e ) => this.sendDataEvent( "dataAdded", e.data ), this );
+                this._source.addEventListener( "dataAdded", ( e ) => this.sendEvent( "dataAdded", e.data ), this );
+                this._source.forwardEvent( "reset", this );
+                //this._source.stopForwardEvent( "reset", this );
                 //this._source.addEventListener( "beforeDataAdded", () => this.sendEvent( "beforeDataAdded" ), this );
             }
         }

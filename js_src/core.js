@@ -34,19 +34,27 @@ namespace gn.core {
         }
 
         addEventListener(type, callback, thisObj) {
-            gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
+            return gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
         }
 
         removeEventListener(type, callback, thisObj) {
-            gn.event.Emitter.instance().removeEventListener(this, type, callback, thisObj);
+            return gn.event.Emitter.instance().removeEventListener(this, type, callback, thisObj);
         }
 
-        sendEvent(type) {
-            gn.event.Emitter.instance().sendEvent(this, type);
+        removeEventListenerById( id, type ) { // type is optional but faster
+            return gn.event.Emitter.instance().removeEventListenerById(this, id, type);
         }
 
-        sendDataEvent(type, data) {
-            gn.event.Emitter.instance().sendDataEvent(this, type, data);
+        sendEvent( type, data ) { // type must be alphanumerical and _, otherwise it may break system, espetialy "|""
+            gn.event.Emitter.instance().sendEvent( this, type, data );
+        }
+
+        forwardEvent( type, object ) {
+            return gn.event.Emitter.instance().forwardEvent(this, type, object);
+        }
+
+        stopForwardEvent( type, object ) {
+            return gn.event.Emitter.instance().stopForwardEvent(this, type, object);
         }
 
         static getInternalId(obj) {

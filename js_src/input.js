@@ -107,10 +107,10 @@ namespace gn.ui.input {
             this._element.click();
         }
         onInput() {
-            this.sendDataEvent("input", this.value);
+            this.sendEvent("input", this.value);
         }
         onChange() {
-            this.sendDataEvent("change", this.value);
+            this.sendEvent("change", this.value);
         }
     }
 
@@ -345,15 +345,15 @@ namespace gn.ui.input {
         }
         onCancel() {
             this._updateLabel();
-            this.sendDataEvent("cancel", null);
+            this.sendEvent("cancel", null);
         }
         onInput() {
             this._updateLabel();
-            this.sendDataEvent("input", this.value);
+            this.sendEvent("input", this.value);
         }
         onChange() {
             this._updateLabel();
-            this.sendDataEvent("change", this.value);
+            this.sendEvent("change", this.value);
         }
     }
 }

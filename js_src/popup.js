@@ -22,7 +22,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.OK) {
                 let button = new gn.ui.control.Button("OK");
                 button.addEventListener("click", function () {
-                    this.sendDataEvent("ok", this._callback ? this._callback.call(this, "ok", this) : null);
+                    this.sendEvent("ok", this._callback ? this._callback.call(this, "ok", this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -30,7 +30,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.CLOSE) {
                 let close = new gn.ui.basic.Icon(14, "fa-xmark", ["fa-solid"]);
                 close.addEventListener("click", function () {
-                    this.sendDataEvent("close", this._callback ? this._callback.call(this, "close", this) : null);
+                    this.sendEvent("close", this._callback ? this._callback.call(this, "close", this) : null);
                     this.dispose();
                 }, this);
                 this.header.add(close);
@@ -38,7 +38,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.CANCEL) {
                 let button = new gn.ui.control.Button("CANCEL");
                 button.addEventListener("click", function () {
-                    this.sendDataEvent("cancel", this._callback ? this._callback.call(this, "cancel", this) : null);
+                    this.sendEvent("cancel", this._callback ? this._callback.call(this, "cancel", this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -46,7 +46,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.YES) {
                 let button = new gn.ui.control.Button("YES");
                 button.addEventListener("click", function () {
-                    this.sendDataEvent("yes", this._callback ? this._callback.call(this, "yes", this) : null);
+                    this.sendEvent("yes", this._callback ? this._callback.call(this, "yes", this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -54,7 +54,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.NO) {
                 let button = new gn.ui.control.Button("NO");
                 button.addEventListener("click", function () {
-                    this.sendDataEvent("no", this._callback ? this._callback.call(this, "no", this) : null);
+                    this.sendEvent("no", this._callback ? this._callback.call(this, "no", this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);

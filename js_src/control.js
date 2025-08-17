@@ -38,7 +38,7 @@ namespace gn.ui.control {
             this.add(this._span);
             this.checked = checked || false;
             this._input.addEventListener("change", () => {
-                this.sendDataEvent("change", this.checked);
+                this.sendEvent("change", this.checked);
             }, this);
         }
         set checked(value) {
@@ -162,7 +162,7 @@ namespace gn.ui.control {
             this.add(this._rootSeparator);
         }
         triggered(idx){
-            this.sendDataEvent("triggered", idx)
+            this.sendEvent("triggered", idx)
         }
         set model(value) { // TODO addd event listeners at least "reset" and maybe "decorationChanged"
             if (gn.lang.Var.isNull(value)) {
@@ -288,7 +288,7 @@ namespace gn.ui.control {
             }, this);
             sep.addEventListener("click", function(){
                 if(!this._menu){
-                    this.sendDataEvent("generateMenu", this);
+                    this.sendEvent("generateMenu", this);
                 }
                 this._menu.show();
             }, sep)

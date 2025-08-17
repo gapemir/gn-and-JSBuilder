@@ -23,7 +23,7 @@ namespace gn.ui.tile {
             }
             this.add(this._header);
 
-            gn.event.Emitter.instance().addEventListener("windowResized", this.genFakeTileItems, this);
+            gn.app.App.instance().addEventListener("resize", this.genFakeTileItems, this);
         }
         set tileClass(value) {
             this._tileClass = value;

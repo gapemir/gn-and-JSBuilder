@@ -27,6 +27,9 @@ namespace gn.app {
             return gn.app.App._instance;
         }
         main(){
+            window.addEventListener( "resize", function() {
+                this.sendEvent( "resize" )
+            }.bind( this ) );
         }
         set root(root) {
             this._root = root;
