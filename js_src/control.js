@@ -164,7 +164,7 @@ namespace gn.ui.control {
         triggered(idx){
             this.sendDataEvent("triggered", idx)
         }
-        set model(value) {
+        set model(value) { // TODO addd event listeners at least "reset" and maybe "decorationChanged"
             if (gn.lang.Var.isNull(value)) {
                 throw new Error('Model cannot be null');
             }
@@ -219,7 +219,7 @@ namespace gn.ui.control {
         _addWidgets(idx){
             if(idx == null)
                 return;
-            let pidx = this._model.getParent(idx);
+            let pidx = this._model.parent(idx);
             if(pidx != null)
                 this._addWidgets(pidx);
             
@@ -233,7 +233,7 @@ namespace gn.ui.control {
             this._up.addEventListener("click", function(){
                 if(this._currentIndex == null)
                     return;
-                this._setIndex(this._model.getParent(this._currentIndex));
+                this._setIndex(this._model.parent(this._currentIndex));
                 this.triggered( this._currentIndex );
             }, this);
             this._up.tooltip = this.tr("UP");
@@ -270,10 +270,10 @@ namespace gn.ui.control {
                 el._menu = new gn.ui.popup.Menu(el);
                 el._menu.setStyle("min-width", "5rem");
                 el._menu.setStyle("min-height", "1rem");
-                let children = this.model.getChildren(idx);
+                let children = this._model.children(idx);
                 if(children){
                     for (let i = 0; i < children.length; i++) {
-                        let data = this.model.data(children[i], gn.model.Model.DataType.all)
+                        let data = this._model.data(children[i], gn.model.Model.DataType.all)
                         if(data.type == gn.model.Model.Type.group){
                             let menuItem = new gn.ui.popup.MenuItem(data.name, null, function(){
                                 this._setIndex(children[i]);

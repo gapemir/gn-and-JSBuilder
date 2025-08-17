@@ -1,131 +1,50 @@
 namespace gn.model {
-    class Model extends gn.core.Object {
-        constructor(identifier) {
+    class AbstractModel extends gn.core.Object {
+        constructor() {
             super();
-            this._data = new Map(); // id -> data
-            this._dataId = identifier || "id";
-            this._viewId = "view";
-
-            this._filterText = "";
-            this._filterCb = null;
-            this._filterCtx = null;
-            this._sortCb = null;
-            this._sortCtx = null;
+            this._key = "id"
+            this._data = {}; // index -> value
         }
-        set dataId(value) {
-            if (gn.lang.Var.isNull(value)) {
-                throw new Error('Data identifier cannot be null');
-            }
-            this._dataId = value;
+        set key(value) {
+            this._key = value;
         }
-        set viewId(value){
-            if (gn.lang.Var.isNull(value)) {
-                throw new Error('View identifier cannot be null');
-            }
-            this._viewId = value;
+        rowCount() {
+            return 0;
         }
-        setData(data) {
-            this._data = new Map();
-            if(gn.lang.Var.isArray(data)) {
-                data.forEach((item) => {
-                    if (gn.lang.Var.isNull(item[this._dataId])) {
-                        throw new Error('Data item does not have identifier used in this model');
-                    }
-                    this._data.set(item[this._dataId], item);
-                });
-            }
+        columnCount() {
+            return 0;
+        }
+        index( row, parent) { // watch out becouse table models should have row, column, parent
+            throw new TypeError("Abstract class");
+        }
+        setData( data ) { // param array
+            this._reset();
+            this._setData( data );
             this.sendEvent('dataSet');
         }
-        addData(data) {
-            if (gn.lang.Var.isNull(data)) {
-                throw new Error('Data cannot be null');
-            }
-            if (gn.lang.Var.isNull(data[this._dataId])) {
-                throw new Error('Data does not have identifier used in this model');
-            }
-            this._data.set(data[this._dataId], data);
-            this.sendDataEvent('dataAdded', data[this._dataId]);
-        }
-        removeData(id){
-            if (gn.lang.Var.isNull(id)) {
-                throw new Error('Id cannot be null');
-            }
-            if (!this._data.has(id)) {
-                throw new Error('Data not found in model');
-            }
-            this.sendDataEvent('toRemoveData', id);
-            this._data.delete(id);
-            this.sendDataEvent('dataRemoved', id);
-        }
-        changeData(id, key, value){
-            if (gn.lang.Var.isNull(id)) {
+
+        // some sort of data inserts, movers, deleters
+
+        changeData( index, key, value ){
+            if ( gn.lang.Var.isNull( index ) ) {
                 throw new Error("Data identifier cannot be null");
             }
-            if(gn.lang.Var.isNull(this._data.has(id))){
+            if( gn.lang.Var.isNull( this._data[ index ] ) ){
                 throw new Error("Data with this id doesn't exist");
             }
-            this._data.get(id)[key] = value;
-            this.sendDataEvent("dataChanged", {index: id, key: key})
+            this._data[ index ][ key ] = value;
+            this.sendDataEvent("dataChanged", { index: index, key: key } )
         }
-        fsAllData(type = gn.model.Model.DataType.view) { //* filter sort all data
-            let tmp = Array.from(this._data.values());
-            if (gn.lang.Var.isFunction(this._filterCb)) {
-                for (let val in tmp) {
-                    if (this._filter.call(this._filterCtx, this._filterText, val, this)) {
-                        tmp.push(val);
-                    }
-                }
-            }
-            if (gn.lang.Var.isFunction(this._sort)) {
-                tmp.sort((a, b) => this._sort.call(this._sortCtx, a, b, this));
-            }
-            let ret = [];
-            switch (type) {
-                case gn.model.Model.DataType.view:
-                    ret = tmp.map(item => item[this._viewId]);
-                    break;
-                case gn.model.Model.DataType.all:
-                    ret = tmp;
-                    break;
-                default:
-                    throw new Error('Invalid type');
-                    break;
-            }
-            return ret;
-        }
-        fData(id, type = gn.model.Model.DataType.view) { //* filter data by id
-            if (gn.lang.Var.isNull(id)) {
+        data(index, role = gn.model.Model.DataType.display) {
+            if ( gn.lang.Var.isNull( index ) ) {
                 throw new Error('Data identifier cannot be null');
             }
-            let ret = this._data.get(id);
-            if (gn.lang.Var.isFunction(this._filter)) {
-                if (!this._filter.call(this._filterCtx, this._filterText, ret, this)) {
-                    return null;
-                }
-            }
-            switch (type) {
-                case gn.model.Model.DataType.view:
-                    ret = ret[this._viewId];
+            let ret = this._data[ index ];
+            switch ( role ) {
+                case gn.model.Model.DataType.display:
+                    ret = ret[ "display" ] || ret[ this._key ];
                     break;
                 case gn.model.Model.DataType.all:
-                    break;
-                default:
-                    throw new Error('Invalid type');
-                    break;
-            }
-            return ret;
-        }
-        data(id, type = gn.model.Model.DataType.view) { //* default data getter
-            if (gn.lang.Var.isNull(id)) {
-                throw new Error('Data identifier cannot be null');
-            }
-            let ret = this._data.get(id);
-            switch (type) {
-                case gn.model.Model.DataType.view:
-                    ret = ret[this._viewId];
-                    break;
-                case gn.model.Model.DataType.all:
-                    ret = this._data.get(id);
                     break;
                 default:
                     throw new Error('Invalid type');
@@ -134,149 +53,345 @@ namespace gn.model {
             return ret;
         }
         reset() {
-            this._data = new Map();
+            this._reset();
             this.sendEvent('reset');
         }
-        setAcceptFilter(cb, ctx){
-            if (gn.lang.Var.isNull(cb) || !gn.lang.Var.isFunction(cb)) {
-                throw new Error('Filter callback must be a function');
+        _checkIndex( index ) {
+            if ( gn.lang.Var.isNull( index ) ) {
+                throw new Error('Data item does not have identifier');
             }
-            this._filterCb = cb;
-            this._filterCtx = ctx;
-            this.sendEvent('filterSet');
+            else if( !gn.lang.Var.isNull( this._data[index] ) ) {
+                throw new Error('Every item must have a unique id');
+            }
         }
-        setAcceptSort(cb, ctx){
-            if (gn.lang.Var.isNull(cb) || !gn.lang.Var.isFunction(cb)) {
-                throw new Error('Sort callback must be a function');
-            }
-            this._sortCb = cb;
-            this._sortCtx = ctx;
-            this.sendEvent('sortSet');
+        _setData() {
+            throw new TypeError("Abstract class");
+        }
+        _reset() {
+            throw new TypeError("Abstract class");
         }
     }
-    class TreeModel extends gn.model.Model {
-        constructor(identifier) {
-            super(identifier);
-            this._parentMap = new Map(); // id -> children ids
-            //this._currLevel = null;
-            this._parentId = null;
+    class TreeModel extends gn.model.AbstractModel {
+        constructor() {
+            super();
+            this._subKey = "subitems";
+            this._mapData = { null : [] }; // parent mappings
         }
-        set parentId(value) {
-            if (gn.lang.Var.isNull(value)) {
-                throw new Error('Parent identifier cannot be null');
+        set subKey( value ){
+            this._subKey = value;
+        }
+        rowCount( row = null ){
+            return this._mapData[ row ]?.length || 0;
+        }
+        index( row, parent = null ) {
+            if( row >= 0 && row < this.rowCount( parent ) ) {
+                return this._mapData[ parent ][ row ];
             }
-            this._parentId = value;
+            return null;
         }
-        setData(data) {
-            this._data = new Map();
-            if (gn.lang.Var.isArray(data)) {
-                let cpy = [...data];
-                let i = 0;
-                while(cpy.length){
-                    if(i >= cpy.length) {
-                        i = 0;
+        setDataFromFlat( data, parentKey ) {
+            this._reset();
+            let removedData = {};
+            for( let i = 0; i < data.length; i++ ) {
+                if( data[i][parentKey] ) {
+                    let item = data.find( el => el[this._key] == data[i][parentKey] )
+                    if( item ){
+                        if( gn.lang.Var.isNull( item.subitems ) ) {
+                            item.subitems = [];
+                        }
+                        item.subitems.push( data[i] );
+                    } else{
+                        if( gn.lang.Var.isNull( removedData[ data[ i ] ].subitems ) ) {
+                            item.subitems = [];
+                        }
+                        removedData[ data[ i ] ].subitems.push( data[ i ] )
                     }
-                    if(this._data.has(cpy[i][this._parentId]) || cpy[i][this._parentId] == null){
-                        this._addData(cpy[i])
-                        cpy.splice(i,1);
-                        i = 0;
-                    } else {
-                        i++;
-                    }
+                    data.splice( data.indexOf( data[ i ] ), 1 );
+                    i--;
                 }
             }
+            this._setData( data );
             this.sendEvent('dataSet');
         }
-        _addData(data) {
-            if (gn.lang.Var.isNull(data)) {
-                throw new Error('Data cannot be null');
-            }
-            if (gn.lang.Var.isNull(data[this._dataId])) {
-                throw new Error('Data doesnt have identifier used in this model');
-            }
-            if(!this._data.has(data[this._parentId]) && !gn.lang.Var.isNull(data[this._parentId])){
-                throw new Error('Parent data not found in model');
-            }
-            this._data.set(data[this._dataId], data);
-
-            let parentId = data[this._parentId];
-            if (gn.lang.Var.isNull(parentId)) {
-                parentId = null;
-            }
-            if (this._parentMap.has(parentId)) {
-                this._parentMap.get(parentId).push(data[this._dataId]);
-            } else {
-                this._parentMap.set(parentId, [data[this._dataId]]);
-            }
-        }
-        addData(data) {
-            if( gn.lang.Var.isNull(data)) {
-                throw new Error('Data cannot be null');
-            }
-            if (gn.lang.Var.isNull(data[this._dataId])) {
-                throw new Error('Data does not have identifier used in this model');
-            }
-            if(!this._data.has(data[this._parentId]) && !gn.lang.Var.isNull(data[this._parentId])){
-                throw new Error('Parent data not found in model');
-            }
-            let parentId = data[this._parentId];
-            if (gn.lang.Var.isNull(parentId)) {
-                parentId = null;
-            }
-            if (this._parentMap.has(parentId)) {
-                this._parentMap.get(parentId).push(data[this._dataId]);
-            } else {
-                this._parentMap.set(parentId, [data[this._dataId]]);
-            }
-            super.addData(data);
-        }
-        removeData(id) {
-            if (gn.lang.Var.isNull(id)) {
-                throw new Error('Id cannot be null');
-            }
-            if (!this._data.has(id)) {
-                throw new Error('Data not found in model');
-            }
-            if(this._parentMap.has(id)) {
-                let children = this._parentMap.get(id);
-                children.forEach((childId) => {
-                    this.removeData(childId);
+        _setData(data, parent = null) {
+            if(gn.lang.Var.isArray(data)) {
+                data.forEach( obj => {
+                    this._checkIndex( obj[this._key] );
+                    this._data[ obj[ this._key ] ] = obj;
+                    this._mapData[ parent ].push( obj[ this._key ] );
+                    if( obj[ this._subKey ] ) {
+                        this._ensureChildMapping( obj[ this._key ] );
+                        this._setData( obj[ this._subKey ], obj[ this._key ] );
+                    }
                 });
-            }  
-            super.removeData(id);          
-            this._parentMap.forEach((value, key) => {
-                let index = value.indexOf(id);
-                if (index > -1) {
-                    value.splice(index, 1);
+            }
+        }
+        insertRow( obj, row = this.rowCount(), parent = null ) {
+            if ( gn.lang.Var.isNull( obj ) ) {
+                throw new Error('Data cannot be null');
+            }
+            if( row < 0 || row > this.rowCount() ){
+                throw new Error("Row is not good");
+            }
+            this._checkIndex( obj[ this._key ] );
+            //this.sendDataEvent('beforeDataAdded');
+            this._data[ obj[ this._key ] ] = obj;
+            this._ensureChildMapping( parent );
+            this._mapData[ parent ].splice( row, 0, obj[ this._key ] );
+            if( obj[ this._subKey ] ) {
+                this._ensureChildMapping( obj[ this._key ] )
+                this._setData( obj[ this._subKey ], obj[ this._key ] );
+            }
+            this.sendDataEvent('dataAdded', obj[ this._key ]);
+        }
+        moveRow(){
+            throw new TypeError("not implemented yet")
+        }
+        removeData( index ) {
+            if ( gn.lang.Var.isNull( index ) ) {
+                throw new Error('Data item does not have identifier');
+            }
+            this.sendDataEvent( "beforeDataRemoved", index );
+            this._removeData( index, this.parent( index ) );
+            this.sendDataEvent( "dataRemoved", index );
+        }
+        _removeData( index, parent = undefined ){
+            delete this._data[ index ];
+            if( parent !== undefined ) {
+                this._mapData[ parent ] = this._mapData[ parent ].filter( i => i != index );
+            }
+            this._mapData[ index ]?.forEach( idx => this._removeData( idx ) );
+            delete this._mapData[ index ];
+        }
+        _reset(){
+            this._data = {};
+            this._mapData = { null : [] };
+        }
+        _ensureChildMapping( index ) {
+            if( !this._mapData[ index ] ) {
+                this._mapData[ index ] = [];
+            }
+        }
+        parent( index ){
+            for( let idx in this._mapData ) {
+                if( this._mapData[ idx ].includes( index ) ) {
+                    if( idx == "null" ) {
+                        return null;
+                    }
+                    return idx;
                 }
-            });
-        }
-        getChildren(id) {
-            if (this._parentMap.has(id)) {
-                return this._parentMap.get(id);
-            } else {
-                return null;
             }
+            return null;
         }
-        getParent(id) {
-            if (gn.lang.Var.isNull(id)) {
-                throw new Error('Id cannot be null');
-            }
-            for (let [key, value] of this._parentMap.entries()) {
-                if (value.includes(id)) {
-                    return key;
-                }
-            }
-            throw new Error('This should not happen, contact me');
-        }
-        reset() {
-            this._parentMap = new Map();
-            //this._currLevel = null;
-            super.reset();
+        children( index ) {
+            return this._mapData[ index ];
         }
     }
+    // internal note: insertRow/Colun + move + remove actualy changes structure, first set Data to that, how will we handle index of empty cell, when row is iserted some id is created, but that defeats the puprose of using objects id
+    // ok i have an idea, we make insertCell function that takes row, column, parent and obj and returns index this way we can have our idea of createCell, but are APIs between model compatible???
+    class TableModel extends gn.model.AbstractModel {
+        constructor() {
+            super();
+            throw new TypeError("Not implemented yet");
+        }
+    }
+    class AbstractDecoratorModel extends gn.core.Object {
+        constructor() {
+            super();
+            this._source = null;
+        }
+        set key(value){
+            this._source.key = value;
+        }
+        rowCount() {
+            return 0;
+        }
+        columnCount() {
+            return 0;
+        }
+        index() {
+            throw new TypeError("Abstract class");
+        }
+        setData( data ) { // param array
+            return this._source ? this._source.setData( data ) : null;
+        }
+        changeData( index, key, value ){
+            return this._source ? this._source.changeData( index, key, value ) : null;
+        }
+        data(index, role) {
+            return this._source ? this._source.data( index, role ) : null;
+        }
+        reset() {
+            return this._source ? this._source.reset() : null;
+        }
+    }
+    class filterSortTreeModel extends gn.model.AbstractDecoratorModel { // for now filterSortModel will only work on TreeModel not on table model
+        constructor( model ) {
+            super();
+            this._source = null;
+            this._mapping = { null : [] };
+
+            this._filterCB = null;
+            this._filter = null;
+            this._sortCB = null;
+            this._sort = null;
+
+            this.sourceModel = model;
+        }
+        get sourceModel() {
+            return this._source;
+        }
+        set sourceModel( value ) {
+            if( this._source ) {
+                //TODO
+            }
+            this._mapping = { null : [] };
+            this._source = value;
+            if( this._source ) {
+                this._source.addEventListener( "reset", () => this.sendEvent( "reset" ), this );
+                this._source.addEventListener( "dataSet", () => this.sendEvent( "dataSet" ), this );
+                this._source.addEventListener( "dataChanged", ( e ) => this.sendDataEvent( "dataChanged", e.data ), this );
+                this._source.addEventListener( "beforeDataRemoved", ( e ) => this.sendDataEvent( "beforeDataRemoved", e.data ), this );
+                this._source.addEventListener( "dataRemoved", ( e ) => this.sendEvent( "dataRemoved", e.data ), this );
+                this._source.addEventListener( "dataAdded", ( e ) => this.sendDataEvent( "dataAdded", e.data ), this );
+                //this._source.addEventListener( "beforeDataAdded", () => this.sendEvent( "beforeDataAdded" ), this );
+            }
+        }
+        set filterCB( value ) {
+            this._filterCB = value;
+        }
+        set sortCB( value ) {
+            this._sortCB = value;
+        }
+        applyFilter( value ) {
+            this._filter = value;
+            this._applyFilterSort();
+        }
+        applySort( key ) {
+            this._sort = key;
+            this._applyFilterSort();
+        }
+        _applyFilterSort() {
+            this._mapping = { null : [] };
+            if( !gn.lang.Var.isNull( this._filter ) || !gn.lang.Var.isNull( this._sort ) ) {
+                this._filterInternal();
+                if( !gn.lang.Var.isNull( this._sort ) ) {
+                    this._sortInternal();
+                }
+            }
+            this.sendEvent( "decorationChanged" );
+        }
+        _filterInternal( parent = null ) {
+            let filterFunc = this._defaultFilter;
+            if( this._filterCB ) {
+                filterFunc = this._filterCB;
+            }
+            let ret = false;
+            
+            for( let i = 0; i < this._source.rowCount( parent ); i++ ) {
+                let index =  this._source.index( i, parent )
+                let bAccept = false;
+                if( this._source.children( index ) ) {
+                    this._mapping [ index ] = [];
+                    bAccept = this._filterInternal( index );
+                }
+                if( !bAccept ) {
+                    bAccept = filterFunc.call( this , this.data( index, gn.model.Model.DataType.all ), this._filter );
+                }
+                if( bAccept ) {
+                    ret = true;
+                    this._mapping[ parent ].push( index )
+                }
+            }
+            return ret
+        }
+        _defaultFilter( data, filter ) { // arguments should be object with key -> value and it works only with strings
+            let bRet = true;
+            for( let key in filter ) {
+                bRet &= data[ key ].includes( filter[ key ] );
+            }
+            return bRet;
+        }
+        _sortInternal() {
+            let sortFunc = this._defaultSort;
+            if( this._sortCB ) {
+                sortFunc = this._sortCB;
+            }
+            let swapped;
+            let tmp = null;
+            for( let key in this._mapping ) {
+                let n = this._mapping[ key ].length;
+                for( let i = 0; i < n - 1; i++ ) {
+                    swapped = false;
+                    for( let j = 0; j < n - i - 1; j++ ) {
+                        if( sortFunc.call( this, this.data( this._mapping[ key ][ j ], gn.model.Model.DataType.all ), this.data( this._mapping[ key ][j + 1], gn.model.Model.DataType.all ), this._sort ) > 0 ) {
+                            tmp = this._mapping[ key ][j];
+                            this._mapping[ key ][j] = this._mapping[ key ][j + 1];
+                            this._mapping[ key ][j + 1] = tmp;
+                            swapped = true;
+                        }
+                    }
+                    if (!swapped)
+                        break;
+                }
+            }
+        }
+        _defaultSort( dataA, dataB, sort ) { // sort should be an array of keys, it only supports strings and numerical values
+            let ret = 0;
+            if( gn.lang.Var.isArray( sort ) ) {
+                for( let key of sort ) {
+                    ret = dataA[ key ] > dataB[ key ]
+                    if( ret ) { 
+                        return ret;
+                    }
+                }
+            }
+            return ret;
+        }
+        // reimplemented
+        rowCount( row = null ){
+            if( gn.lang.Var.isNull( this._filter ) && gn.lang.Var.isNull( this._sort ) ) {
+                return this._source.rowCount( row );
+            }
+            return this._mapping[ row ]?.length || 0;
+        }
+        index( row, parent = null ) {
+            if( gn.lang.Var.isNull( this._filter ) && gn.lang.Var.isNull( this._sort ) ) {
+                return this._source.index( row, parent );
+            }
+            if( row >= 0 && row < this.rowCount( parent ) ) {
+                return this._mapping[ parent ][ row ];
+            }
+            return null;
+        }
+        setDataFromFlat( ...args ) {
+            return this._source ? this._source.setDataFromFlat( ...args ) : null;
+        }
+        insertRow( ...args ) { 
+            return this._source ? this._source.insertRow( ...args ) : null;
+        }
+        moveRow() {
+            return this._source ? this._source.moveRow( index ) : null;
+        }
+        removeData( index ) {
+            return this._source ? this._source.removeData( index ) : null;
+        }
+        parent( index ) {
+            return this._source ? this._source.parent( index ) : null;
+        }
+        children( index ) {
+            return this._source ? this._source.children( index ) : null;
+        }
+    } 
+    class filterSortTableModel extends gn.model.AbstractDecoratorModel {
+        constructor() {
+            super();
+            throw new TypeError("Not implemented yet");
+        }
+    }
+    Model = {};
     Model.DataType = gn.lang.Enum({
-        view: 1,
+        display: 1,
         all: 2,
     });
     Model.Type = gn.lang.Enum({

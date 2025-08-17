@@ -26,15 +26,16 @@ namespace gn.lang {
         }
     }
     class Array {
-        static isEmpty (array){
+        static isEmpty( array ) {
             return !!(gn.lang.Var.isNull(array) || array.length === 0);
-
+        }
+        static clone( array ) {
+            return gn.lang.Object.clone( array );
         }
     }
     class String {
         static isEmpty (string){
             return !!(gn.lang.Var.isNull(string) || string.length === 0);
-
         }
     }
     //class Object is for handling native Objects, it is not designed to handle class objects as inherited properties are skipped
@@ -42,11 +43,32 @@ namespace gn.lang {
         static isEmpty(obj){
             return Object.keys(obj).length === 0;
         }
+        /**
+         * Adds properties from source to target
+         * @param {Object} target 
+         * @param {Object} source 
+         * @returns {Object} 
+         */
         static merge(obj1, obj2) {
-            return Object.assign({}, obj1, obj2);
+            return Object.assign(obj1, obj2);
         }
-        static clone(obj) {
-            return Object.assign({}, obj);
+        static clone( value, deep )
+        {
+            if ( gn.lang.Var.isObject( value ) ) {
+                var clone = {};
+                for( var key in value ) {
+                    clone[ key ] = deep ? gn.lang.Object.clone( value[key], deep ) : item;
+                }
+                return clone;
+            }
+            else if ( gn.lang.Var.isArray( value ) ) {
+                var clone = [];
+                for( let item of value ) {
+                    clone.push( deep ? gn.lang.Object.clone( item, deep ) : item );
+                }
+                return clone;
+            }
+            return value;
         }
     }
     Enum = function( obj ) {
