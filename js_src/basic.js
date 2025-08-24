@@ -71,16 +71,20 @@ namespace gn.ui.basic {
             return gn.util.Geometry.width(this._element);
         }
         set width(value){
-            if(gn.lang.Var.isNumber(value) && value >= 0){
-                this.setStyle("width", value + "px");
+            if( gn.lang.Var.isNumber( value ) && value >= 0 ) {
+                this.setStyle( "width", value + "px" );
+            } else {
+                this.setStyle( "width", value );
             }
         }
         get height(){
             return gn.util.Geometry.height(this._element);
         }
         set height(value){
-            if(gn.lang.Var.isNumber(value) && value >= 0){
-                this.setStyle("height", value + "px");
+            if( gn.lang.Var.isNumber( value ) && value >= 0 ) {
+                this.setStyle( "height", value + "px" );
+            } else {
+                this.setStyle( "height", value );
             }
         }
         addClass(className){
@@ -115,7 +119,7 @@ namespace gn.ui.basic {
             }
         }
         setStyle(styleName, value = "", important = false){
-            this._element.style[styleName] = value + (important ? " !important" : "");
+            this._element.style[styleName] = ( value ? value : "" ) + (important ? " !important" : "");
         }
         setStyles(map){
             for(let key in map){
@@ -286,11 +290,36 @@ namespace gn.ui.basic {
             element.layoutParent = null;
             return true;
         }
-        show(){    
-            this.removeClass("gn-exclude");
+        get visibility() {
+            return this._visibility;
         }
-        hide(){
-            this.addClass("gn-exclude");
+        set visibility( value ){
+            if ( this._visibility != value ) {
+                this._visibility = value;
+                if ( value == "visible" ) {
+                    this.removeClass( "gn-exclude" );
+                    this.setStyle( "visibility", "visible" );
+                }
+                else if ( value == "hidden" ) {
+                    this.removeClass( "gn-exclude" );
+                    this.setStyle( "visibility", "hidden" );
+                }
+                else if ( value == "excluded" ) {
+                    this.addClass( "gn-exclude" );
+                }
+            }
+        }
+        show() {
+            this.visibility = "visible";
+        }
+        hide() {
+            this.visibility = "hidden";
+        }
+        exclude() {
+            this.visibility = "excluded";
+        }
+        isVisible() {
+            this.visibility == "visible";
         }
         _createElement(type){
             return document.createElement(type?type:"div");
@@ -390,7 +419,7 @@ namespace gn.ui.basic {
             return this._size;
         }
     }
-    class Image extends gn.ui.basic.Widget{
+    class Image extends gn.ui.basic.Widget {
         constructor(src, classList){
             super(null, "img");
             this._element.src = src;
