@@ -70,4 +70,5 @@ namespace gn.ui.container {
 ```
 
 ### Known issues
-builder js doesnt recognize well switch statements so each case/default should have its own break
+builderJS doesnt recognize well switch statements so each case/default should have its own break
+last thing in a file must be "}" as any new lines mess with builderJS
