@@ -202,7 +202,7 @@ namespace gn.ui.tile {
             }
             let ids = this._groups.get(this._currentGroup)
             for (let i = 0; i < ids.length; i++) {
-                this._idElementMap.get(ids[i]).hide();
+                this._idElementMap.get(ids[i]).exclude();
             }
             this._currentGroup = id;
             if (this._groups.has(this._currentGroup)) {

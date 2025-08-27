@@ -8,6 +8,9 @@ namespace gn.ui.popup {
         hide() {
             document.body.removeChild(this.element);
         }
+        exclude(){
+            document.body.removeChild(this.element);
+        }
         show() {
             document.body.appendChild(this.element);
         }
