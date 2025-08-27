@@ -153,9 +153,9 @@ namespace gn.ui.list {
             this._openGroup(e.data);
         }
     }
-    class ListItem extends gn.ui.container.Row {
+    class ListItem extends gn.ui.basic.Widget {
         constructor( data ) {
-            super( "gn-listItem" );
+            super( null, "div", "gn-listItem" );
             this._data = data;
         }
         updateItem( data, key ){
@@ -163,9 +163,9 @@ namespace gn.ui.list {
             //TODO
         }
     }
-    class ListTitle extends gn.ui.container.Row {
+    class ListTitle extends gn.ui.basic.Widget {
         constructor( data ) {
-            super( "gn-listTitle" );
+            super( null, "div", "gn-listTitle" );
             this._data = data;
         }
         updateItem( data, key ){
