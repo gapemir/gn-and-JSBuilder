@@ -166,6 +166,12 @@ input[type="color" i]::-webkit-color-swatch {
   border:none;
 }
 
+.gn-listItem, .gn-listTitle  {
+  justify-content: left;
+  border: 1px solid black;
+  border-radius: 5px;
+}
+
 
 .gn-header{
   height: 60px;
@@ -236,3 +242,7 @@ input[type="color" i]::-webkit-color-swatch {
   position: absolute;
   transition: transform 0.5s linear;
 }
+
+
+
+
