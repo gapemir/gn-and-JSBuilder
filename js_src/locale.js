@@ -1,8 +1,9 @@
 namespace gn.locale{
     /**
-     * we swapped to normal object as Stirings are imutable in js
+     * we swapped to normal object as Stirings are imutable in js, in order to introduce string methord back to this string i changed this into proxy, we will se if its ok, else we might go back to imutable strings
      * count is overriden by args parameter, only if there is only one
      */
+    //TODO swap back to extending strings as they have useful methods eg length, localeCompare
     class LocaleString { // TODO swap for jsonc files so we can have comments, but we need to make a minify function that will remove comments on frontend
         constructor(messageId, text, count) {
             //super(text);
@@ -10,6 +11,25 @@ namespace gn.locale{
             this._text = text;
             this._count = count; // for pluratization
             this._args = [];
+
+            return new Proxy(this,{
+                get: (target, prop) => {
+                    // If the property is on our class (like "translate"), return it
+                    if (Reflect.has(target, prop)) {
+                    return target[prop];
+                    }
+
+                    // Otherwise, assume it's a string method and call it on the internal string
+                    if (typeof target._text[prop] === 'function') {
+                    return (...args) => {
+                        return target._text[prop](...args);
+                    };
+                    }
+
+                    // For properties like "length", return the value directly
+                    return target._text[prop];
+                },
+            });
         }
         get messageId(){
             return this._messageId;

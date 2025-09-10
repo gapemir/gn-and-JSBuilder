@@ -13,6 +13,8 @@ namespace gn.ui.input {
             this.addClasses(classList);
             this.element.addEventListener("input", this.onInput.bind(this));
             this.element.addEventListener("change", this.onChange.bind(this));
+            this.addEventListener( "focus", this._onFocus, this );
+            this.focusable = 0;
         }
         get type() {
             return this._element.type;
@@ -111,6 +113,9 @@ namespace gn.ui.input {
         }
         onChange() {
             this.sendEvent("change", this.value);
+        }
+        _onFocus() {
+            //
         }
     }
 

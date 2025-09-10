@@ -157,4 +157,112 @@ namespace gn.ui.container {
             this.activate( this._order[ ( i < 0 ? this._order.length-1 : i ) ], false );
         }
     }
+    class Split extends gn.ui.basic.Widget { // class for two containers and handle in the middle whitch is used to resize containers
+        constructor( layout ) {
+            super( layout, "div", "gn-split" );
+            
+        }
+        _addInternal( element, where = null, refElement = null ) {
+            if( !this._children.length ){
+                super._addInternal( element, where, refElement );
+                return;
+            }
+            if( gn.lang.Var.isNull( element ) || gn.lang.Var.isNull( element.element) ) {
+                throw new Error('Element cannot be null');
+            }
+            super._addInternal( new gn.ui.container.SplitHandle( this.layoutManager.direction, 1 ), where, refElement );
+            super._addInternal( element, where, refElement );
+            for( let i = 1; i < this._children.length - 1; i+=2 ) {
+                this._children[ i ].before = this._children[ i-1 ];
+                this._children[ i ].after = this._children[ i+1 ];
+            }
+            this._devideSize();
+        }
+        _devideSize() {
+            let num = Math.ceil( this._children.length / 2 );
+            let a = 100 / num + "%";
+            for( let child of this._children ){
+                if( !( child instanceof gn.ui.container.SplitHandle ) ) {
+                    if( this.layoutManager.direction == gn.ui.layout.direction.Row ) {
+                        child.width = a;
+                        child.height = "100%";
+                    }
+                    else {
+                        child.height = a;
+                        child.width = "100%";
+                    }
+                }
+            }
+        }
+    }
+    class SplitHandle extends gn.ui.basic.Widget {
+        constructor( direction, size ) { // gn.ui.layout.direction
+            super( null, "div", "gn-split-handle" );
+            this._direction = direction;
+            this._before = null;
+            this._after = null;
+            this._splitSize = null;
+            this._originalPosition = null;
+            if( direction == gn.ui.layout.direction.Row ) {
+                this.height = "100%";
+                this.width = size;
+            }
+            else {
+                this.width = "100%";
+                this.height = size;
+            }
+            this.addEventListener( "dragstart", this._onDragStart, this );
+            this.addEventListener( "drag", this._onDrag, this );
+            this.addEventListener( "dragend", this._onDragStop, this );
+        }
+        set before( value ) {
+            this._before = value;
+        }
+        get before() {
+            return this._before;
+        }
+        set after( value ) {
+            this._after = value;
+        }
+        get after() {
+            return this._after;
+        }
+        _onDrag( e ){
+            console.log( e.clientX, e.clientY )
+            if( e.clientX == 0 ){
+                console.log("wtf");
+            }
+            if ( this._moving ) {
+                if ( this._direction == gn.ui.layout.direction.Column ) {
+                    var delta = e.clientY - this._originalPosition.y;
+                    var b = ( this._beforeSize.height + delta ) * 100 / this._splitSize.height;
+                    var a = ( this._afterSize.height - delta ) * 100 / this._splitSize.height;
+                    this._before.height = b + "%";
+                    this._after.height = a + "%";
+                }
+                else {
+                    var delta = e.clientX - this._originalPosition.x;
+                    var b = ( this._beforeSize.width + delta ) * 100 / this._splitSize.width;
+                    var a = ( this._afterSize.width - delta ) * 100 / this._splitSize.width;
+                    this._before.width = b + "%";
+                    this._after.width = a + "%";
+                }
+                return false;
+            }
+        }
+        _onDragStart( e ){
+            this._moving = true;
+            this._splitSize = this.layoutParent.size;
+            this._originalPosition = { x : e.clientX, y : e.clientY };
+            this._beforeSize = this._before.size;
+            this._afterSize = this._after.size;
+        }
+        _onDragStop( e ) {
+            this._moving = false;
+            this._splitSize = null;
+            this._originalPosition = null;
+            this._beforeSize = null;
+            this._afterSize = null;
+        }
+    }
 }

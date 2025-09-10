@@ -37,6 +37,18 @@ namespace gn.geometry{
             return this._y + (this._height / 2);
         }
     }
+    class Size {
+        constructor( width, height ) {
+            this._width = width;
+            this._height = height;
+        }
+        get width() {
+            return this._width;
+        }
+        get height() {
+            return this._height;
+        }
+    }
     class Point{
         constructor(x, y) {
             this._x = x;

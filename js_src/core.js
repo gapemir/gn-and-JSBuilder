@@ -3,6 +3,7 @@ namespace gn.core {
         constructor() {
             //in gn.ui.basic.widget there is property _layoutParent for ui parent
             this._internalId = this.internalId;
+            gn.core.Object._ObjectMap.set( this._internalId, this );
         }
 
         _destructor() {
@@ -28,7 +29,8 @@ namespace gn.core {
         dispose() {
             gn.event.Emitter.instance().removeAllEventListeners(this);
             this._destructor();
-            gn.core.Object._idCache.push(gn.core.Object.getInternalId(this))
+            gn.core.Object._ObjectMap.delete( this._internalId );
+            gn.core.Object._idCache.push( this._internalId )
             this._disposed = true;
             // we hope js garbage collector does its job
         }
@@ -58,6 +60,9 @@ namespace gn.core {
         }
 
         static getInternalId(obj) {
+            if( obj == null ) {
+                return null;
+            }
             var id = obj._internalId;
             if (id != null && id != undefined) return id;
             if (gn.core.Object._idCache.length > 0) {
@@ -67,7 +72,12 @@ namespace gn.core {
             }
             return obj._internalId = id;
         }
+
+        static getObjectById( id ) {
+            return gn.core.Object._ObjectMap.get( id.replace( "gn_", "" ) );
+        }
     }
     Object._idCache = [];
     Object._nextId = 0;
+    Object._ObjectMap = new Map();
 }

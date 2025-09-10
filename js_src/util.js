@@ -50,6 +50,10 @@ namespace gn.util{
         static rect(el){
             return gn.util.Geometry._boundingClientRect(el);
         }
+        static size(el){
+            let rect = gn.util.Geometry._boundingClientRect(el);
+            return new gn.geometry.Size( rect.width, rect.height );
+        }
         static width(el) {
             return gn.util.Geometry._boundingClientRect(el).width;
         }

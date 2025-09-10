@@ -217,12 +217,23 @@ namespace gn.model {
         set sortCB( value ) {
             this._sortCB = value;
         }
-        applyFilter( value ) {
+        /**
+         * Object of properties and value that is passed to includes function on a string eg. { name: "test" }
+         * Applyes filter, for default filtering use param, it only handeles strings
+         * if custom CB is supplied value is its 2. argument
+         * @param {Object{prop: string}} value 
+         */
+        applyFilter( value ) { 
             this._filter = value;
             this._applyFilterSort();
         }
-        applySort( key ) {
-            this._sort = key;
+        /**
+         * @param {Array<{prop: boolean}>} criteria An array of objects defining sort criteria. eb. [ { name: false } ]
+         * Each object should have a property and boolean direction (true='asc' or false='desc')
+         * if CB is supplied, this is 2. parameter of function
+         */
+        applySort( value ) { 
+            this._sort = value;
             this._applyFilterSort();
         }
         _applyFilterSort() {
@@ -293,10 +304,14 @@ namespace gn.model {
         _defaultSort( dataA, dataB, sort ) { // sort should be an array of keys, it only supports strings and numerical values
             let ret = 0;
             if( gn.lang.Var.isArray( sort ) ) {
-                for( let key of sort ) {
-                    ret = dataA[ key ] > dataB[ key ]
-                    if( ret ) { 
-                        return ret;
+                for( let sortObj of sort.toReversed() ) {
+                    for( let key in sortObj ) {
+                        if( gn.lang.Var.isString( dataA[ key ] ) ) {
+                            ret = dataA[ key ].localeCompare( dataB[ key ] ) * ( ( sortObj[ key ] ? 1 : -1) );
+                            if( ret ) { 
+                                return ret;
+                            }
+                        }
                     }
                 }
             }

@@ -3,6 +3,7 @@ namespace gn.ui.basic {
         constructor(layout, type, classList){
             super();
             this._element = this._createElement(type);
+            this._element.id = "gn_" + this._internalId;
             this._element.setAttribute("gn_name", this.constructor.name);
             this.addClasses(classList);
             this._tooltip = null;
@@ -14,13 +15,6 @@ namespace gn.ui.basic {
             if(layout){
                 this.layoutManager = layout
             }
-            //todo add more listeners
-            this._element.addEventListener("click", this.onClick.bind(this));
-            this._element.addEventListener("dblclick", this.onDblClick.bind(this));
-            this._element.addEventListener("mouseover", this.onMouseOver.bind(this));
-            this._element.addEventListener("mouseout", this.onMouseOut.bind(this));
-            this._element.addEventListener("focusin", this.onFocusIn.bind(this));
-            this._element.addEventListener("focusout", this.onFocusOut.bind(this));
         }
         _destructor(){
             if(!gn.lang.Var.isNull(this._layoutParent)){
@@ -65,7 +59,10 @@ namespace gn.ui.basic {
             return this._layoutManager;
         }
         get rect(){
-            return gn.util.Geometry.rect(this._element);
+            return gn.util.Geometry.rect( this._element );
+        }
+        get size(){
+            return gn.util.Geometry.size( this._element );
         }
         get width(){
             return gn.util.Geometry.width(this._element);
@@ -129,6 +126,8 @@ namespace gn.ui.basic {
             }
         }
         set tooltip(value){
+            this.addEventListener("mouseover", this.onMouseOver, this );
+            this.addEventListener("mouseout", this.onMouseOut, this );
             if(value instanceof gn.ui.basic.Widget){
                 this._tooltip = value;
                 this._tooltip.addClass("gn-tooltip");
@@ -244,35 +243,32 @@ namespace gn.ui.basic {
         addAfter(element, refElement){
             this._addInternal(element, "after", refElement);
         }
-        _addInternal(element, where = null, refElement = null){
-            if(gn.lang.Var.isNull(element)){
+        _addInternal( element, where = null, refElement = null ){
+            if( gn.lang.Var.isNull( element ) || gn.lang.Var.isNull( element.element) ) {
                 throw new Error('Element cannot be null');
             }
-            if(gn.lang.Var.isNull(element.element)){
-                throw new Error('Element element cannot be null');
-            }
             let index = this._element.childElementCount;
-            if(!gn.lang.Var.isNull(where)){
-                if(gn.lang.Var.isNull(refElement)){
+            if( !gn.lang.Var.isNull( where ) ) {
+                if( gn.lang.Var.isNull( refElement ) ) {
                     where = null;
                 } else {
-                    index = [...this._element.children].indexOf(refElement.element);
+                    index = [ ...this._element.children ].indexOf( refElement.element );
                 }
             }
+            this._children.splice( index, 0, element )
+            element.layoutParent = this;
             switch(where){
                 case "before":
-                    this._element.insertBefore(element.element, refElement.element);
+                    this._element.insertBefore( element.element, refElement.element );
                     break;
                 case "after":
-                    this._element.insertBefore(element.element, refElement.element.nextSibling);
+                    this._element.insertBefore( element.element, refElement.element.nextSibling );
                     index++
                     break;
                 default:
-                    this._element.appendChild(element.element);
+                    this._element.appendChild( element.element );
                     break;
             }
-            this._children.splice(index, 0, element)
-            element.layoutParent = this;
         }
         remove(element){
             if(gn.lang.Var.isNull(element)){
@@ -321,32 +317,29 @@ namespace gn.ui.basic {
         isVisible() {
             this.visibility == "visible";
         }
+        set focusable( value ) {
+            if( value === true || value >= 0 ) {
+                value = 0;
+            } else {
+                value = -1;
+            }
+            this._element.tabIndex = value;
+        }
+        get focusable() {
+            return this._element.tabIndex;
+        }
         _createElement(type){
             return document.createElement(type?type:"div");
         }
-        onClick(){
-            this.sendEvent("click");
-        }
-        onDblClick(){
-            this.sendEvent("dblclick");
-        }
         onMouseOver(){
-            this.sendEvent("mouseover");
             if(!gn.lang.Var.isNull(this._tooltip)){
                 this.showTooltip();
             }
         }
         onMouseOut(){
-            this.sendEvent("mouseout");
             if(!gn.lang.Var.isNull(this._tooltip)){
                 this.hideTooltip();
             }
-        }
-        onFocusIn(){
-            this.sendEvent("focusin")
-        }
-        onFocusOut(){
-            this.sendEvent("focusout")
         }
         dispose(){
             if(this._element){

@@ -243,6 +243,12 @@ input[type="color" i]::-webkit-color-swatch {
   transition: transform 0.5s linear;
 }
 
+.gn-split {
 
+}
+.gn-split-handle {
+  border-left: 1px solid black;
+  cursor: ew-resize;
+}
 
 
