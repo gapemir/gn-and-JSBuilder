@@ -135,13 +135,6 @@ namespace gn.ui.control {
             this._model = null;
             this._mode = mode || gn.ui.control.Breadcrumb.Type.history
 
-            if(this._mode == gn.ui.control.Breadcrumb.Type.layer) {
-                this._makeUp()
-            } else {
-                this._makeBack();
-                this._makeForward();
-            }
-
             this._history = [null];// history of groups
             this._historyIdx = 0;
 
@@ -160,6 +153,14 @@ namespace gn.ui.control {
             this.add(this._topLevelName);
             this._rootSeparator = this._generateSeparator(null);
             this.add(this._rootSeparator);
+
+            if(this._mode == gn.ui.control.Breadcrumb.Type.layer) {
+                this._makeUp()
+            } else {
+                this._makeBack();
+                this._makeForward();
+            }
+
         }
         triggered(idx){
             this.sendEvent("triggered", idx)

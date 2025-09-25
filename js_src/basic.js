@@ -250,7 +250,7 @@ namespace gn.ui.basic {
             this._addInternal( child, "after", refChild );
         }
         _addInternal( child, where = null, refChild = null ) {
-            child.layoutParent?.remove( element );
+            child.layoutParent?.remove( child );
             child.layoutParent = this;
             if( child.element ) {
                 switch( where ){

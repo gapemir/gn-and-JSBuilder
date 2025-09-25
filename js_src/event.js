@@ -24,10 +24,19 @@ namespace gn.event {
                 }
             }
         }
+        set( obj ) {
+            for( let prop in obj ) {
+                this[ prop ] = obj[ prop ];
+            }
+        }
     }
     Event.COPY_FROM_NATIVE = {
-        "MouseEvent" : [ "clientX", "clientY" ]
+        "MouseEvent" : [ "clientX", "clientY" ],
+        "WheelEvent" : [ "deltaX", "deltaY" ],
     }
+    //list of all events that environment or lower processed can emit
+    // ['focusin', 'focusout', 'focus', 'blur', 'drag', 'dragstart', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'drop', 
+    // 'click', 'mouseup', 'mouseout', 'mouseover', 'dblclick', 'contextmenu', 'tap', 'doubleTap', 'longTap']
     class Emitter {
         //TODO add bubble support, so that events can bubble up the object hierarchy
         //TODO add support for event propagation, so that events can be stopped from propagating
@@ -50,10 +59,12 @@ namespace gn.event {
             new gn.event.FocusManager();
             new gn.event.DragManager();
             new gn.event.ClickManager();
+            new gn.event.TouchManager( { tap : "click", doubleTap : "dblclick", longTap : "contextmenu" } );
+            //new gn.event.ScrollManager();
         }
         addManager( manager ) {
-            this._managersSupportedTypes = this._managersSupportedTypes.concat( manager.supportedEvents );
-            for( let type of manager.supportedEvents ) {
+            this._managersSupportedTypes = this._managersSupportedTypes.concat( manager.internalEvents );
+            for( let type of manager.internalEvents ) {
                 this._managers.set( type, manager );
             }
         }
@@ -295,7 +306,10 @@ namespace gn.event {
             this._initObserver();
             gn.event.Emitter.instance().addManager( this );
         }
-        get supportedEvents() {
+        get supportedEvents() { // events that are registered to document
+            return [];
+        }
+        get internalEvents() { // events that if obj adds event listener it is added to emmiter instead
             return [];
         }
         _initObserver(){
@@ -310,9 +324,10 @@ namespace gn.event {
             }
             this._onEventBind = null;
         }
-        _sendEvent( object, type, domEvent ) {
+        _sendEvent( object, type, domEvent, data ) {
             let event = new gn.event.Event( type, object );
             event.copyFromNative( domEvent );
+            event.set( data );  
             gn.event.Emitter.instance().dispatchEvent( event );
         }
         _onEvent(){
@@ -327,7 +342,11 @@ namespace gn.event {
         }
         get supportedEvents() {
             // "pointerover", "pointerenter", "pointermove", "pointercancel", "pointerout", "pointerleave", "gotpointercapture", "lostpointercapture"
-            return [ "pointerdown", "pointerup", "pointerout", "pointerover", "dblclick", "contextmenu" ];
+            //return [ "pointerdown", "pointerup", "pointerout", "pointerover", "dblclick", "contextmenu" ];
+            return [ "click", "mouseup", "mouseout", "mouseover", "dblclick", "contextmenu" ]
+        }
+        get internalEvents() {
+            return this.supportedEvents;
         }
         _onEvent( domEvent ) {
             let type = domEvent.type;
@@ -370,6 +389,9 @@ namespace gn.event {
         get supportedEvents() {
             return [ "drag", "dragstart", "dragend", "dragenter", "dragexit", "dragleave", "dragover", "drop" ];
         }
+        get internalEvents() {
+            return this.supportedEvents;
+        }
         _onEvent( domEvent ){
             var type = domEvent.type;
             if ( domEvent.target && gn.core.Object.getObjectById( domEvent.target.id ) && gn.event.Emitter.instance().hasListeners( gn.core.Object.getObjectById( domEvent.target.id ), type ) ) {
@@ -388,6 +410,9 @@ namespace gn.event {
         }
         get supportedEvents() {
             return [ "focusin", "focusout" ]; // focus and blur does not bubble so we cant get it in document
+        }
+        get internalEvents() {
+            return this.supportedEvents.concat( [ "focus", "blur" ] );
         }
         _onEvent( domEvent) {
             var type = domEvent.type;
@@ -416,6 +441,140 @@ namespace gn.event {
 
             if( type == "focusout" ) {
                 this._currentFocused = null;
+            }
+        }
+    }
+    // class ScrollManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //     }
+    //     get supportedEvents() {
+    //         return ["wheel"]//["scroll"]//[ "wheel", "scroll", "scrollend" ];
+    //     }
+    //     _onEvent( domEvent ){
+    //         var type = domEvent.type;
+    //         console.log( type )
+    //         if ( domEvent.target && domEvent.target.id ) {
+    //             let closest = domEvent.target.closest( ".gn-scroll" );
+    //             if( closest && gn.core.Object.getObjectById( closest.id ) && gn.event.Emitter.instance().hasListeners( gn.core.Object.getObjectById( closest.id ), "scroll" ) ) {
+    //                 console.log(type)
+    //                 this._sendEvent( gn.core.Object.getObjectById( closest.id ), "scroll", domEvent );
+    //             }
+    //         }
+    //     }
+    // }
+    class TouchManager extends gn.event.AbstractManager { // add swipe or scroll event
+        constructor( config ) {
+            super();
+            this._touchStartTime = null;
+            this._lastTapTime = 0;
+            this._startX = 0;
+            this._startY = 0;
+            this._isMoving = false;
+            this._lastTargetId = null;
+            
+            this._longTapThreshold = 700;
+            this._dblTapThreshold = 300;
+            this._moveThreshold = 10;
+
+            this._TapTimeout = null;
+            this._longTapTimeout = null;
+
+            this._config = config || {};
+        }
+        get supportedEvents() {
+            return [ "touchstart", "touchmove", "touchend" ];
+        }
+        get internalEvents() {
+            return [ "tap", "doubleTap", "longTap" ];
+        }
+        _onEvent( domEvent ) {
+            if( domEvent.type == "touchstart" ) {
+                this._handleTouchStart( domEvent );
+            }
+            else if( domEvent.type == "touchmove" ) {
+                this._handleTouchMove( domEvent );
+            }
+            else if( domEvent.type == "touchend" ) {
+                this._handleTouchEnd( domEvent );
+            }
+        }
+        _handleTouchStart( event ) {
+            if ( event.touches.length > 1) {
+                return; // todo gesture manager for double swipe, twist, ...
+            }
+            clearTimeout( this._TapTimeout );
+            clearTimeout( this._longTapTimeout );
+
+            this._startX = event.touches[0].clientX;
+            this._startY = event.touches[0].clientY;
+            this._touchStartTime = Date.now();
+            this._isMoving = false;
+            this._lastTargetId = event.target.id;
+
+            this._longTapTimeout = setTimeout( () => {
+                console.log("longTap");
+                clearTimeout( this._TapTimeout );
+                gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), "longTap", { x: this._startX, y: this._startY } );
+                if( this._config[ "longTap" ] ) {
+                    console.log( this._config[ "longTap" ] );
+                    gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), this._config[ "longTap" ], { x: this._startX, y: this._startY } );
+                }
+            }, this._longTapThreshold );
+        }
+        _handleTouchMove( event ) {
+            if ( event.touches.length > 1 ) {
+                return;
+            }
+            const dx = this._startX - event.touches[ 0 ].clientX;
+            const dy = this._startY - event.touches[ 0 ].clientY;
+
+            this._startX = event.touches[ 0 ].clientX;
+            this._startY = event.touches[ 0 ].clientY;
+            if ( Math.abs( dx ) > this._moveThreshold || Math.abs( dy ) > this._moveThreshold ) {
+                this._isMoving = true;
+                if ( this._longTapTimeout ) {
+                    clearTimeout(this._longTapTimeout);
+                    clearTimeout( this._TapTimeout );
+                }
+                // needs improvement before we emit scroll, when custom scrolling becomes a thing
+                // let closest = event.target.closest( ".gn-scroll" );
+                // if( closest ) {
+                //     console.log("scroll");
+                //     let event = new gn.event.Event( "scroll", gn.core.Object.getObjectById( closest.id ) );
+                //     event.deltaX = dx * 10;
+                //     event.deltaY = dy * 10;
+                //     gn.event.Emitter.instance().dispatchEvent( event );
+                // }
+            }
+        }
+        _handleTouchEnd( event ) {
+            if ( this._isMoving ) {
+                return;
+            }
+
+            clearTimeout( this._longTapTimeout );
+            clearTimeout( this._TapTimeout );
+
+            const endTime = Date.now();
+            if ( endTime - this._lastTapTime < this._dblTapThreshold ) {
+                console.log("doubleTap");
+                this._lastTapTime = 0;
+                gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), "doubleTap", { x: this._startX, y: this._startY } );
+                if( this._config[ "doubleTap" ] ) {
+                    console.log( this._config[ "doubleTap" ] );
+                    gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), this._config[ "doubleTap" ], { x: this._startX, y: this._startY } );
+                }
+            } else {
+                this._TapTimeout = setTimeout( () => {
+                    console.log("tap");
+                    gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), "tap", { x: this._startX, y: this._startY });
+                    if( this._config[ "tap" ] ) {
+                        console.log( this._config[ "tap" ] );
+                        gn.event.Emitter.instance().sendEvent( gn.core.Object.getObjectById( this._lastTargetId ), this._config[ "tap" ], { x: this._startX, y: this._startY } );
+                    }
+                }, this._dblTapThreshold );
+                this._lastTapTime = endTime;
             }
         }
     }

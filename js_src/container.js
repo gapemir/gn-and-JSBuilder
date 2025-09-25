@@ -159,19 +159,18 @@ namespace gn.ui.container {
     }
     class Split extends gn.ui.basic.Widget { // class for two containers and handle in the middle whitch is used to resize containers
         constructor( layout ) {
-            super( layout, "div", "gn-split" );
-            
+            super( layout || new gn.ui.layout.Row, "div", "gn-split" );
         }
-        _addInternal( element, where = null, refElement = null ) {
+        _addInternal( child, where, refChild ) {
             if( !this._children.length ){
-                super._addInternal( element, where, refElement );
+                super._addInternal( child, where, refChild );
                 return;
             }
-            if( gn.lang.Var.isNull( element ) || gn.lang.Var.isNull( element.element) ) {
+            if( gn.lang.Var.isNull( child ) || gn.lang.Var.isNull( child.element ) ) {
                 throw new Error('Element cannot be null');
             }
-            super._addInternal( new gn.ui.container.SplitHandle( this.layoutManager.direction, 1 ), where, refElement );
-            super._addInternal( element, where, refElement );
+            super._addInternal( new gn.ui.container.SplitHandle( this.layoutManager.direction, 3 ), where, refChild );
+            super._addInternal( child, where, refChild );
             for( let i = 1; i < this._children.length - 1; i+=2 ) {
                 this._children[ i ].before = this._children[ i-1 ];
                 this._children[ i ].after = this._children[ i+1 ];
@@ -263,6 +262,61 @@ namespace gn.ui.container {
             this._originalPosition = null;
             this._beforeSize = null;
             this._afterSize = null;
+        }
+    }
+    // this will be redone some day so we will have custom all, rn we still rely on browser overflow : auto whitch is ugly and cant be removed on focus out ....
+    class Scroll extends gn.ui.basic.Widget { 
+        constructor( content, classList ) {
+            super( null, null, classList );
+            this.addClass( "gn-scroll" )
+
+            this._body = content || new gn.ui.basic.Widget();
+            this._body.addClass( "body" );
+            super._addInternal( this._body );
+
+            // this.addEventListener( "scroll", this._onScroll, this );
+        }
+
+        get body() {
+            return this._body;
+        }
+
+        _addInternal( child, where, refChild ) {
+            this._body._addInternal( child, where, refChild );
+        }
+        remove( child ) {
+            this._body.remove( child, where, refChild );
+        }
+        // _onScroll( e ) {
+        //     const currentTop = parseFloat(this._body.element.style.top) || 0;
+        //     const newTop = currentTop - this._speed * e.deltaY;
+
+        //     const maxScroll = Math.min(0, this.element.clientHeight - this._body.element.scrollHeight);
+        //     const clampedTop = Math.max(maxScroll, Math.min(0, newTop));
+
+        //     this._body.element.style.top = clampedTop + "px";
+            
+        //     console.log("scroll", e.deltaY, "new top:", clampedTop);
+        // }
+
+        scrollTo( y, x, instant = false ) {
+            y = gn.lang.Var.isNull( y ) ? this._element.scrollTop : y;
+            x = gn.lang.Var.isNull( x ) ? this._element.scrollLeft : x;
+            this._element.scrollTo( {
+                top: y,
+                left: x,
+                behavior: ( instant ? "instant" : "auto" )
+            } );
+        }
+
+        scrollBy( y, x, instant = false ) {
+            y = gn.lang.Var.isNull( y ) ? 0 : y;
+            x = gn.lang.Var.isNull( x ) ? 0 : x;
+            this._element.scrollBy({
+                top: y,
+                left: x,
+                behavior: ( instant ? "instant" : "auto" )
+            } );
         }
     }
 }
