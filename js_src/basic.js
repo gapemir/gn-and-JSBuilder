@@ -118,6 +118,12 @@ namespace gn.ui.basic {
         setStyle(styleName, value = "", important = false){
             this._element.style[styleName] = ( value ? value : "" ) + (important ? " !important" : "");
         }
+        resetStyle( styleName ){
+            this.setStyle( styleName, null );
+        }
+        getStyle( styleName ){
+            return this._element.style[ styleName ];
+        }
         setStyles(map){
             for(let key in map){
                 if(map.hasOwnProperty(key)){
@@ -227,64 +233,47 @@ namespace gn.ui.basic {
             this.element.removeChild(nativeElement);
             this._children.splice(index, 1);
         }
-        add(element){
-            this._addInternal(element);
+        add( child ) {
+            this._addInternal( child );
         }
-        addFirst(element){
-            if(this._children.length){
-                this._addInternal(element, "before", this._children[0]);
-            }else{
-                this._addInternal(element);
+        addFirst( child ) {
+            if( this._children.length ){
+                this._addInternal( child, "before", this._children[ 0 ] );
+            } else {
+                this._addInternal( child );
             }
         }
-        addBefore(element, refElement){
-            this._addInternal(element, "before", refElement);
+        addBefore( child, refChild ) {
+            this._addInternal( child, "before", refChild );
         }
-        addAfter(element, refElement){
-            this._addInternal(element, "after", refElement);
+        addAfter( child, refChild ) {
+            this._addInternal( child, "after", refChild );
         }
-        _addInternal( element, where = null, refElement = null ){
-            if( gn.lang.Var.isNull( element ) || gn.lang.Var.isNull( element.element) ) {
-                throw new Error('Element cannot be null');
-            }
-            let index = this._element.childElementCount;
-            if( !gn.lang.Var.isNull( where ) ) {
-                if( gn.lang.Var.isNull( refElement ) ) {
-                    where = null;
-                } else {
-                    index = [ ...this._element.children ].indexOf( refElement.element );
+        _addInternal( child, where = null, refChild = null ) {
+            child.layoutParent?.remove( element );
+            child.layoutParent = this;
+            if( child.element ) {
+                switch( where ){
+                    case "before":
+                        gn.lang.Array.insertBefore( this._children, child, refChild );
+                        this._element.insertBefore( child.element, refChild.element );
+                        break;
+                    case "after":
+                        gn.lang.Array.insertAfter( this._children, child, refChild );
+                        this._element.insertBefore( child.element, refChild.element.nextSibling );
+                        index++
+                        break;
+                    default:
+                        this._children.push( child );
+                        this._element.appendChild( child.element );
+                        break;
                 }
             }
-            this._children.splice( index, 0, element )
-            element.layoutParent = this;
-            switch(where){
-                case "before":
-                    this._element.insertBefore( element.element, refElement.element );
-                    break;
-                case "after":
-                    this._element.insertBefore( element.element, refElement.element.nextSibling );
-                    index++
-                    break;
-                default:
-                    this._element.appendChild( element.element );
-                    break;
-            }
         }
-        remove(element){
-            if(gn.lang.Var.isNull(element)){
-                throw new Error('Element cannot be null');
-            }
-            if(gn.lang.Var.isNull(element.element)){
-                throw new Error('Element element cannot be null');
-            }
-            let index = [...this._element.children].indexOf(element.element)
-            if(index == -1){
-                return false;
-            }
-            this._element.removeChild(element.element);
-            this._children.splice(index, 1);
-            element.layoutParent = null;
-            return true;
+        remove( child ) {
+            child.layoutParent = null;
+            gn.lang.Array.remove( this._children, child );
+            this._element.removeChild( child.element );
         }
         get visibility() {
             return this._visibility;

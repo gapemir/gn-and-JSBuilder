@@ -32,11 +32,28 @@ namespace gn.lang {
         static clone( array ) {
             return gn.lang.Object.clone( array );
         }
+        static remove( array, element ) {
+            let index = array.indexOf( element );
+            if ( index > -1 ) {
+                array.splice( index, 1 );
+            }
+        }
+        static insertBefore( array, element, refElement ) {
+            let index = array.indexOf( refElement );
+            array.splice( index >= 0 ? index : array.length , 0, element );
+        }
+        static insertAfter( array, element, refElement ) {
+            let index = array.indexOf( refElement );
+            array.splice( index >= 0 ? index + 1 : array.length, 0, element );
+        }
     }
     class String {
         static isEmpty (string){
             return !!(gn.lang.Var.isNull(string) || string.length === 0);
         }
+    }
+    class Number { // TODO ?
+        
     }
     //class Object is for handling native Objects, it is not designed to handle class objects as inherited properties are skipped
     class Object{
