@@ -69,6 +69,7 @@ namespace gn.ui.container {
 }
 ```
 
-### Known issues
-builderJS doesnt recognize well switch statements so each case/default should have its own break
-last thing in a file must be "}" as any new lines mess with builderJS
+## Known issues
+- builderJS doesnt recognize well switch statements so each case/default should have its own break
+- last thing in a file must be "}" as any new lines mess with builderJS
+- webside should not be scolable as this breaks popups

@@ -1,22 +1,38 @@
 namespace gn.ui.popup {
     //TODO popups stay if user scrolls or size of webside is changed
     class PopupBase extends gn.ui.container.Column {
-        constructor(classList){
-            super("gn-popup-base");
-            this.addClasses(classList);
+        constructor( classList, blocker = true ) {
+            super( "gn-popup-base" );
+            this.addClasses( classList );
+            if( blocker ){
+                this._blocker = new gn.ui.popup.Blocker();
+            }
         }
         hide() {
-            document.body.removeChild(this.element);
+            document.body.removeChild( this.element );
+            if( this._blocker ) {
+               this._blocker.hide();
+            }
         }
-        exclude(){
-            document.body.removeChild(this.element);
+        exclude() {
+            document.body.removeChild( this.element );
+            if( this._blocker ) {
+                this._blocker.exclude();
+            }
         }
         show() {
-            document.body.appendChild(this.element);
+            if( this._blocker ) {
+                this._blocker.show();
+            }
+            document.body.appendChild( this.element );
+        }
+        dispose(){
+            this._blocker.dispose();
+            super.dispose();
         }
     }
     class Popup extends gn.ui.popup.PopupBase { //TODO bug it shows on top of page(if page is scrolled it wont show in the middle, we should also lock scroll when we have a popup)
-        constructor(buttons) {
+        constructor(buttons, blocker) {
             super("gn-popup");
             this._callback = null;
             this.header = new gn.ui.container.Row("gn-popup-header");
@@ -123,7 +139,7 @@ namespace gn.ui.popup {
             return this._items;
         }
         show() {
-            document.body.appendChild(this.element);
+            super.show();
             let rect = this._menuParent.rect;
             let trect = this.rect;
             this.setStyle("top", rect.bottom + "px");
@@ -197,4 +213,20 @@ namespace gn.ui.popup {
     CLOSE = 4;
     YES = 8;
     NO = 16;
+
+    class Blocker extends gn.ui.basic.Widget{
+        constructor() {
+            super();
+            this.addClass( "gn-blocker" )
+        }
+        hide() {
+            document.body.removeChild( this.element );
+        }
+        exclude() {
+            document.body.removeChild( this.element );
+        }
+        show() {
+            document.body.appendChild( this.element );
+        }
+    }
 }

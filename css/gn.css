@@ -22,7 +22,9 @@
 .gn-icon{
   cursor: pointer
 }
-.gn-label{}
+.gn-label{
+  display: inline-block;
+}
 .gn-button{
   border-radius: 5px;
   border: 0;
@@ -161,6 +163,7 @@ input[type="color" i]::-webkit-color-swatch {
   height: 350px;
   border: 1px solid #000;
   border-radius: 5px;
+  min-width: 0;
 }
 .gn-fakeTileItem{
   border:none;
@@ -224,6 +227,14 @@ input[type="color" i]::-webkit-color-swatch {
 }
 .gn-popup-menu div{
   border-bottom: 1px solid #000;
+}
+
+.gn-blocker{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
 }
 
 
