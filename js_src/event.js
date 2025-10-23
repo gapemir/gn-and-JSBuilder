@@ -270,10 +270,8 @@ namespace gn.event {
             this.enabled = true;
         }
         restart() {
-            if( this._enabled ){
-                this.enabled = false;
-                this.enabled = true;
-            }
+            this.enabled = false;
+            this.enabled = true;
         }
         stop() {
             this.enabled = false;
