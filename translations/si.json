@@ -1,0 +1,30 @@
+{
+    "locale" : "si",
+    "n-plurals" : 2,
+    "plural" : "return n % 100 === 1 ? 0 : n % 100 === 2 ? 1 : n % 100 === 3 || n % 100 === 4 ? 2 : 3;",
+    "tr":{
+        "BACK": "Nazaj",
+        "FORWARD": "Naprej",
+        "CANCEL": "Prekliči",
+        "CONFIRM": "Potrdi",
+        "DELETE": "Izbriši",
+        "EDIT": "Uredi",
+        "SAVE": "Shrani",
+        "SEARCH": "Išči",
+        "SUBMIT": "Pošlji",
+        "YES": "Da",
+        "NO": "Ne",
+        "ERROR": "Napaka",
+        "LOADING": "Nalaganje",
+        "SUCCESS": "Uspešno",
+        "LOGIN": "Prijava",
+        "LOGOUT": "Odjava",
+
+        "PODFOLIO": "Podfolio",
+        "YOUR_PERSONAL_PASTEBIN" : "Tvoja osebnia prilepna stena",
+
+        "DOWNLOAD" : "Prenesi",
+
+        "TEST_%1": ["EN_%1_TEST", "DVA_%1_TESTA", "TRIJE_%1_TESTI", "PET_%1_TESTOV"]
+    }
+}

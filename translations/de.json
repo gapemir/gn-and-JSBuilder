@@ -1,26 +1,30 @@
 {
-    "BACK": "Zurück",
-    "FORWARD": "Vorwärts",
-    "CANCEL": "Abbrechen",
-    "CONFIRM": "Bestätigen",
-    "DELETE": "Löschen",
-    "EDIT": "Bearbeiten",
-    "SAVE": "Speichern",
-    "SEARCH": "Suche",
-    "SUBMIT": "Absenden",
-    "YES": "Ja",
-    "NO": "Nein",
-    "ERROR": "Fehler",
-    "LOADING": "Laden",
-    "SUCCESS": "Erfolg",
-    "LOGIN": "Anmelden",
-    "LOGOUT": "Logout",
+    "locale" : "de",
+    "n-plurals" : 2,
+    "plural" : "return n == 1 ? 0 : 1;",
+    "tr" :{
+        "BACK": "Zurück",
+        "FORWARD": "Vorwärts",
+        "CANCEL": "Abbrechen",
+        "CONFIRM": "Bestätigen",
+        "DELETE": "Löschen",
+        "EDIT": "Bearbeiten",
+        "SAVE": "Speichern",
+        "SEARCH": "Suche",
+        "SUBMIT": "Absenden",
+        "YES": "Ja",
+        "NO": "Nein",
+        "ERROR": "Fehler",
+        "LOADING": "Laden",
+        "SUCCESS": "Erfolg",
+        "LOGIN": "Anmelden",
+        "LOGOUT": "Logout",
 
-    "PODFOLIO": "Podfolio",
-    "YOUR_PERSONAL_PASTEBIN" : "Dein persönlicher Pastebin",
+        "PODFOLIO": "Podfolio",
+        "YOUR_PERSONAL_PASTEBIN" : "Dein persönlicher Pastebin",
 
+        "DOWNLOAD" : "Herunterladen",
 
-
-
-    "TMP": "TMP"
+        "TEST_%1": ["EIN_%1_TEST", "ZWEI_%1_TESTEN"]
+    }
 }

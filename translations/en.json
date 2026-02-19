@@ -1,7 +1,7 @@
 {
     "locale" : "en",
-    "n-plurals" : 4,
-    "plural" : "return n % 100 === 1 ? 0 : n % 100 === 2 ? 1 : n % 100 === 3 || n % 100 === 4 ? 2 : 3;",
+    "n-plurals" : 2,
+    "plural" : "return n == 1 ? 0 : 1;",
     "tr":{
         "BACK": "Back",
         "FORWARD": "Forward",
@@ -25,9 +25,6 @@
 
         "DOWNLOAD" : "Download",
 
-
-        "TMP": "TMP",
-
-        "TEST_%1": ["EN_%1_TEST", "DVA_%1_TESTA", "TRIJE_%1_TESTI", "PET_%1_TESTOV"]
+        "TEST_%1": ["ONE_%1_TEST", "TWO_%1_TESTS"]
     }
 }
