@@ -11,8 +11,8 @@ namespace gn.ui.input {
                     break;
             }
             this.addClasses(classList);
-            this.element.addEventListener("input", this.onInput.bind(this));
-            this.element.addEventListener("change", this.onChange.bind(this));
+            // this.element.addEventListener("input", this.onInput.bind(this));
+            // this.element.addEventListener("change", this.onChange.bind(this));
             this.addEventListener( "focus", this._onFocus, this );
             this.focusable = 0;
         }

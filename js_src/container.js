@@ -228,8 +228,8 @@ namespace gn.ui.container {
         }
         _onDrag( e ){
             console.log( e.clientX, e.clientY )
-            if( e.clientX == 0 ){
-                console.log("wtf");
+            if( e.clientX == 0 && e.clientY == 0 ) {
+                return;
             }
             if ( this._moving ) {
                 if ( this._direction == gn.ui.layout.direction.Column ) {
@@ -274,7 +274,12 @@ namespace gn.ui.container {
             this._body.addClass( "body" );
             super._addInternal( this._body );
 
-            // this.addEventListener( "scroll", this._onScroll, this );
+            this._body.addEventListener( "scroll", this._onScroll, this );
+
+            this._speed = 0.1;
+
+            super._addInternal(new gn.ui.container.ScrollBar( this, gn.ui.layout.direction.Row ));
+            super._addInternal(new gn.ui.container.ScrollBar( this, gn.ui.layout.direction.Column ));
         }
 
         get body() {
@@ -284,39 +289,172 @@ namespace gn.ui.container {
         _addInternal( child, where, refChild ) {
             this._body._addInternal( child, where, refChild );
         }
+
         remove( child ) {
-            this._body.remove( child, where, refChild );
+            this._body.remove( child );
         }
-        // _onScroll( e ) {
-        //     const currentTop = parseFloat(this._body.element.style.top) || 0;
-        //     const newTop = currentTop - this._speed * e.deltaY;
 
-        //     const maxScroll = Math.min(0, this.element.clientHeight - this._body.element.scrollHeight);
-        //     const clampedTop = Math.max(maxScroll, Math.min(0, newTop));
+        _getClampedOffsets(y, x) {
+            const maxScrollTop = Math.max(0, this._body.element.scrollHeight - this.element.clientHeight);
+            const maxScrollLeft = Math.max(0, this._body.element.scrollWidth - this.element.clientWidth);
 
-        //     this._body.element.style.top = clampedTop + "px";
+            return {
+                y: Math.max(0, Math.min(maxScrollTop, y)),
+                x: Math.max(0, Math.min(maxScrollLeft, x))
+            };
+        }
+
+        scrollTo(y, x) {
+            const currentY = -parseFloat(this._body.element.style.top || 0);
+            const currentX = -parseFloat(this._body.element.style.left || 0);
             
-        //     console.log("scroll", e.deltaY, "new top:", clampedTop);
-        // }
+            y = (y === null || typeof y === 'undefined') ? currentY : y;
+            x = (x === null || typeof x === 'undefined') ? currentX : x;
 
-        scrollTo( y, x, instant = false ) {
-            y = gn.lang.Var.isNull( y ) ? this._element.scrollTop : y;
-            x = gn.lang.Var.isNull( x ) ? this._element.scrollLeft : x;
-            this._element.scrollTo( {
-                top: y,
-                left: x,
-                behavior: ( instant ? "instant" : "auto" )
-            } );
+            const clamped = this._getClampedOffsets(y, x);
+
+            this._body.element.style.top = (-clamped.y) + "px";
+            this._body.element.style.left = (-clamped.x) + "px";
+
+            this.sendEvent("scrolled");
         }
 
-        scrollBy( y, x, instant = false ) {
-            y = gn.lang.Var.isNull( y ) ? 0 : y;
-            x = gn.lang.Var.isNull( x ) ? 0 : x;
-            this._element.scrollBy({
-                top: y,
-                left: x,
-                behavior: ( instant ? "instant" : "auto" )
-            } );
+        scrollBy(y, x) {
+            const currentY = -parseFloat(this._body.element.style.top || 0);
+            const currentX = -parseFloat(this._body.element.style.left || 0);
+
+            const targetY = currentY + (y || 0);
+            const targetX = currentX + (x || 0);
+
+            this.scrollTo(targetY, targetX);
+        }
+
+        _onScroll(e) {  
+            this.scrollBy(this._speed * e.deltaY, this._speed * e.deltaX);
+        }
+    }
+    class ScrollBar extends gn.ui.basic.Widget {
+        constructor( scroll, orientation, classList ) {
+            super( null, "div", classList );
+            this.addClass( "gn-scrollbar" );
+            this._orientation = orientation;
+            this._scroll = scroll;
+            this._wheelScrollSpeed = 0.1;
+
+            this._thumb = new gn.ui.basic.Widget( null, "div", "thumb" );
+
+            if( gn.ui.layout.direction.Row == orientation ) {
+                this.addClass( "horizontal" );
+                this._thumb.setStyle("width", "100px");
+                this._thumb.setStyle("height", "100%");
+            }
+            else {
+                this.addClass( "vertical" );
+                this._thumb.setStyle("height", "100px");
+                this._thumb.setStyle("width", "100%");
+            }
+
+            this.addEventListener( "scroll", this._onTumbScrolled, this );
+            this._thumb.addEventListener( "dragstart", this._onDragStart, this );
+            this._thumb.addEventListener( "drag", this._onDrag, this );
+            this._thumb.addEventListener( "dragend", this._onDragStop, this );
+            this.add(this._thumb);
+
+            this._scroll.addEventListener( "scrolled", this._updatePositionOfThumb, this );
+
+            gn.event.Timer.singleShot( this, () => {
+                this._updateLengthOfThumb();
+            });
+        }
+
+        _updateLengthOfThumb() {
+            if( gn.ui.layout.direction.Row == this._orientation ) {
+                let width = this.width;
+                let contentWidth = this._scroll.body.width;
+                let thumbWidth = Math.max( 20, width * width / contentWidth );
+                this._thumb.setStyle("width", thumbWidth + "px");
+                if(thumbWidth >= width) {
+                    this.exclude();
+                }
+                else {
+                    this.show();
+                }
+            }
+            else {
+                let height = this.height;
+                let contentHeight = this._scroll.body.height;
+                let thumbHeight = Math.max( 20, height * height / contentHeight );
+                this._thumb.setStyle("height", thumbHeight + "px");
+                if(thumbHeight >= height) {
+                    this.exclude();
+                }
+                else {
+                    this.show();
+                }
+            }
+        }
+
+        _updatePositionOfThumb() {
+            if( gn.ui.layout.direction.Row == this._orientation ) {
+                let scrollLeft = -parseFloat(this._scroll.body.element.style.left || 0);
+                let contentWidth = this._scroll.body.width;
+                let thumbLeft = scrollLeft * this.width / contentWidth;
+                this._thumb.setStyle("left", thumbLeft + "px");
+            }
+            else {
+                let scrollTop = -parseFloat(this._scroll.body.element.style.top || 0);
+                let contentHeight = this._scroll.body.height;
+                let thumbTop = scrollTop * this.height / contentHeight;
+                this._thumb.setStyle("top", thumbTop + "px");
+            }
+        }
+
+        _onDrag( e ) {
+            console.log( e.clientX, e.clientY )
+            if( e.clientX == 0 && e.clientY == 0 ) {
+                return;
+            }
+            if ( this._moving ) {
+                if ( this._orientation == gn.ui.layout.direction.Column ) {
+                    var delta = e.clientY - this._originalPosition.y;
+                    console.log( "delta", delta );
+                    // this._thumb.setStyle( "top", ( parseFloat( this._thumb.element.style.top || 0 ) + delta ) + "px" );
+                    this._scroll.scrollBy( delta * this._scroll.body.height / this.height, 0 );
+                }
+                else {
+                    var delta = e.clientX - this._originalPosition.x;
+                    console.log( "delta", delta );
+                    //this._thumb.setStyle( "left", ( parseFloat( this._thumb.element.style.left || 0 ) + delta ) + "px" );
+
+                    this._scroll.scrollBy( 0, delta * this._scroll.body.width / this.width );
+                }
+                this._originalPosition = { x : e.clientX, y : e.clientY };
+                console.log("orig", this._originalPosition )
+                return false;
+            }
+        }
+        _onDragStart( e ){
+            this._moving = true;
+            this._originalPosition = { x : e.clientX, y : e.clientY };
+        }
+        _onDragStop( e ) {
+            this._moving = false;
+            this._originalPosition = null;
+        }
+        _onTumbScrolled( e ) {
+            console.log(e)
+            if ( this._orientation == gn.ui.layout.direction.Column ) {
+                var delta = e.deltaY * this._wheelScrollSpeed;
+                console.log( "delta", delta );
+                this._scroll.scrollBy( delta * this._scroll.body.height / this.height, 0 );
+            }
+            else {
+                var delta = e.deltaX * this._wheelScrollSpeed;
+                console.log( "delta", delta );
+                //this._thumb.setStyle( "left", ( parseFloat( this._thumb.element.style.left || 0 ) + delta ) + "px" );
+
+                this._scroll.scrollBy( 0, delta * this._scroll.body.width / this.width );
+            }
         }
     }
 }
