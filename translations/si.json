@@ -19,11 +19,9 @@
         "SUCCESS": "Uspešno",
         "LOGIN": "Prijava",
         "LOGOUT": "Odjava",
-
-        "PODFOLIO": "Podfolio",
-        "YOUR_PERSONAL_PASTEBIN" : "Tvoja osebnia prilepna stena",
-
         "DOWNLOAD" : "Prenesi",
+        "UPLOAD" : "Naloži",
+        "SELECT_FILE" : "Izberite datoteko",
 
         "TEST_%1": ["EN_%1_TEST", "DVA_%1_TESTA", "TRIJE_%1_TESTI", "PET_%1_TESTOV"]
     }

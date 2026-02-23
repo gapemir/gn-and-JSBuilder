@@ -3,13 +3,25 @@ namespace gn.ui.control {
         constructor(text, classList, callback, context) {
             super(null, "button", classList );
             this.addClass("gn-button");
+            this._text = "";
             this.text = text;
             if(!gn.lang.Var.isNull(callback) && callback instanceof Function) {
                 this.addEventListener("click", callback, context || this );
             }
         }
+        _destructor() {
+            if(this._text instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+            }
+            super._destructor();
+        }
         set text(value) {
-            this._element.innerText = value;
+            this._text = value;
+            this._element.innerText = this._text;
+
+            if(this._text instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+            }
         }
         get text() {
             return this._element.innerText;
@@ -26,6 +38,11 @@ namespace gn.ui.control {
         }
         get type(){
             return this._element.type;
+        }
+        _onLocaleChanged(){
+            if(this._text instanceof gn.locale.LocaleString) {
+                this.text = this._text.translate();
+            }
         }
     }
     class Switch extends gn.ui.basic.Widget {

@@ -125,8 +125,8 @@ namespace gn.ui.basic {
             return this._element.style[ styleName ];
         }
         setStyles(map){
-            for(let key in map){
-                if(map.hasOwnProperty(key)){
+            for(let key in map) {
+                if(map.hasOwnProperty(key)) {
                     this.setStyle(key, map[key]);
                 }
             }
@@ -134,19 +134,19 @@ namespace gn.ui.basic {
         set tooltip(value){
             this.addEventListener("mouseover", this.onMouseOver, this );
             this.addEventListener("mouseout", this.onMouseOut, this );
-            if(value instanceof gn.ui.basic.Widget){
+            if(value instanceof gn.ui.basic.Widget) {
                 this._tooltip = value;
                 this._tooltip.addClass("gn-tooltip");
                 this.addClass("gn-tooltip-parent");
             }
-            else if(!gn.lang.Var.isNull(value)){
-                this._tooltip = new gn.ui.basic.Widget(null, "div");
+            else if(!gn.lang.Var.isNull(value)) {
+                this._tooltip = new gn.ui.basic.Widget();
                 this._tooltip.addClass("gn-tooltip");
                 this.addClass("gn-tooltip-parent");
                 this._tooltipContent = value;
                 this._tooltip.label = new gn.ui.basic.Label(value);
                 this._tooltip.add(this._tooltip.label)
-            }else{
+            } else {
                 if(!gn.lang.Var.isNull(this._tooltip)){
                     this._tooltip.dispose();
                     delete this._tooltip;
@@ -154,13 +154,13 @@ namespace gn.ui.basic {
             }
         }
         set tooltipContent(value){ // only accepts null(to erase) or string (also localizedString)
-            if( gn.lang.Var.isNull(value) ){
+            if( gn.lang.Var.isNull(value) ) {
                 this.tooltip = null;
             }
-            else if( gn.lang.Var.isString(value) ){
+            else if( gn.lang.Var.isString(value) ) {
                 this.tooltip = value;
             }
-            else{
+            else {
                 throw new TypeError("gn.ui.basic.Widget.tooltipContent must be a string, localizedString or null");
             }
         }
@@ -337,21 +337,26 @@ namespace gn.ui.basic {
             super.dispose();
         }
     }
-    class Label extends gn.ui.basic.Widget{
+    class Label extends gn.ui.basic.Widget {
         constructor(text, classList){
             super(null, "label", "gn-label");
             this._text = "";
             this.text = text;
             this.addClasses(classList);
-
-            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
         }
-        destructor(){
-            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+        _destructor() {
+            if(this._text instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+            }
+            super._destructor();
         }
         set text(value){
             this._text = value;
             this._element.innerText = this._text;
+
+            if(this._text instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+            }
         }
         get text(){
             return this._text;

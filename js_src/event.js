@@ -68,9 +68,6 @@ namespace gn.event {
         'FocusEvent': ['relatedTarget'],
         'DragEvent': ['dataTransfer']
     };
-    //list of all events that environment or lower processed can emit
-    // ['focusin', 'focusout', 'focus', 'blur', 'drag', 'dragstart', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'drop', 
-    // 'click', 'mouseup', 'mouseout', 'mouseover', 'dblclick', 'contextmenu', 'tap', 'doubleTap', 'longTap']
     class Emitter {
         constructor() {
             this._listeners = new Map(); // Map<objectId, Map<eventType, Set<listenerEntry>>>
@@ -125,8 +122,14 @@ namespace gn.event {
             }
 
             const eventListeners = objectEvents.get(type);
-            const entry = { listener, context, id: this._getNextId() };
 
+            for (const existing of eventListeners) {
+                if (existing.listener === listener && existing.context === context) {
+                    return existing.id;
+                }
+            }
+
+            const entry = { listener, context, id: this._getNextId() };
             eventListeners.add(entry);
 
             if (this._managersSupportedTypes.has(type)) {
@@ -527,7 +530,7 @@ namespace gn.event {
         }
 
         get supportedEvents() {
-            return ['click', 'mousedown', 'mouseup', /*'mouseover', 'mouseout',*/ 'dblclick', 'contextmenu'];
+            return ['click', 'mousedown', 'mouseup', 'mouseover', 'mouseout', 'dblclick', 'contextmenu'];
         }
 
         get internalEvents() {

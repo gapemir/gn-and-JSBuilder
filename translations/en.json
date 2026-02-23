@@ -19,11 +19,9 @@
         "SUCCESS": "Success",
         "LOGIN": "Login",
         "LOGOUT": "Logout",
-
-        "PODFOLIO": "Podfolio",
-        "YOUR_PERSONAL_PASTEBIN" : "Your personal pastebin",
-
         "DOWNLOAD" : "Download",
+        "UPLOAD" : "Upload",
+        "SELECT_FILE" : "Select File",
 
         "TEST_%1": ["ONE_%1_TEST", "TWO_%1_TESTS"]
     }

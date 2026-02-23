@@ -68,7 +68,7 @@ namespace gn.app {
             return await promise.arrayBuffer();
         }
         getLocalePath() {
-            return "./gn/translations/";
+            return ["./gn/translations/"];
         }
     }
     App._instance = null;

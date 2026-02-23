@@ -10,11 +10,17 @@ namespace gn.ui.input {
                     this._element.type = type;
                     break;
             }
+            this._plcText = "";
+
             this.addClasses(classList);
-            // this.element.addEventListener("input", this.onInput.bind(this));
-            // this.element.addEventListener("change", this.onChange.bind(this));
             this.addEventListener( "focus", this._onFocus, this );
-            this.focusable = 0;
+            // this.focusable = 0;
+        }
+        _destructor() {
+            if(this._plcText instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+            }
+            super._destructor();
         }
         get type() {
             return this._element.type;
@@ -36,6 +42,13 @@ namespace gn.ui.input {
                 throw new TypeError("Placeholder for this input type is not supported by standard html")
             }
             this._element.placeholder = value || "";
+
+            this._plcText = value;
+            this._element.innerText = this._plcText;
+
+            if(this._plcText instanceof gn.locale.LocaleString) {
+                gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+            }
         }
         get placeholder() {
             return this._element.placeholder;
@@ -105,17 +118,16 @@ namespace gn.ui.input {
         get pattern() {
             return this._element.pattern;
         }
-        click(){
+        click() {
             this._element.click();
-        }
-        onInput() {
-            this.sendEvent("input", this.value);
-        }
-        onChange() {
-            this.sendEvent("change", this.value);
         }
         _onFocus() {
             //
+        }
+        _onLocaleChanged() {
+            if(this._plcText instanceof gn.locale.LocaleString) {
+                this.placeholder = this._plcText.translate();
+            }
         }
     }
 
@@ -306,7 +318,7 @@ namespace gn.ui.input {
             this._input.element.multiple = false;
             this._input.element.accept = "*";
             this.add(this._input);
-            this._button = new gn.ui.control.Button("Select File");
+            this._button = new gn.ui.control.Button(this.tr("SELECT_FILE"));
             this._button.addEventListener( "click", function(){
                 this._input.click();
             }, this )

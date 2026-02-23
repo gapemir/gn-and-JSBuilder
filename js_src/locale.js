@@ -1,35 +1,12 @@
 namespace gn.locale{
-    /**
-     * we swapped to normal object as Stirings are imutable in js, in order to introduce string methord back to this string i changed this into proxy, we will se if its ok, else we might go back to imutable strings
-     * count is overriden by args parameter, only if there is only one
-     */
-    //TODO swap back to extending strings as they have useful methods eg length, localeCompare
     class LocaleString { // TODO swap for jsonc files so we can have comments, but we need to make a minify function that will remove comments on frontend
         constructor(messageId, text, count) {
-            //super(text);
             this._messageId = messageId;
             this._text = text;
             this._count = count; // for pluratization
             this._args = [];
+            gn.locale.LocaleManager.instance().translate(this);
 
-            return new Proxy(this,{
-                get: (target, prop) => {
-                    // If the property is on our class (like "translate"), return it
-                    if (Reflect.has(target, prop)) {
-                    return target[prop];
-                    }
-
-                    // Otherwise, assume it's a string method and call it on the internal string
-                    if (typeof target._text[prop] === 'function') {
-                    return (...args) => {
-                        return target._text[prop](...args);
-                    };
-                    }
-
-                    // For properties like "length", return the value directly
-                    return target._text[prop];
-                },
-            });
         }
         get messageId(){
             return this._messageId;
@@ -48,6 +25,8 @@ namespace gn.locale{
         }
         translate() {
             return gn.locale.LocaleManager.instance().translate(this);
+
+            //return this;
         }
         args( ...argz ) {
             this._args = argz;
@@ -95,18 +74,25 @@ namespace gn.locale{
             return this._locale;
         }
         async _loadLocale(locale){ //i have decided we wont use .po files, we will rather have a json file with key:translation pairs
-            try{
-                let loc = await gn.app.App.instance().phpRequestJ(gn.app.App.instance().getLocalePath() + locale + ".json");
-                if(!gn.lang.Var.isNull(loc)){
-                    this._locales[locale] = loc;
-                    this._locales[locale].pluralCB = new Function("n", this._locales['en'].plural)
+            let localeFiles = gn.app.App.instance().getLocalePath();
+            for(let file of localeFiles){
+                try{
+                    let loc = await gn.app.App.instance().phpRequestJ(file + locale + ".json");
+                    if(!gn.lang.Var.isNull(loc)) {
+                        if(!this._locales[locale]) {
+                            this._locales[locale] = loc;
+                            this._locales[locale].pluralCB = new Function("n", loc.plural)
+                        } else {
+                            gn.lang.Object.merge(this._locales[locale].tr, loc.tr);
+                        }
+                    }
+                    else {
+                        throw new Error("Locale file is empty or not found: " + file + locale + ".json");
+                    }
+                } catch(e) {
+                    console.error("Failed to load locale: " + locale + " file: " + file + locale + ".json", e);
+                    return;
                 }
-                else{
-                    throw new Error("Locale file is empty or not found: " + locale);
-                }
-            }catch(e){
-                console.error("Failed to load locale: " + locale, e);
-                return;
             }
             this._locale = locale;
             this._changeLocale();
@@ -129,6 +115,9 @@ namespace gn.locale{
             }
         }
         translate(ls){
+            if(this._locale == "") {
+                return ls;
+            }
             ls.text = this._getLocalisedText(ls.messageId, ls.count);
             return ls.args(ls.argz);
         }
