@@ -276,7 +276,7 @@ namespace gn.ui.container {
 
             this._body.addEventListener( "scroll", this._onScroll, this );
 
-            this._speed = 0.1;
+            this._speed = 0.2;
 
             super._addInternal(new gn.ui.container.ScrollBar( this, gn.ui.layout.direction.Row ));
             super._addInternal(new gn.ui.container.ScrollBar( this, gn.ui.layout.direction.Column ));
@@ -330,7 +330,12 @@ namespace gn.ui.container {
         }
 
         _onScroll(e) {  
-            this.scrollBy(this._speed * e.deltaY, this._speed * e.deltaX);
+            // this.scrollBy(this._speed * e.deltaY, this._speed * e.deltaX);
+            const power = 1.2;
+            const dynamicY = Math.pow(Math.abs(e.deltaY), power) * Math.sign(e.deltaY);
+            const dynamicX = Math.pow(Math.abs(e.deltaX), power) * Math.sign(e.deltaX);
+
+            this.scrollBy(this._speed * dynamicY, this._speed * dynamicX); 
         }
     }
     class ScrollBar extends gn.ui.basic.Widget {

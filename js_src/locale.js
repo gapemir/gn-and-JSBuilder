@@ -25,8 +25,6 @@ namespace gn.locale{
         }
         translate() {
             return gn.locale.LocaleManager.instance().translate(this);
-
-            //return this;
         }
         args( ...argz ) {
             this._args = argz;
