@@ -45,7 +45,7 @@ namespace gn.app {
         get header() {
             return this._header;
         }
-        async phpRequest(url, data) {
+        async request(url, data) {
             let promise = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -55,16 +55,16 @@ namespace gn.app {
             }
             return promise;
         }
-        async phpRequestJ(url, data) {
-            let promise = await this.phpRequest(url, data);
+        async requestJ(url, data) {
+            let promise = await this.request(url, data);
             return await promise.json();
         }
-        async phpRequestT(url, data) {
-            let promise = await this.phpRequest(url, data);
+        async requestT(url, data) {
+            let promise = await this.request(url, data);
             return await promise.text();
         }
-        async phpRequestA(url, data) {
-            let promise = await this.phpRequest(url, data);
+        async requestA(url, data) {
+            let promise = await this.request(url, data);
             return await promise.arrayBuffer();
         }
         getLocalePath() {

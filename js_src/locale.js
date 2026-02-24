@@ -75,7 +75,7 @@ namespace gn.locale{
             let localeFiles = gn.app.App.instance().getLocalePath();
             for(let file of localeFiles){
                 try{
-                    let loc = await gn.app.App.instance().phpRequestJ(file + locale + ".json");
+                    let loc = await gn.app.App.instance().requestJ(file + locale + ".json");
                     if(!gn.lang.Var.isNull(loc)) {
                         if(!this._locales[locale]) {
                             this._locales[locale] = loc;
