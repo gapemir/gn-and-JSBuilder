@@ -74,7 +74,6 @@ namespace gn.event {
             this._forwards = new Map(); // Map<forwardKey, listenerId>
             this._idCache = [];
             this._nextId = 0;
-            this._managers = new Map();
             this._managersSupportedTypes = new Set();
             this._bubblingStack = [];
         }
@@ -86,21 +85,16 @@ namespace gn.event {
             return gn.event.Emitter._instance;
         }
         registerHandlers() {
-            new gn.event.FocusManager();
-            new gn.event.DragManager();
-            new gn.event.ClickManager();
-            new gn.event.TouchManager({
-                tap: 'click',
-                doubleTap: 'dblclick',
-                longTap: 'contextmenu'
-            });
-            new gn.event.InputManager();
-            new gn.event.WheelManager();
+            new gn.event.manager.PointerManager();
+            new gn.event.manager.InputManager();
+            new gn.event.manager.FocusManager();
+            new gn.event.manager.DragManager();
+            new gn.event.manager.WheelManager();
+            new gn.event.manager.MobileScrollManager();
         }
         addManager(manager) {
             for( const type of manager.internalEvents ) {
                 this._managersSupportedTypes.add( type );
-                this._managers.set( type, manager );
             }
         }
         addEventListener( object, type, listener, context ) {
@@ -367,13 +361,13 @@ namespace gn.event {
     }
 
     class Timer extends gn.core.Object {
-        constructor(interval, callback = null) {
+        constructor(interval) {
             super();
             this._enabled = false;
             this._interval = interval || 1000;
             this._singleShot = false;
             this._intervalId = null;
-            this._boundTimeout = callback ? callback.bind(this) : this._timeout.bind(this);
+            this._boundTimeout = this._timeout.bind(this);
         }
 
         _destructor() {
@@ -460,559 +454,555 @@ namespace gn.event {
                 }
             }, timeout);
         }
-        static interval(obj, func, interval) {
-            if (typeof func !== 'function') {
-                throw new TypeError('Must be a function');
-            }
-
-            return setInterval(() => {
-                if (obj && !obj._disposed) {
-                    func.call(obj);
-                }
-            }, interval);
-        }
     }
     Emitter._instance = null;
 
-    class AbstractManager {
-        constructor() {
-            this._onEventBind = this._onEvent.bind(this);
-            this._initObserver();
-            gn.event.Emitter.instance().addManager(this);
-        }
-        get supportedEvents() { 
-            throw new Error('Abstract property supportedEvents must be implemented');
-        }
-        get internalEvents() {  
-            throw new Error('Abstract property internalEvents must be implemented');
-        }
-        _initObserver() {
-            for( const type of this.supportedEvents ) {
-                document.addEventListener(type, this._onEventBind, true);
-            }
-        }
-        _exitObserver() {
-            for( const type of this.supportedEvents ) {
-                document.removeEventListener(type, this._onEventBind);
-            }
-            this._onEventBind = null;
-        }
-        _sendEvent(object, type, domEvent, data = null, bubbles = true) {
-            if (!object) {
-                return;
-            }
-            // still need this to be comented as we dont have all managers yet but we should not use events on native elements
-            // domEvent.stopPropagation();
-            // domEvent.preventDefault();
+    // class AbstractManager {
+    //     constructor() {
+    //         this._onEventBind = this._onEvent.bind(this);
+    //         this._initObserver();
+    //         gn.event.Emitter.instance().addManager(this);
+    //     }
+    //     get useCapture() {
+    //         return true;
+    //     }
+    //     get supportedEvents() { 
+    //         throw new Error('Abstract property supportedEvents must be implemented');
+    //     }
+    //     get internalEvents() {  
+    //         throw new Error('Abstract property internalEvents must be implemented');
+    //     }
+    //     _initObserver() {
+    //         for( const type of this.supportedEvents ) {
+    //             document.addEventListener(type, this._onEventBind, this.useCapture);
+    //         }
+    //     }
+    //     _exitObserver() {
+    //         for( const type of this.supportedEvents ) {
+    //             document.removeEventListener(type, this._onEventBind);
+    //         }
+    //         this._onEventBind = null;
+    //     }
+    //     _sendEvent(object, type, domEvent, data = null, bubbles = true) {
+    //         if (!object) {
+    //             return;
+    //         }
+    //         // still need this to be comented as we dont have all managers yet but we should not use events on native elements
+    //         // domEvent.stopPropagation();
+    //         // domEvent.preventDefault();
 
-            const event = new gn.event.Event(type, object, data, bubbles);
-            event.copyFromNative(domEvent);
+    //         const event = new gn.event.Event(type, object, data, bubbles);
+    //         event.copyFromNative(domEvent);
 
-            // event.setStopCB = function(){
-            //     domEvent.stopPropagation();
-            //     domEvent.preventDefault();
-            // }
+    //         // event.setStopCB = function(){
+    //         //     domEvent.stopPropagation();
+    //         //     domEvent.preventDefault();
+    //         // }
 
-            gn.event.Emitter.instance().dispatchEvent(event);
-        }
-        _onEvent(domEvent) {
-            throw new Error('Abstract method _onEvent must be implemented');
-        }
-        destroy() {
-            this._exitObserver();
-        }
-    }
-    class ClickManager extends gn.event.AbstractManager {
-        constructor() {
-            super();
-            this._lastPointerDown = null;
-            this._clickPrevented = false;
-        }
+    //         gn.event.Emitter.instance().dispatchEvent(event);
+    //     }
+    //     _onEvent(domEvent) {
+    //         throw new Error('Abstract method _onEvent must be implemented');
+    //     }
+    //     destroy() {
+    //         this._exitObserver();
+    //     }
+    // }
+    // class ClickManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //         this._lastPointerDown = null;
+    //         this._clickPrevented = false;
+    //     }
 
-        get supportedEvents() {
-            return ['click', 'mousedown', 'mouseup', 'mouseover', 'mouseout', 'dblclick', 'contextmenu'];
-        }
+    //     get supportedEvents() {
+    //         return ['click', 'mousedown', 'mouseup', 'mouseover', 'mouseout', 'dblclick', 'contextmenu'];
+    //     }
 
-        get internalEvents() {
-            return this.supportedEvents;
-        }
+    //     get internalEvents() {
+    //         return this.supportedEvents;
+    //     }
 
-        _onEvent(domEvent) {
-            const type = domEvent.type;
-            console.log(type)
-            const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+    //     _onEvent(domEvent) {
+    //         const type = domEvent.type;
+    //         console.log(type)
+    //         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
 
-            if (!targetObj) {
-                return;
-            }
-            if (type === 'click' && this._clickPrevented) {
-                domEvent.preventDefault();
-                domEvent.stopPropagation();
-                return;
-            }
+    //         if (!targetObj) {
+    //             return;
+    //         }
+    //         if (type === 'click' && this._clickPrevented) {
+    //             domEvent.preventDefault();
+    //             domEvent.stopPropagation();
+    //             return;
+    //         }
 
-            if (type === 'mousedown') {
-                this._lastPointerDown = {
-                    target: domEvent.target.id,
-                    time: Date.now(),
-                    x: domEvent.clientX,
-                    y: domEvent.clientY,
-                };
-                this._clickPrevented = false;
-            }
+    //         if (type === 'mousedown') {
+    //             this._lastPointerDown = {
+    //                 target: domEvent.target.id,
+    //                 time: Date.now(),
+    //                 x: domEvent.clientX,
+    //                 y: domEvent.clientY,
+    //             };
+    //             this._clickPrevented = false;
+    //         }
 
-            if (type === 'mouseup' && this._lastPointerDown) {
-                const dx = Math.abs(domEvent.clientX - this._lastPointerDown.x);
-                const dy = Math.abs(domEvent.clientY - this._lastPointerDown.y);
-                const timeDiff = Date.now() - this._lastPointerDown.time;
+    //         if (type === 'mouseup' && this._lastPointerDown) {
+    //             const dx = Math.abs(domEvent.clientX - this._lastPointerDown.x);
+    //             const dy = Math.abs(domEvent.clientY - this._lastPointerDown.y);
+    //             const timeDiff = Date.now() - this._lastPointerDown.time;
 
-                if (dx > 10 || dy > 10 || timeDiff > 500) {
-                    this._clickPrevented = true;
-                }
-            }
+    //             if (dx > 10 || dy > 10 || timeDiff > 500) {
+    //                 this._clickPrevented = true;
+    //             }
+    //         }
 
-            this._sendEvent(targetObj, type, domEvent, null, true);
-        }
-    }
-    class DragManager extends gn.event.AbstractManager {
-        constructor() {
-            super();
-            this._dragActive = false;
-            this._dragStartThreshold = 5;
-            this._dragStartPos = null;
-            this._dragTarget = null;
-            this._dragTargetObj = null;
-            this._dragStarted = false; // Track if threshold was crossed
-        }
+    //         this._sendEvent(targetObj, type, domEvent, null, true);
+    //     }
+    // }
+    // class DragManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //         this._dragActive = false;
+    //         this._dragStartThreshold = 5;
+    //         this._dragStartPos = null;
+    //         this._dragTarget = null;
+    //         this._dragTargetObj = null;
+    //         this._dragStarted = false; // Track if threshold was crossed
+    //     }
         
-        get supportedEvents() {
-            return ["mousedown", /*"mousemove", */"mouseup"/*, "mouseleave"*/];
-        }
+    //     get supportedEvents() {
+    //         return ["mousedown", /*"mousemove", */"mouseup"/*, "mouseleave"*/];
+    //     }
         
-        get internalEvents() {
-            return ["drag", "dragstart", "dragend"];
-        }
+    //     get internalEvents() {
+    //         return ["drag", "dragstart", "dragend"];
+    //     }
 
-        _initMoveObserver() {
-            document.addEventListener("mousemove", this._onEventBind);
-        }
+    //     _initMoveObserver() {
+    //         document.addEventListener("mousemove", this._onEventBind);
+    //     }
 
-        _exitMoveObserver() {
-            document.removeEventListener("mousemove", this._onEventBind);
-        }
+    //     _exitMoveObserver() {
+    //         document.removeEventListener("mousemove", this._onEventBind);
+    //     }
         
-        _onEvent(domEvent) {
-            const type = domEvent.type;
-            const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+    //     _onEvent(domEvent) {
+    //         const type = domEvent.type;
+    //         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
 
-            if (type === "mousedown") {
-                this._handleMouseDown(domEvent, targetObj);
-            }
-            else if (type === "mousemove" && this._dragActive) {
-                this._handleMouseMove(domEvent);
-            }
-            else if (type === "mouseup" && this._dragActive) {
-                this._handleMouseUp(domEvent);
-            }
-            else if (type === "mouseleave" && this._dragActive) {
-                // this._endDrag(domEvent);
-            }
-        }
+    //         if (type === "mousedown") {
+    //             this._handleMouseDown(domEvent, targetObj);
+    //         }
+    //         else if (type === "mousemove" && this._dragActive) {
+    //             this._handleMouseMove(domEvent);
+    //         }
+    //         else if (type === "mouseup" && this._dragActive) {
+    //             this._handleMouseUp(domEvent);
+    //         }
+    //         else if (type === "mouseleave" && this._dragActive) {
+    //             // this._endDrag(domEvent);
+    //         }
+    //     }
         
-        _handleMouseDown(domEvent, targetObj) {
-            if (!targetObj) return;
-            domEvent.preventDefault();
+    //     _handleMouseDown(domEvent, targetObj) {
+    //         if (!targetObj) return;
+    //         // domEvent.preventDefault();
             
-            this._dragActive = true;
-            this._dragTarget = domEvent.target;
-            this._dragTargetObj = targetObj;
-            this._dragStarted = false;
-            this._dragStartPos = {
-                x: domEvent.clientX,
-                y: domEvent.clientY,
-                targetX: 0,
-                targetY: 0,
-            };
+    //         this._dragActive = true;
+    //         this._dragTarget = domEvent.target;
+    //         this._dragTargetObj = targetObj;
+    //         this._dragStarted = false;
+    //         this._dragStartPos = {
+    //             x: domEvent.clientX,
+    //             y: domEvent.clientY,
+    //             targetX: 0,
+    //             targetY: 0,
+    //         };
             
-            if (targetObj.x !== undefined && targetObj.y !== undefined) {
-                this._dragStartPos.targetX = targetObj.x;
-                this._dragStartPos.targetY = targetObj.y;
-            }
-            this._initMoveObserver();
-        }
+    //         if (targetObj.x !== undefined && targetObj.y !== undefined) {
+    //             this._dragStartPos.targetX = targetObj.x;
+    //             this._dragStartPos.targetY = targetObj.y;
+    //         }
+    //         this._initMoveObserver();
+    //     }
         
-        _handleMouseMove(domEvent) {
-            if (!this._dragStartPos) return;
+    //     _handleMouseMove(domEvent) {
+    //         if (!this._dragStartPos) return;
             
-            const dx = Math.abs(domEvent.clientX - this._dragStartPos.x);
-            const dy = Math.abs(domEvent.clientY - this._dragStartPos.y);
+    //         const dx = Math.abs(domEvent.clientX - this._dragStartPos.x);
+    //         const dy = Math.abs(domEvent.clientY - this._dragStartPos.y);
             
-            if (!this._dragStarted) {
-                if (dx >= this._dragStartThreshold || dy >= this._dragStartThreshold) {
-                    this._startDrag(domEvent);
-                }
-                return;
-            }
+    //         if (!this._dragStarted) {
+    //             if (dx >= this._dragStartThreshold || dy >= this._dragStartThreshold) {
+    //                 this._startDrag(domEvent);
+    //             }
+    //             return;
+    //         }
             
-            if (this._dragTargetObj) {
-                const deltaX = domEvent.clientX - this._dragStartPos.x;
-                const deltaY = domEvent.clientY - this._dragStartPos.y;
+    //         if (this._dragTargetObj) {
+    //             const deltaX = domEvent.clientX - this._dragStartPos.x;
+    //             const deltaY = domEvent.clientY - this._dragStartPos.y;
                 
-                const dragData = {
-                    deltaX: deltaX,
-                    deltaY: deltaY,
-                    startX: this._dragStartPos.x,
-                    startY: this._dragStartPos.y,
-                    currentX: domEvent.clientX,
-                    currentY: domEvent.clientY,
-                    target: this._dragTarget,
-                    originalEvent: domEvent,
-                };
-                this._sendEvent(this._dragTargetObj, "drag", domEvent, dragData);
-            }
-        }
+    //             const dragData = {
+    //                 deltaX: deltaX,
+    //                 deltaY: deltaY,
+    //                 startX: this._dragStartPos.x,
+    //                 startY: this._dragStartPos.y,
+    //                 currentX: domEvent.clientX,
+    //                 currentY: domEvent.clientY,
+    //                 target: this._dragTarget,
+    //                 originalEvent: domEvent,
+    //             };
+    //             this._sendEvent(this._dragTargetObj, "drag", domEvent, dragData);
+    //         }
+    //     }
         
-        _startDrag(domEvent) {
-            this._dragStarted = true;
+    //     _startDrag(domEvent) {
+    //         this._dragStarted = true;
             
-            if (this._dragTargetObj) {
-                const dragData = {
-                    startX: this._dragStartPos.x,
-                    startY: this._dragStartPos.y,
-                    target: this._dragTarget,
-                    targetStartX: this._dragStartPos.targetX,
-                    targetStartY: this._dragStartPos.targetY,
-                    originalEvent: domEvent,
-                };
-                this._sendEvent(this._dragTargetObj, "dragstart", domEvent, dragData);
-            }
-        }
+    //         if (this._dragTargetObj) {
+    //             const dragData = {
+    //                 startX: this._dragStartPos.x,
+    //                 startY: this._dragStartPos.y,
+    //                 target: this._dragTarget,
+    //                 targetStartX: this._dragStartPos.targetX,
+    //                 targetStartY: this._dragStartPos.targetY,
+    //                 originalEvent: domEvent,
+    //             };
+    //             this._sendEvent(this._dragTargetObj, "dragstart", domEvent, dragData);
+    //         }
+    //     }
         
-        _handleMouseUp(domEvent) {
-            this._endDrag(domEvent);
-            this._exitMoveObserver();
-        }
+    //     _handleMouseUp(domEvent) {
+    //         this._endDrag(domEvent);
+    //         this._exitMoveObserver();
+    //     }
         
-        _endDrag(domEvent) {
-            if (this._dragStarted && this._dragTargetObj) {
-                const dragData = {
-                    startX: this._dragStartPos?.x,
-                    startY: this._dragStartPos?.y,
-                    endX: domEvent.clientX,
-                    endY: domEvent.clientY,
-                    target: this._dragTarget,
-                    originalEvent: domEvent,
-                };
-                this._sendEvent(this._dragTargetObj, "dragend", domEvent, dragData);
-            }
-            this._dragActive = false;
-            this._dragStarted = false;
-            this._dragStartPos = null;
-            this._dragTarget = null;
-            this._dragTargetObj = null;
-        }
+    //     _endDrag(domEvent) {
+    //         if (this._dragStarted && this._dragTargetObj) {
+    //             const dragData = {
+    //                 startX: this._dragStartPos?.x,
+    //                 startY: this._dragStartPos?.y,
+    //                 endX: domEvent.clientX,
+    //                 endY: domEvent.clientY,
+    //                 target: this._dragTarget,
+    //                 originalEvent: domEvent,
+    //             };
+    //             this._sendEvent(this._dragTargetObj, "dragend", domEvent, dragData);
+    //         }
+    //         this._dragActive = false;
+    //         this._dragStarted = false;
+    //         this._dragStartPos = null;
+    //         this._dragTarget = null;
+    //         this._dragTargetObj = null;
+    //     }
     
-        destroy() {
-            if (this._dragActive) {
-                this._endDrag(null);
-            }
-            super.destroy();
-        }
-    }
-    class FocusManager extends gn.event.AbstractManager {
-        constructor() {
-            super();
-            this._currentFocused = null;
-            this._focusStack = [];
-        }
+    //     destroy() {
+    //         if (this._dragActive) {
+    //             this._endDrag(null);
+    //         }
+    //         super.destroy();
+    //     }
+    // }
+    // class FocusManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //         this._currentFocused = null;
+    //         this._focusStack = [];
+    //     }
 
-        get supportedEvents() {
-            return ['focusin', 'focusout'];
-        }
+    //     get supportedEvents() {
+    //         return ['focusin', 'focusout'];
+    //     }
 
-        get internalEvents() {
-            return ['focus', 'blur', 'focusin', 'focusout'];
-        }
+    //     get internalEvents() {
+    //         return ['focus', 'blur', 'focusin', 'focusout'];
+    //     }
 
-        _onEvent(domEvent) {
-            const type = domEvent.type;
-            const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
-            const relatedTargetObj = domEvent.relatedTarget ? gn.core.Object.getObjectById(domEvent.relatedTarget.id) : null;
+    //     _onEvent(domEvent) {
+    //         const type = domEvent.type;
+    //         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+    //         const relatedTargetObj = domEvent.relatedTarget ? gn.core.Object.getObjectById(domEvent.relatedTarget.id) : null;
 
-            if (type === 'focusin' && targetObj) {
-                if (this._currentFocused) {
-                    this._focusStack.push(this._currentFocused);
-                }
-                this._currentFocused = targetObj;
+    //         if (type === 'focusin' && targetObj) {
+    //             if (this._currentFocused) {
+    //                 this._focusStack.push(this._currentFocused);
+    //             }
+    //             this._currentFocused = targetObj;
 
-                // Send focusin (bubbles) and focus (doesn't bubble)
-                this._sendEvent(targetObj, 'focusin', domEvent, { relatedTarget: relatedTargetObj }, true);
-                this._sendEvent(targetObj, 'focus', domEvent, { relatedTarget: relatedTargetObj }, false);
-            }
+    //             // Send focusin (bubbles) and focus (doesn't bubble)
+    //             this._sendEvent(targetObj, 'focusin', domEvent, { relatedTarget: relatedTargetObj }, true);
+    //             this._sendEvent(targetObj, 'focus', domEvent, { relatedTarget: relatedTargetObj }, false);
+    //         }
 
-            if (type === 'focusout' && targetObj) {
-                // Send blur (doesn't bubble) and focusout (bubbles)
-                this._sendEvent(targetObj, 'blur', domEvent, { relatedTarget: relatedTargetObj }, false);
-                this._sendEvent(targetObj, 'focusout', domEvent, { relatedTarget: relatedTargetObj }, true);
+    //         if (type === 'focusout' && targetObj) {
+    //             // Send blur (doesn't bubble) and focusout (bubbles)
+    //             this._sendEvent(targetObj, 'blur', domEvent, { relatedTarget: relatedTargetObj }, false);
+    //             this._sendEvent(targetObj, 'focusout', domEvent, { relatedTarget: relatedTargetObj }, true);
 
-                this._currentFocused = this._focusStack.pop() || null;
-            }
-        }
+    //             this._currentFocused = this._focusStack.pop() || null;
+    //         }
+    //     }
 
-        getCurrentFocused() {
-            return this._currentFocused;
-        }
+    //     getCurrentFocused() {
+    //         return this._currentFocused;
+    //     }
 
-        focusPrevious() {
-            if (this._focusStack.length > 0) {
-                const previous = this._focusStack.pop();
-                if (previous && previous.focus) {
-                    previous.focus();
-                }
-            }
-        }
-    }
-    class WheelManager extends gn.event.AbstractManager {
-        constructor() {
-            super();
-        }
-        get supportedEvents() {
-            return ["wheel"]//["scroll"]//[ "wheel", "scroll", "scrollend" ];
-        }
-        get internalEvents() {
-            return ["scroll"];
-        }
-        _onEvent( domEvent ){
-            const type = domEvent.type;
-            const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+    //     focusPrevious() {
+    //         if (this._focusStack.length > 0) {
+    //             const previous = this._focusStack.pop();
+    //             if (previous && previous.focus) {
+    //                 previous.focus();
+    //             }
+    //         }
+    //     }
+    // }
+    // class WheelManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //     }
+    //     get supportedEvents() {
+    //         return ["wheel"]//["scroll"]//[ "wheel", "scroll", "scrollend" ];
+    //     }
+    //     get internalEvents() {
+    //         return ["scroll"];
+    //     }
+    //     _onEvent( domEvent ){
+    //         const type = domEvent.type;
+    //         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
 
-            if (!targetObj) {
-                return;
-            }
+    //         if (!targetObj) {
+    //             return;
+    //         }
 
-            this._sendEvent(targetObj, "scroll", domEvent, null, true);
-        }
-    }
-    class TouchManager extends gn.event.AbstractManager {
-        constructor(config = {}) {
-            super();
-            this._touchStartTime = null;
-            this._lastTapTime = 0;
-            this._startX = 0;
-            this._startY = 0;
-            this._isMoving = false;
-            this._lastTargetId = null;
-            this._longTapThreshold = config.longTapThreshold || 700;
-            this._dblTapThreshold = config.dblTapThreshold || 300;
-            this._moveThreshold = config.moveThreshold || 10;
-            this._tapTimeout = null;
-            this._longTapTimeout = null;
-            this._config = config;
-            this._activeTouches = new Map(); // Track multiple touches
-        }
+    //         this._sendEvent(targetObj, "scroll", domEvent, null, true);
+    //     }
+    // }
+    // class TouchManager extends gn.event.AbstractManager {
+    //     constructor(config = {}) {
+    //         super();
+    //         this._touchStartTime = null;
+    //         this._lastTapTime = 0;
+    //         this._startX = 0;
+    //         this._startY = 0;
+    //         this._isMoving = false;
+    //         this._lastTargetId = null;
+    //         this._longTapThreshold = config.longTapThreshold || 700;
+    //         this._dblTapThreshold = config.dblTapThreshold || 300;
+    //         this._moveThreshold = config.moveThreshold || 10;
+    //         this._tapTimeout = null;
+    //         this._longTapTimeout = null;
+    //         this._config = config;
+    //         this._activeTouches = new Map(); // Track multiple touches
+    //     }
 
-        get supportedEvents() {
-            return ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
-        }
+    //     get useCapture() {
+    //         return false;
+    //     }
 
-        get internalEvents() {
-            return ['tap', 'doubleTap', 'longTap', 'swipe'];
-        }
+    //     get supportedEvents() {
+    //         return ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
+    //     }
 
-        _onEvent(domEvent) {
-            switch (domEvent.type) {
-                case 'touchstart':
-                    this._handleTouchStart(domEvent);
-                    break;
-                case 'touchmove':
-                    this._handleTouchMove(domEvent);
-                    break;
-                case 'touchend':
-                    this._handleTouchEnd(domEvent);
-                    break;
-                case 'touchcancel':
-                    this._handleTouchCancel(domEvent);
-                    break;
-            }
-        }
+    //     get internalEvents() {
+    //         return ['tap', 'doubleTap', 'longTap', 'swipe'];
+    //     }
 
-        _handleTouchStart(event) {
-            if (this._config.preventDefault !== false) {
-                event.preventDefault();
-            }
-            for (const touch of event.touches) {
-                const touchId = touch.identifier;
+    //     _onEvent(domEvent) {
+    //         switch (domEvent.type) {
+    //             case 'touchstart':
+    //                 this._handleTouchStart(domEvent);
+    //                 break;
+    //             case 'touchmove':
+    //                 this._handleTouchMove(domEvent);
+    //                 break;
+    //             case 'touchend':
+    //                 this._handleTouchEnd(domEvent);
+    //                 break;
+    //             case 'touchcancel':
+    //                 this._handleTouchCancel(domEvent);
+    //                 break;
+    //         }
+    //     }
 
-                this._activeTouches.set(touchId, {
-                    startX: touch.clientX,
-                    startY: touch.clientY,
-                    startTime: Date.now(),
-                    targetId: event.target.id,
-                    lastX: touch.clientX,
-                    lastY: touch.clientY,
-                });
-            }
-            if (event.touches.length === 1) {
-                this._clearTimeouts();
+    //     _handleTouchStart(event) {
+    //         if (this._config.preventDefault !== false) {
+    //             // event.preventDefault();
+    //         }
+    //         for (const touch of event.touches) {
+    //             const touchId = touch.identifier;
 
-                const touch = event.touches[0];
-                this._startX = touch.clientX;
-                this._startY = touch.clientY;
-                this._touchStartTime = Date.now();
-                this._isMoving = false;
-                this._lastTargetId = event.target.id;
+    //             this._activeTouches.set(touchId, {
+    //                 startX: touch.clientX,
+    //                 startY: touch.clientY,
+    //                 startTime: Date.now(),
+    //                 targetId: event.target.id,
+    //                 lastX: touch.clientX,
+    //                 lastY: touch.clientY,
+    //             });
+    //         }
+    //         if (event.touches.length === 1) {
+    //             this._clearTimeouts();
 
-                this._longTapTimeout = setTimeout(() => {
-                    this._sendTapEvent('longTap', event);
-                }, this._longTapThreshold);
-            }
-        }
+    //             const touch = event.touches[0];
+    //             this._startX = touch.clientX;
+    //             this._startY = touch.clientY;
+    //             this._touchStartTime = Date.now();
+    //             this._isMoving = false;
+    //             this._lastTargetId = event.target.id;
 
-        _handleTouchMove(event) {
-            event.preventDefault();
-            for (const touch of event.touches) {
-                const touchId = touch.identifier;
-                const touchData = this._activeTouches.get(touchId);
+    //             this._longTapTimeout = setTimeout(() => {
+    //                 this._sendTapEvent('longTap', event);
+    //             }, this._longTapThreshold);
+    //         }
+    //     }
 
-                if (touchData) {
-                    touchData.lastX = touch.clientX;
-                    touchData.lastY = touch.clientY;
-                }
-            }
-            if (event.touches.length === 1) {
-                const touch = event.touches[0];
-                const dx = Math.abs(touch.clientX - this._startX);
-                const dy = Math.abs(touch.clientY - this._startY);
+    //     _handleTouchMove(event) {
+    //         // event.preventDefault();
+    //         for (const touch of event.touches) {
+    //             const touchId = touch.identifier;
+    //             const touchData = this._activeTouches.get(touchId);
 
-                if (dx > this._moveThreshold || dy > this._moveThreshold) {
-                    this._isMoving = true;
-                    this._clearTimeouts();
-                }
-            }
-        }
+    //             if (touchData) {
+    //                 touchData.lastX = touch.clientX;
+    //                 touchData.lastY = touch.clientY;
+    //             }
+    //         }
+    //         if (event.touches.length === 1) {
+    //             const touch = event.touches[0];
+    //             const dx = Math.abs(touch.clientX - this._startX);
+    //             const dy = Math.abs(touch.clientY - this._startY);
 
-        _handleTouchEnd(event) {
-            event.preventDefault();
-            if (event.touches.length === 0 && !this._isMoving) {
-                this._handleGestureEnd(event);
-            }
-            for (const touch of event.changedTouches) {
-                this._activeTouches.delete(touch.identifier);
-            }
-        }
+    //             if (dx > this._moveThreshold || dy > this._moveThreshold) {
+    //                 this._isMoving = true;
+    //                 this._clearTimeouts();
+    //             }
+    //         }
+    //     }
 
-        _handleTouchCancel(event) {
-            this._clearTimeouts();
-            this._activeTouches.clear();
-            this._isMoving = false;
-        }
+    //     _handleTouchEnd(event) {
+    //         // event.preventDefault();
+    //         if (event.touches.length === 0 && !this._isMoving) {
+    //             this._handleGestureEnd(event);
+    //         }
+    //         for (const touch of event.changedTouches) {
+    //             this._activeTouches.delete(touch.identifier);
+    //         }
+    //     }
 
-        _handleGestureEnd(event) {
-            this._clearTimeouts();
+    //     _handleTouchCancel(event) {
+    //         this._clearTimeouts();
+    //         this._activeTouches.clear();
+    //         this._isMoving = false;
+    //     }
 
-            const endTime = Date.now();
-            const touchDuration = endTime - this._touchStartTime;
+    //     _handleGestureEnd(event) {
+    //         this._clearTimeouts();
 
-            if (event.changedTouches.length === 1) {
-                const touch = event.changedTouches[0];
-                const dx = touch.clientX - this._startX;
-                const dy = touch.clientY - this._startY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+    //         const endTime = Date.now();
+    //         const touchDuration = endTime - this._touchStartTime;
 
-                if (distance > 50 && touchDuration < 300) {
-                    let direction = '';
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        direction = dx > 0 ? 'right' : 'left';
-                    } else {
-                        direction = dy > 0 ? 'down' : 'up';
-                    }
+    //         if (event.changedTouches.length === 1) {
+    //             const touch = event.changedTouches[0];
+    //             const dx = touch.clientX - this._startX;
+    //             const dy = touch.clientY - this._startY;
+    //             const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    this._sendEventToTarget('swipe', {
-                        direction,
-                        distance,
-                        velocity: distance / touchDuration,
-                        startX: this._startX,
-                        startY: this._startY,
-                        endX: touch.clientX,
-                        endY: touch.clientY,
-                    });
-                    return;
-                }
-            }
+    //             if (distance > 50 && touchDuration < 300) {
+    //                 let direction = '';
+    //                 if (Math.abs(dx) > Math.abs(dy)) {
+    //                     direction = dx > 0 ? 'right' : 'left';
+    //                 } else {
+    //                     direction = dy > 0 ? 'down' : 'up';
+    //                 }
 
-            if (endTime - this._lastTapTime < this._dblTapThreshold) {
-                this._lastTapTime = 0;
-                this._sendTapEvent('doubleTap', event);
-            } else {
-                this._tapTimeout = setTimeout(() => {
-                    this._sendTapEvent('tap', event);
-                }, this._dblTapThreshold);
+    //                 this._sendEventToTarget('swipe', {
+    //                     direction,
+    //                     distance,
+    //                     velocity: distance / touchDuration,
+    //                     startX: this._startX,
+    //                     startY: this._startY,
+    //                     endX: touch.clientX,
+    //                     endY: touch.clientY,
+    //                 });
+    //                 return;
+    //             }
+    //         }
 
-                this._lastTapTime = endTime;
-            }
-        }
+    //         if (endTime - this._lastTapTime < this._dblTapThreshold) {
+    //             this._lastTapTime = 0;
+    //             this._sendTapEvent('doubleTap', event);
+    //         } else {
+    //             this._tapTimeout = setTimeout(() => {
+    //                 this._sendTapEvent('tap', event);
+    //             }, this._dblTapThreshold);
 
-        _sendTapEvent(eventType, domEvent) {
-            const target = gn.core.Object.getObjectById(this._lastTargetId);
-            if (!target) {
-                return;
-            }
+    //             this._lastTapTime = endTime;
+    //         }
+    //     }
 
-            const touch = domEvent.changedTouches[0];
-            const data = {
-                x: touch ? touch.clientX : this._startX,
-                y: touch ? touch.clientY : this._startY,
-                timestamp: Date.now()
-            };
+    //     _sendTapEvent(eventType, domEvent) {
+    //         const target = gn.core.Object.getObjectById(this._lastTargetId);
+    //         if (!target) {
+    //             return;
+    //         }
 
-            this._sendEvent(target, eventType, domEvent, data, true);
+    //         const touch = domEvent.changedTouches[0];
+    //         const data = {
+    //             x: touch ? touch.clientX : this._startX,
+    //             y: touch ? touch.clientY : this._startY,
+    //             timestamp: Date.now()
+    //         };
 
-            const mappedType = this._config[eventType];
-            if (mappedType) {
-                this._sendEvent(target, mappedType, domEvent, data, true);
-            }
-        }
+    //         this._sendEvent(target, eventType, domEvent, data, true);
 
-        _sendEventToTarget(eventType, data) {
-            const target = gn.core.Object.getObjectById(this._lastTargetId);
-            if (!target) {
-                return;
-            }
+    //         const mappedType = this._config[eventType];
+    //         if (mappedType) {
+    //             this._sendEvent(target, mappedType, domEvent, data, true);
+    //         }
+    //     }
 
-            gn.event.Emitter.instance().sendEvent(target, eventType, data, true);
-        }
+    //     _sendEventToTarget(eventType, data) {
+    //         const target = gn.core.Object.getObjectById(this._lastTargetId);
+    //         if (!target) {
+    //             return;
+    //         }
 
-        _clearTimeouts() {
-            if (this._tapTimeout) {
-                clearTimeout(this._tapTimeout);
-                this._tapTimeout = null;
-            }
-            if (this._longTapTimeout) {
-                clearTimeout(this._longTapTimeout);
-                this._longTapTimeout = null;
-            }
-        }
-    }
-    class InputManager extends gn.event.AbstractManager {
-        constructor() {
-            super();
-        }
+    //         gn.event.Emitter.instance().sendEvent(target, eventType, data, true);
+    //     }
 
-        get supportedEvents() {
-            return ['input', 'change'];
-        }
+    //     _clearTimeouts() {
+    //         if (this._tapTimeout) {
+    //             clearTimeout(this._tapTimeout);
+    //             this._tapTimeout = null;
+    //         }
+    //         if (this._longTapTimeout) {
+    //             clearTimeout(this._longTapTimeout);
+    //             this._longTapTimeout = null;
+    //         }
+    //     }
+    // }
+    // class InputManager extends gn.event.AbstractManager {
+    //     constructor() {
+    //         super();
+    //     }
 
-        get internalEvents() {
-            return this.supportedEvents;
-        }
+    //     get supportedEvents() {
+    //         return ['input', 'change'];
+    //     }
 
-        _onEvent(domEvent) {
-            const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+    //     get internalEvents() {
+    //         return this.supportedEvents;
+    //     }
 
-            if (!targetObj) {
-                return;
-            }
-            this._sendEvent(targetObj, domEvent.type, domEvent, null, true);
-        }
-    }
+    //     _onEvent(domEvent) {
+    //         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
+
+    //         if (!targetObj) {
+    //             return;
+    //         }
+    //         this._sendEvent(targetObj, domEvent.type, domEvent, null, true);
+    //     }
+    // }
 }

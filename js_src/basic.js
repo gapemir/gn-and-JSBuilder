@@ -132,8 +132,8 @@ namespace gn.ui.basic {
             }
         }
         set tooltip(value){
-            this.addEventListener("mouseover", this.onMouseOver, this );
-            this.addEventListener("mouseout", this.onMouseOut, this );
+            this.addEventListener("hoverover", this.onMouseOver, this );
+            this.addEventListener("hoverout", this.onMouseOut, this );
             if(value instanceof gn.ui.basic.Widget) {
                 this._tooltip = value;
                 this._tooltip.addClass("gn-tooltip");

@@ -158,8 +158,9 @@ namespace gn.ui.container {
         }
     }
     class Split extends gn.ui.basic.Widget { // class for two containers and handle in the middle whitch is used to resize containers
-        constructor( layout ) {
+        constructor( layout, handleSize = 5 ) {
             super( layout || new gn.ui.layout.Row, "div", "gn-split" );
+            this._handleSize = handleSize;
         }
         _addInternal( child, where, refChild ) {
             if( !this._children.length ){
@@ -169,24 +170,25 @@ namespace gn.ui.container {
             if( gn.lang.Var.isNull( child ) || gn.lang.Var.isNull( child.element ) ) {
                 throw new Error('Element cannot be null');
             }
-            super._addInternal( new gn.ui.container.SplitHandle( this.layoutManager.direction, 3 ), where, refChild );
+            super._addInternal( new gn.ui.container.SplitHandle( this.layoutManager.direction, this._handleSize ), where, refChild );
             super._addInternal( child, where, refChild );
             for( let i = 1; i < this._children.length - 1; i+=2 ) {
                 this._children[ i ].before = this._children[ i-1 ];
                 this._children[ i ].after = this._children[ i+1 ];
             }
-            this._devideSize();
+            gn.event.Timer.singleShot(this, this._devideSize);
         }
         _devideSize() {
             let num = Math.ceil( this._children.length / 2 );
-            let a = 100 / num + "%";
+            let widthOfHandles = Math.floor( this._children.length / 3 ) * this._handleSize * 100 / this.size.width;
+            let a = ( 100 - widthOfHandles );
+            a = a / num + "%"; // there is a bug in jsbuilder that it breaks if this is in same line as line above
             for( let child of this._children ){
                 if( !( child instanceof gn.ui.container.SplitHandle ) ) {
                     if( this.layoutManager.direction == gn.ui.layout.direction.Row ) {
                         child.width = a;
                         child.height = "100%";
-                    }
-                    else {
+                    } else {
                         child.height = a;
                         child.width = "100%";
                     }
@@ -202,6 +204,7 @@ namespace gn.ui.container {
             this._after = null;
             this._splitSize = null;
             this._originalPosition = null;
+            this._handleSize = size;
             if( direction == gn.ui.layout.direction.Row ) {
                 this.height = "100%";
                 this.width = size;
@@ -227,7 +230,7 @@ namespace gn.ui.container {
             return this._after;
         }
         _onDrag( e ){
-            console.log( e.clientX, e.clientY )
+            // console.log( e.clientX, e.clientY )
             if( e.clientX == 0 && e.clientY == 0 ) {
                 return;
             }
@@ -249,7 +252,7 @@ namespace gn.ui.container {
                 return false;
             }
         }
-        _onDragStart( e ){
+        _onDragStart( e ) {
             this._moving = true;
             this._splitSize = this.layoutParent.size;
             this._originalPosition = { x : e.clientX, y : e.clientY };
@@ -264,8 +267,7 @@ namespace gn.ui.container {
             this._afterSize = null;
         }
     }
-    // this will be redone some day so we will have custom all, rn we still rely on browser overflow : auto whitch is ugly and cant be removed on focus out ....
-    class Scroll extends gn.ui.basic.Widget { 
+    class ScrollCustom extends gn.ui.basic.Widget { 
         constructor( content, classList ) {
             super( null, null, classList );
             this.addClass( "gn-scroll" )
@@ -304,7 +306,7 @@ namespace gn.ui.container {
             };
         }
 
-        scrollTo(y, x) {
+        scrollTo(x, y) {
             const currentY = -parseFloat(this._body.element.style.top || 0);
             const currentX = -parseFloat(this._body.element.style.left || 0);
             
@@ -319,14 +321,14 @@ namespace gn.ui.container {
             this.sendEvent("scrolled");
         }
 
-        scrollBy(y, x) {
+        scrollBy(x, y) {
             const currentY = -parseFloat(this._body.element.style.top || 0);
             const currentX = -parseFloat(this._body.element.style.left || 0);
 
             const targetY = currentY + (y || 0);
             const targetX = currentX + (x || 0);
 
-            this.scrollTo(targetY, targetX);
+            this.scrollTo(targetX, targetY);
         }
 
         _onScroll(e) {  
@@ -335,7 +337,7 @@ namespace gn.ui.container {
             const dynamicY = Math.pow(Math.abs(e.deltaY), power) * Math.sign(e.deltaY);
             const dynamicX = Math.pow(Math.abs(e.deltaX), power) * Math.sign(e.deltaX);
 
-            this.scrollBy(this._speed * dynamicY, this._speed * dynamicX); 
+            this.scrollBy(this._speed * dynamicX, this._speed * dynamicY); 
         }
     }
     class ScrollBar extends gn.ui.basic.Widget {
@@ -422,16 +424,11 @@ namespace gn.ui.container {
             if ( this._moving ) {
                 if ( this._orientation == gn.ui.layout.direction.Column ) {
                     var delta = e.clientY - this._originalPosition.y;
-                    console.log( "delta", delta );
-                    // this._thumb.setStyle( "top", ( parseFloat( this._thumb.element.style.top || 0 ) + delta ) + "px" );
-                    this._scroll.scrollBy( delta * this._scroll.body.height / this.height, 0 );
+                    this._scroll.scrollBy( 0, delta * this._scroll.body.height / this.height );
                 }
                 else {
                     var delta = e.clientX - this._originalPosition.x;
-                    console.log( "delta", delta );
-                    //this._thumb.setStyle( "left", ( parseFloat( this._thumb.element.style.left || 0 ) + delta ) + "px" );
-
-                    this._scroll.scrollBy( 0, delta * this._scroll.body.width / this.width );
+                    this._scroll.scrollBy( delta * this._scroll.body.width / this.width, 0 );
                 }
                 this._originalPosition = { x : e.clientX, y : e.clientY };
                 console.log("orig", this._originalPosition )
@@ -450,16 +447,46 @@ namespace gn.ui.container {
             console.log(e)
             if ( this._orientation == gn.ui.layout.direction.Column ) {
                 var delta = e.deltaY * this._wheelScrollSpeed;
-                console.log( "delta", delta );
-                this._scroll.scrollBy( delta * this._scroll.body.height / this.height, 0 );
+                this._scroll.scrollBy( 0, delta * this._scroll.body.height / this.height );
             }
             else {
                 var delta = e.deltaX * this._wheelScrollSpeed;
-                console.log( "delta", delta );
-                //this._thumb.setStyle( "left", ( parseFloat( this._thumb.element.style.left || 0 ) + delta ) + "px" );
-
-                this._scroll.scrollBy( 0, delta * this._scroll.body.width / this.width );
+                this._scroll.scrollBy( delta * this._scroll.body.width / this.width, 0 );
             }
         }
+    }
+    class ScrollSys extends gn.ui.basic.Widget { 
+        constructor( content, classList ) {
+            super( null, null, classList );
+            this.addClass( "gn-scroll-sys" )
+
+            this._body = content || new gn.ui.basic.Widget();
+            this._body.addClass( "body" );
+            super._addInternal( this._body );
+
+            this._speed = 0.2;
+        }
+
+        get body() {
+            return this._body;
+        }
+
+        _addInternal( child, where, refChild ) {
+            this._body._addInternal( child, where, refChild );
+        }
+
+        remove( child ) {
+            this._body.remove( child );
+        }
+
+        scrollTo(x, y) {
+            this.element.scrollTo(x, y);
+        }
+
+        scrollBy(x, y) {
+            this.element.scrollBy(x, y);
+        }
+    }
+    class Scroll extends gn.ui.container.ScrollCustom {
     }
 }
