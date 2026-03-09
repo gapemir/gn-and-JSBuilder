@@ -189,11 +189,13 @@ namespace gn.event.manager {
             if (!isInteractive) {
                 domEvent.preventDefault();
             }
+
+            const isDateInput = domEvent.target.tagName === 'INPUT' && domEvent.target.type === 'date';
             
             this._pointerId = domEvent.pointerId;
             this._targetElement = domEvent.target;
             
-            if (this._targetElement && this._targetElement.setPointerCapture) {
+            if (this._targetElement && this._targetElement.setPointerCapture && !isDateInput) {
                 try {
                     this._targetElement.setPointerCapture(this._pointerId);
                 } catch (e) {
@@ -233,7 +235,6 @@ namespace gn.event.manager {
         }
         
         _onPointerUp(domEvent) {
-            console.log('Pointer up');
             if (!this._dragActive || !this._dragTargetObj) {
                 this._reset();
                 return;

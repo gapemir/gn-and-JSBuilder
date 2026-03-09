@@ -158,7 +158,7 @@ namespace gn.ui.container {
         }
     }
     class Split extends gn.ui.basic.Widget { // class for two containers and handle in the middle whitch is used to resize containers
-        constructor( layout, handleSize = 5 ) {
+        constructor( layout, handleSize = 1 ) {
             super( layout || new gn.ui.layout.Row, "div", "gn-split" );
             this._handleSize = handleSize;
         }
@@ -180,7 +180,7 @@ namespace gn.ui.container {
         }
         _devideSize() {
             let num = Math.ceil( this._children.length / 2 );
-            let widthOfHandles = Math.floor( this._children.length / 3 ) * this._handleSize * 100 / this.size.width;
+            let widthOfHandles = Math.floor( this._children.length - num ) * this._handleSize * 100 / this.size.width;
             let a = ( 100 - widthOfHandles );
             a = a / num + "%"; // there is a bug in jsbuilder that it breaks if this is in same line as line above
             for( let child of this._children ){
@@ -199,19 +199,22 @@ namespace gn.ui.container {
     class SplitHandle extends gn.ui.basic.Widget {
         constructor( direction, size ) { // gn.ui.layout.direction
             super( null, "div", "gn-split-handle" );
+            this._absolChild = new gn.ui.basic.Widget();
+            this.add(this._absolChild);
             this._direction = direction;
             this._before = null;
             this._after = null;
             this._splitSize = null;
             this._originalPosition = null;
             this._handleSize = size;
+            this.setStyle("align-self", "stretch")
             if( direction == gn.ui.layout.direction.Row ) {
-                this.height = "100%";
-                this.width = size;
+                this.setStyle("min-width", size + "px");
+                this.addClass("horizontal");
             }
             else {
-                this.width = "100%";
-                this.height = size;
+                this.setStyle("min-height", size + "px");
+                this.addClass("vertical");
             }
             this.addEventListener( "dragstart", this._onDragStart, this );
             this.addEventListener( "drag", this._onDrag, this );
