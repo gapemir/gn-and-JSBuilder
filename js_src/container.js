@@ -318,7 +318,7 @@ namespace gn.ui.container {
 
             const clamped = this._getClampedOffsets(y, x);
 
-            this._body.element.style.top = (-clamped.y) + "px";
+            this._body.element.style.top = (-clamped.y) + "px";     //TODO move from top and left to transform: translate3d(x, y, 0) becouse it is apparently smother (runs on compositor thread(GPU))
             this._body.element.style.left = (-clamped.x) + "px";
 
             this.sendEvent("scrolled");
@@ -375,6 +375,10 @@ namespace gn.ui.container {
             gn.event.Timer.singleShot( this, () => {
                 this._updateLengthOfThumb();
             });
+            gn.app.App.instance().addEventListener("resize", () => {
+                this._updateLengthOfThumb();
+                this._updatePositionOfThumb();
+            }, this);
         }
 
         _updateLengthOfThumb() {

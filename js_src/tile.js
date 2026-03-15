@@ -1,7 +1,11 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
+    // class TileContainer extends gn.ui.container.Scroll {
         constructor( details ) {
             super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
+            this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
+            super._addInternal(this._scroll);
+            
             this._model = null;
             this._idElementMap = new Map();
             this._groups = new Map();// id group -> [id elements]
@@ -73,6 +77,18 @@ namespace gn.ui.tile {
         }
         get breadcrumb(){
             return this._breadcrumb;
+        }
+        add(child) {
+            this._scroll.add(child);
+        }
+        addBefore( child, refChild ) {
+            this._scroll.addBefore( child, refChild );
+        }
+        addAfter( child, refChild ) {
+            this._scroll.addAfter( child, refChild );
+        }
+        remove(child) {
+            this._scroll.remove(child);
         }
         _onDataSet() {
             this._openGroup();
