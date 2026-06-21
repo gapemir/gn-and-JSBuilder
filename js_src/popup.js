@@ -36,6 +36,8 @@ namespace gn.ui.popup {
             super("gn-popup");
             this._callback = null;
             this.header = new gn.ui.container.Row("gn-popup-header");
+            this._title = new gn.ui.basic.Label();
+            this._header.add(this._title);
             this.body = new gn.ui.container.Column("gn-popup-body");
             this.footer = new gn.ui.container.Row("gn-popup-footer");
             if(buttons & gn.ui.popup.OK) {
@@ -100,19 +102,32 @@ namespace gn.ui.popup {
         get footer() {
             return this._footer;
         }
+        set title(value) {
+            this._title.text = value
+        }
         set callback(value){
             this._callback = value;
         }
-        static InformationPopup(titleWidget, messageWidget) {
+        static InformationPopup(title, message) {
             let popup = new gn.ui.popup.Popup(gn.ui.popup.OK|gn.ui.popup.CLOSE);
-            popup.header.addFirst(titleWidget);
-            popup.body.add(messageWidget);
+            popup.title = title;
+            if(message instanceof gn.ui.basic.Widget){
+                popup.body.add(message);
+            }
+            else if(gn.lang.Var.isString(message)){
+                popup.body.add(new gn.ui.basic.Label(message));
+            }
             return popup;
         }
-        static ConfirmationPopup(titleWidget, messageWidget) {
+        static ConfirmationPopup(title, message) {
             let popup = new gn.ui.popup.Popup(gn.ui.popup.YES|gn.ui.popup.NO|gn.ui.popup.CLOSE);
-            popup.header.addFirst(titleWidget);
-            popup.body.add(messageWidget);
+            popup.title = title;
+            if(message instanceof gn.ui.basic.Widget){
+                popup.body.add(message);
+            }
+            else if(gn.lang.Var.isString(message)){
+                popup.body.add(new gn.ui.basic.Label(message));
+            }
             return popup;
         }
     }

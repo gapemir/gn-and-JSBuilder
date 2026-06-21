@@ -228,6 +228,7 @@ input[type="color" i]::-webkit-color-swatch {
 .gn-popup-body{
   width: 100%;
   min-height: 120px;
+  min-width: 200px;
   height: auto;
   overflow-y: auto;
 }
