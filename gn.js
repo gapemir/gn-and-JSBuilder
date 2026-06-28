@@ -125,7 +125,7 @@ gn.lang.Var = class gn_lang_Var {
         return value instanceof Array;
     }
     static isString(value) {
-        return typeof value === 'string' || value instanceof String;
+        return typeof value === 'string' || value instanceof String || value instanceof gn.locale.LocaleString;
     }
     static isNumber(value) {
         return typeof value === 'number' && !isNaN(value);
@@ -141,6 +141,9 @@ gn.lang.Var = class gn_lang_Var {
     }
 }
 gn.lang.Array = class gn_lang_Array {
+    static isArray(value) {
+        return gn.lang.Var.isArray(value);
+    }
     static isEmpty(array) {
         return !!(gn.lang.Var.isNull(array) || array.length === 0);
     }
@@ -163,15 +166,23 @@ gn.lang.Array = class gn_lang_Array {
     }
 }
 gn.lang.String = class gn_lang_String {
-    static isEmpty(string) {
-        return !!(gn.lang.Var.isNull(string) || string.length === 0);
+    static isString(value) {
+        return gn.lang.Var.isString(value);
+    }
+    static isEmpty(value) {
+        return !!(gn.lang.Var.isNull(value) || value.length === 0);
     }
 }
 gn.lang.Number = class gn_lang_Number {
-
+    static isNumber(value) {
+        return gn.lang.Var.isNumber(value);
+    }
 }
 
 gn.lang.Object = class gn_lang_Object {
+    static isObject(value) {
+        return gn.lang.Var.isObject(value);
+    }
     static isEmpty(obj) {
         return Object.keys(obj).length === 0;
     }
@@ -523,10 +534,12 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
             domEvent.preventDefault();
         }
 
+        const isDateInput = domEvent.target.tagName === 'INPUT' && domEvent.target.type === 'date';
+
         this._pointerId = domEvent.pointerId;
         this._targetElement = domEvent.target;
 
-        if (this._targetElement && this._targetElement.setPointerCapture) {
+        if (this._targetElement && this._targetElement.setPointerCapture && !isDateInput) {
             try {
                 this._targetElement.setPointerCapture(this._pointerId);
             } catch (e) {
@@ -570,7 +583,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
     }
 
     _onPointerUp(domEvent) {
-        console.log('Pointer up');
         if (!this._dragActive || !this._dragTargetObj) {
             this._reset();
             return;
@@ -3123,7 +3135,7 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
     }
 }
 gn.ui.container.Split = class gn_ui_container_Split extends gn.ui.basic.Widget {
-    constructor(layout, handleSize = 5) {
+    constructor(layout, handleSize = 1) {
         super(layout || new gn.ui.layout.Row, "div", "gn-split");
         this._handleSize = handleSize;
     }
@@ -3145,7 +3157,7 @@ gn.ui.container.Split = class gn_ui_container_Split extends gn.ui.basic.Widget {
     }
     _devideSize() {
         let num = Math.ceil(this._children.length / 2);
-        let widthOfHandles = Math.floor(this._children.length / 3) * this._handleSize * 100 / this.size.width;
+        let widthOfHandles = Math.floor(this._children.length - num) * this._handleSize * 100 / this.size.width;
         let a = (100 - widthOfHandles);
         a = a / num + "%";
         for (let child of this._children) {
@@ -3164,18 +3176,21 @@ gn.ui.container.Split = class gn_ui_container_Split extends gn.ui.basic.Widget {
 gn.ui.container.SplitHandle = class gn_ui_container_SplitHandle extends gn.ui.basic.Widget {
     constructor(direction, size) {
         super(null, "div", "gn-split-handle");
+        this._absolChild = new gn.ui.basic.Widget();
+        this.add(this._absolChild);
         this._direction = direction;
         this._before = null;
         this._after = null;
         this._splitSize = null;
         this._originalPosition = null;
         this._handleSize = size;
+        this.setStyle("align-self", "stretch")
         if (direction == gn.ui.layout.direction.Row) {
-            this.height = "100%";
-            this.width = size;
+            this.setStyle("min-width", size + "px");
+            this.addClass("horizontal");
         } else {
-            this.width = "100%";
-            this.height = size;
+            this.setStyle("min-height", size + "px");
+            this.addClass("vertical");
         }
         this.addEventListener("dragstart", this._onDragStart, this);
         this.addEventListener("drag", this._onDrag, this);
@@ -3337,6 +3352,10 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
         gn.event.Timer.singleShot(this, () => {
             this._updateLengthOfThumb();
         });
+        gn.app.App.instance().addEventListener("resize", () => {
+            this._updateLengthOfThumb();
+            this._updatePositionOfThumb();
+        }, this);
     }
 
     _updateLengthOfThumb() {
@@ -3454,8 +3473,12 @@ gn.ui.container.ScrollSys = class gn_ui_container_ScrollSys extends gn.ui.basic.
 }
 gn.ui.container.Scroll = class gn_ui_container_Scroll extends gn.ui.container.ScrollCustom {}
 gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Widget {
+
     constructor(details) {
         super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
+        this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
+        super._addInternal(this._scroll);
+
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
@@ -3528,6 +3551,18 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
     get breadcrumb() {
         return this._breadcrumb;
     }
+    add(child) {
+        this._scroll.add(child);
+    }
+    addBefore(child, refChild) {
+        this._scroll.addBefore(child, refChild);
+    }
+    addAfter(child, refChild) {
+        this._scroll.addAfter(child, refChild);
+    }
+    remove(child) {
+        this._scroll.remove(child);
+    }
     _onDataSet() {
         this._openGroup();
     }
@@ -3594,6 +3629,7 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
         }
         this._idElementMap.set(id, item);
         this._groups.get(this.model.parent(id)).push(id);
+        this._itemCreated(item);
         this.add(item);
     }
     _makeGroup(id) {
@@ -3601,10 +3637,6 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
             id = null;
         }
         this._groups.set(id, []);
-
-
-
-
         let count = this._model.rowCount(id);
         for (let i = 0; i < count; i++) {
             let index = this._model.index(i, id);
@@ -3612,9 +3644,11 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
             let item = null
             if (data.type == gn.model.Model.Type.item) {
                 item = new this._tileClass(data, this);
+                this._itemCreated(item);
             } else if (data.type == gn.model.Model.Type.group) {
                 item = new this._subItemContClass(data, this);
                 item.addEventListener("openGroup", this.openGroup, this);
+                this._groupCreated(item);
             } else {
                 throw ("Invalid type of item in Tile Container");
             }
@@ -3639,6 +3673,7 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
         for (let i = 0; i < n; i++) {
             let item = new this._fakeTileClass(this);
             this._fakeTiles.push(item);
+            this._fakeItemCreated(item);
             this.add(this._fakeTiles.at(-1));
         }
     }
@@ -3672,6 +3707,9 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
         }
         this.genFakeTileItems();
     }
+    _itemCreated(item) {}
+    _groupCreated(group) {}
+    _fakeItemCreated(item) {}
 }
 gn.ui.tile.TileItem = class gn_ui_tile_TileItem extends gn.ui.basic.Widget {
     constructor(data) {
@@ -4385,6 +4423,17 @@ gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
         this.sendEvent("change", this.value);
     }
 }
+gn.ui.input.Date = class gn_ui_input_Date extends gn.ui.input.AbstractInput {
+    constructor(classList) {
+        super("date", classList);
+    }
+    set value(value) {
+        console.log(value)
+    }
+    get value() {
+        return this._element.value;
+    }
+}
 gn.ui.popup.PopupBase = class gn_ui_popup_PopupBase extends gn.ui.container.Column {
     constructor(classList, blocker = true) {
         super("gn-popup-base");
@@ -4421,6 +4470,8 @@ gn.ui.popup.Popup = class gn_ui_popup_Popup extends gn.ui.popup.PopupBase {
         super("gn-popup");
         this._callback = null;
         this.header = new gn.ui.container.Row("gn-popup-header");
+        this._title = new gn.ui.basic.Label();
+        this._header.add(this._title);
         this.body = new gn.ui.container.Column("gn-popup-body");
         this.footer = new gn.ui.container.Row("gn-popup-footer");
         if (buttons & gn.ui.popup.OK) {
@@ -4485,19 +4536,30 @@ gn.ui.popup.Popup = class gn_ui_popup_Popup extends gn.ui.popup.PopupBase {
     get footer() {
         return this._footer;
     }
+    set title(value) {
+        this._title.text = value
+    }
     set callback(value) {
         this._callback = value;
     }
-    static InformationPopup(titleWidget, messageWidget) {
+    static InformationPopup(title, message) {
         let popup = new gn.ui.popup.Popup(gn.ui.popup.OK | gn.ui.popup.CLOSE);
-        popup.header.addFirst(titleWidget);
-        popup.body.add(messageWidget);
+        popup.title = title;
+        if (message instanceof gn.ui.basic.Widget) {
+            popup.body.add(message);
+        } else if (gn.lang.Var.isString(message)) {
+            popup.body.add(new gn.ui.basic.Label(message));
+        }
         return popup;
     }
-    static ConfirmationPopup(titleWidget, messageWidget) {
+    static ConfirmationPopup(title, message) {
         let popup = new gn.ui.popup.Popup(gn.ui.popup.YES | gn.ui.popup.NO | gn.ui.popup.CLOSE);
-        popup.header.addFirst(titleWidget);
-        popup.body.add(messageWidget);
+        popup.title = title;
+        if (message instanceof gn.ui.basic.Widget) {
+            popup.body.add(message);
+        } else if (gn.lang.Var.isString(message)) {
+            popup.body.add(new gn.ui.basic.Label(message));
+        }
         return popup;
     }
 }
