@@ -1,4 +1,6 @@
 .bdata
 .vscode
-gn.js
 __pycache__
+
+.venv/
+.idea/

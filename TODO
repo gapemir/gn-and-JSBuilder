@@ -20,3 +20,4 @@
 
 //element is destroyed with function el.dispose(), DO NOT overwrite this function, overwrite _destructor or call super._destructor() at the end of _destructor but DO NOT overwrite dispose function
 //_destructor function does not need to remove itself from dom as that is done by dispose function, rather it should remove all extra elements that were added to the element, if needed, it can be left to js garbage collector
+//static static(){} class method is automaticly run at script load
