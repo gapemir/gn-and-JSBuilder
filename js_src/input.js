@@ -373,4 +373,15 @@ namespace gn.ui.input {
             this.sendEvent("change", this.value);
         }
     }
+    class Date extends gn.ui.input.AbstractInput {
+        constructor(classList) {
+            super("date", classList);
+        }
+        set value(value) {
+            console.log(value)
+        }
+        get value() {
+            return this._element.value;
+        }
+    }
 }

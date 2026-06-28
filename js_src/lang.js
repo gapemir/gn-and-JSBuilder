@@ -10,7 +10,7 @@ namespace gn.lang {
             return value instanceof Array;
         }
         static isString(value){
-            return typeof value === 'string' || value instanceof String;
+            return typeof value === 'string' || value instanceof String || value instanceof gn.locale.LocaleString;
         }
         static isNumber(value){
             return typeof value === 'number' && !isNaN(value);
@@ -26,6 +26,9 @@ namespace gn.lang {
         }
     }
     class Array {
+        static isArray(value){
+            return gn.lang.Var.isArray(value);
+        }
         static isEmpty( array ) {
             return !!(gn.lang.Var.isNull(array) || array.length === 0);
         }
@@ -48,15 +51,23 @@ namespace gn.lang {
         }
     }
     class String {
-        static isEmpty (string){
-            return !!(gn.lang.Var.isNull(string) || string.length === 0);
+        static isString(value){
+            return gn.lang.Var.isString(value);
+        }
+        static isEmpty (value){
+            return !!(gn.lang.Var.isNull(value) || value.length === 0);
         }
     }
     class Number { // TODO ?
-        
+        static isNumber(value){
+            return gn.lang.Var.isNumber(value);
+        }
     }
     //class Object is for handling native Objects, it is not designed to handle class objects as inherited properties are skipped
     class Object{
+        static isObject(value){
+            return gn.lang.Var.isObject(value);
+        }
         static isEmpty(obj){
             return Object.keys(obj).length === 0;
         }

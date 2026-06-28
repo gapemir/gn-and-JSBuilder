@@ -1,7 +1,11 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
+    // class TileContainer extends gn.ui.container.Scroll {
         constructor( details ) {
             super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
+            this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
+            super._addInternal(this._scroll);
+            
             this._model = null;
             this._idElementMap = new Map();
             this._groups = new Map();// id group -> [id elements]
@@ -74,6 +78,18 @@ namespace gn.ui.tile {
         get breadcrumb(){
             return this._breadcrumb;
         }
+        add(child) {
+            this._scroll.add(child);
+        }
+        addBefore( child, refChild ) {
+            this._scroll.addBefore( child, refChild );
+        }
+        addAfter( child, refChild ) {
+            this._scroll.addAfter( child, refChild );
+        }
+        remove(child) {
+            this._scroll.remove(child);
+        }
         _onDataSet() {
             this._openGroup();
         }
@@ -141,6 +157,7 @@ namespace gn.ui.tile {
             }
             this._idElementMap.set(id, item);
             this._groups.get(this.model.parent(id)).push(id);
+            this._itemCreated(item);
             this.add(item);
         }
         _makeGroup(id) {
@@ -148,10 +165,6 @@ namespace gn.ui.tile {
                 id = null;
             }
             this._groups.set(id, []);
-            // let tmpIds = this._model._parentMap.get(id);
-            // if (gn.lang.Var.isNull(tmpIds)) {
-            //     return;
-            // }
             let count = this._model.rowCount( id );
             for (let i = 0; i < count; i++) {
                 let index = this._model.index( i, id );
@@ -159,9 +172,11 @@ namespace gn.ui.tile {
                 let item = null
                 if (data.type == gn.model.Model.Type.item) {
                     item = new this._tileClass(data, this);
+                    this._itemCreated(item);
                 } else if (data.type == gn.model.Model.Type.group) {
                     item = new this._subItemContClass(data, this);
                     item.addEventListener("openGroup", this.openGroup, this);
+                    this._groupCreated(item);
                 } else {
                     throw ("Invalid type of item in Tile Container");
                 }
@@ -186,6 +201,7 @@ namespace gn.ui.tile {
             for (let i = 0; i < n; i++) {
                 let item = new this._fakeTileClass(this);
                 this._fakeTiles.push(item);
+                this._fakeItemCreated(item);
                 this.add(this._fakeTiles.at(-1));
             }
         }
@@ -219,6 +235,9 @@ namespace gn.ui.tile {
             }
             this.genFakeTileItems();
         }
+        _itemCreated(item){}
+        _groupCreated(group){}
+        _fakeItemCreated(item){}
     }
     class TileItem extends gn.ui.basic.Widget {
         constructor(data) {
