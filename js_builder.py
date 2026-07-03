@@ -50,6 +50,8 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
     # format code
     opts = jsbeautifier.default_options()
     opts.indent_size = 4
+    opts.max_preserve_newlines = 1 
+    opts.preserve_newlines = True
     code = jsbeautifier.beautify(code, opts)
 
     ret = {
