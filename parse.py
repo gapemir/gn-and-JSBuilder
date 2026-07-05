@@ -7,7 +7,7 @@ VERBOSE = False
 JS = Language(tsjs.language())  # or load from a .so if custom
 parser = Parser(JS)
 
-def parse(code):
+def parse(code :str, file_path :str):
     code, current_namespace = extract_namespace(code)
 
     tree = parser.parse(bytes(code, "utf8"))
@@ -16,7 +16,7 @@ def parse(code):
 
     tree = parser.parse(bytes(code, "utf8"))
 
-    if find_errors(tree.root_node, bytes(code, "utf8")):
+    if find_errors(tree.root_node, bytes(code, "utf8"), file_path):
         return False
 
     code, deps, provides, static = find_deps_and_classes(tree.root_node, current_namespace, code)
@@ -41,7 +41,7 @@ def remove_comments(tree, code :str):
 
     return mutable_code.decode("utf8")
 
-def find_errors(node, code_bytes):
+def find_errors(node, code_bytes, file_path :str):
     if node.is_missing:
         start_row, start_col = node.start_point
         missing_token = node.type
@@ -49,7 +49,7 @@ def find_errors(node, code_bytes):
         lines = code_bytes.decode("utf8").splitlines()
         context_line = lines[start_row].strip() if start_row < len(lines) else ""
 
-        print(Fore.RED + f"Syntax Error at Line {start_row + 1}, Col {start_col + 1}:")
+        print(Fore.RED + f"Syntax Error in file {file_path} at Line {start_row + 1}, Col {start_col + 1}:")
         print(f"   Missing expected token: {Style.RESET_ALL}'{missing_token}'")
         if context_line:
             print(f"   Near code: {Style.DIM}{context_line}{Style.RESET_ALL}\n")
@@ -67,12 +67,12 @@ def find_errors(node, code_bytes):
         if len(first_err_line) > 140:
             first_err_line = first_err_line[:140] + "..."
 
-        print(Fore.RED + f"Syntax Error at Line {start_row + 1}, Col {start_col + 1}:")
+        print(Fore.RED + f"Syntax Error in file {file_path} at Line {start_row + 1}, Col {start_col + 1}:")
         print(f"   Invalid syntax starting at:{Style.RESET_ALL}\n{first_err_line}\n")
         return True
 
     for child in node.children:
-        if find_errors(child, code_bytes):
+        if find_errors(child, code_bytes, file_path):
             return True
 
     return False

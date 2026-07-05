@@ -1,5 +1,5 @@
 namespace gn.ui.input {
-    class AbstractInput extends gn.ui.basic.Widget {
+    class BaseInput extends gn.ui.basic.Widget {
         constructor(type, classList) {
             switch (type) {
                 case "textarea":
@@ -26,10 +26,10 @@ namespace gn.ui.input {
             return this._element.type;
         }
         get value() {
-            throw new TypeError("Abstract class");
+            return this._element.value;
         }
         set value(value) {
-            throw new TypeError("Abstract class");
+            this._element.value = value || "";
         }
         set disabled( value ) {
             this._element.disabled = value;
@@ -131,20 +131,14 @@ namespace gn.ui.input {
         }
     }
 
-    class Line extends gn.ui.input.AbstractInput {
+    class Line extends gn.ui.input.BaseInput {
         constructor(value, placeholder, classList) {
             super("text", classList);
             this.placeholder = placeholder;
             this.value = value;
         }
-        get value() {
-            return this._element.value;
-        }
-        set value(value) {
-            this.element.value = value || "";
-        }
     }
-    class MultiLine extends gn.ui.input.AbstractInput {
+    class MultiLine extends gn.ui.input.BaseInput {
         constructor(value, placeholder, classList, rows, cols) {
             super("textarea", classList);
             this.placeholder = placeholder;
@@ -153,12 +147,6 @@ namespace gn.ui.input {
             this.rows = rowsValue;
             this.cols = colsValue;
             this.value = value;
-        }
-        get value() {
-            return this._element.value;
-        }
-        set value(value) {
-            this._element.value = value || "";
         }
         set rows(value) {
             this._element.rows = value;
@@ -183,17 +171,11 @@ namespace gn.ui.input {
         }
     }
 
-    class Number extends gn.ui.input.AbstractInput {
+    class Number extends gn.ui.input.BaseInput {
         constructor(value, placeholder, classList) {
             super("number", classList);
             this.placeholder = placeholder;
             this.value = value;
-        }
-        get value() {
-            return this._element.value;
-        }
-        set value(value) {
-            this._element.value = value || "";
         }
         get step() {
             return this._element.step;
@@ -223,26 +205,17 @@ namespace gn.ui.input {
             return this._element.max;
         }
     }
-    class Password extends gn.ui.input.AbstractInput {
+    class Password extends gn.ui.input.BaseInput {
         constructor(value, placeholder, classList) {
             super("password", classList);
             this.placeholder = placeholder;
             value = value;
         }
-        get value() {
-            return this._element.value || "";
-        }
-        set value(value) {
-            this._element.value = value;
-        }
     }
-    class Color extends gn.ui.input.AbstractInput {
+    class Color extends gn.ui.input.BaseInput {
         constructor(value, classList) {
             super("color", classList);
             this.value = value;
-        }
-        get value() {
-            return this._element.value;
         }
         set value(value) {
             if(gn.lang.Var.isString(value) && value.length == 7){
@@ -252,7 +225,7 @@ namespace gn.ui.input {
             }
         }
     }
-    class CheckBox extends gn.ui.input.AbstractInput { //* should use gn.ui.control.Switch
+    class CheckBox extends gn.ui.input.BaseInput { //* should use gn.ui.control.Switch
         constructor(value, classList) {
             super("checkbox", classList);
             this.value = value;
@@ -264,18 +237,12 @@ namespace gn.ui.input {
             this._element.checked = value || false;
         }
     }
-    class Range extends gn.ui.input.AbstractInput {
+    class Range extends gn.ui.input.BaseInput {
         constructor(value, min, max, classList ) {
             super("range", classList);
             this.value = value;
             this.min = min;
             this.max = max;
-        }
-        get value() {
-            return this._element.value;
-        }
-        set value(value) {
-            this._element.value = value || 0;
         }
         get min() {
             return this._element.min;
@@ -299,23 +266,12 @@ namespace gn.ui.input {
             this._element.step = value;
         }
     }
-    class FileMin extends gn.ui.input.AbstractInput{
-        constructor(classList){
-            super("file", classList)
-        }
-        get value(){
-            return this._element.files
-        }
-        set value(value){
-        }
-    }
-    //TODO support multiple file upload 
     class File extends gn.ui.container.Column {
-        constructor(classList) {
+        constructor(multi = false, classList) {
             super(classList);
             this.addClass("gn-input-file");
-            this._input = new gn.ui.input.FileMin("gn-exclude");
-            this._input.element.multiple = false;
+            this._input = new gn.ui.input.BaseInput("file", "gn-exclude");
+            this._input.element.multiple = multi;
             this._input.element.accept = "*";
             this.add(this._input);
             this._button = new gn.ui.control.Button(this.tr("SELECT_FILE"));
@@ -330,7 +286,7 @@ namespace gn.ui.input {
             this._input.addEventListener( "change", this.onChange, this );
         }
         get value() {
-            return this._input.value.length ? this._input.value[0] : null;
+            return this._input.element.files || null;
         }
         set value(value) {
             if(value){
@@ -354,11 +310,14 @@ namespace gn.ui.input {
             return this._button.disabled;
         }
         _updateLabel(){
-            if( this.value ){
-                this._label.text = this.value.name;
-            } else {
-                this._label.text = "";
+            let text = "";
+            for(let i = 0; i < this._input.element.files.length; i++){
+                text += this._input.element.files[i].name;
+                if(i < this._input.element.files.length - 1){
+                    text += ", ";
+                }
             }
+            this._label.text = text;
         }
         onCancel() {
             this._updateLabel();
@@ -373,15 +332,165 @@ namespace gn.ui.input {
             this.sendEvent("change", this.value);
         }
     }
-    class Date extends gn.ui.input.AbstractInput {
-        constructor(classList) {
+    class Date extends gn.ui.input.BaseInput {
+        constructor(value, classList) {
             super("date", classList);
+            this.value = value;
         }
         set value(value) {
-            console.log(value)
+            if (value instanceof Date) {
+                value = value.toISOString().split("T")[0];
+            }
+            this._element.value = value || "";
+        }
+    }
+    class ComboBox extends gn.ui.basic.Widget {
+        constructor(placeholder = "", nonEditable = false, classList = "") {
+            super(null, "div", "gn-input-combo");
+            this.addClasses(classList);
+            
+            this._options = [];
+            this._isOpen = false;
+            this._value = null;
+
+            this._input = new gn.ui.input.Line("", placeholder);
+            if (nonEditable) {
+                this._input.readonly = true;
+                this._input.addEventListener("click", this.togglePopup, this);
+            }
+            this.add(this._input);
+            
+            this._popup = new gn.ui.control.Menu(this, true);
+            this._popup.addEventListener("aboutToHide", () => {
+                this._isOpen = false;
+            }, this);
+
+            this._toggleBtn = new gn.ui.basic.Widget(null, "div", "gn-toggle");
+            this._toggleBtn.element.innerHTML = "&#9662;"; // Arrow character
+            this._toggleBtn.addEventListener("click", this.togglePopup, this);
+            this.add(this._toggleBtn);
+        }
+
+        set options(items) {
+            // expects layout format like [{value: 'val1', label: 'Label 1'}, ...]
+            this._options = items || [];
+            this._popup.clear();
+            this._options.forEach(opt => {
+                let item = new gn.ui.control.MenuItem(opt.value, opt.label || opt.value, opt.icon || null);
+                item.addEventListener("selected", () => this._onOptionSelect(opt), this);
+                this._popup.addItem(item);
+            });
+        }
+
+        get options() {
+            return this._options;
+        }
+
+        set text(value) {
+            this._input.value = value;
+        }
+
+        get text() {
+            return this._input.value;
+        }
+
+        get value() {
+            return this._value;
+        }
+
+        set value(val) {
+            this._value = val;
+            let opt = this.options.find(a => a.value == val);
+            this.text = opt ? (opt.label || opt.value) : val;
+            this._popup.walkItems(item => {
+                if(item._id == val) {
+                    item._selected = true;
+                    item.addClass("gn-selected");
+                } else {
+                    item._selected = false;
+                    item.removeClass("gn-selected");
+                }
+            });
+        }
+
+        togglePopup() {
+            this._isOpen = !this._isOpen;
+            if(this._isOpen) {
+                this._popup.show();
+            } else {
+                this._popup.hide();
+            }
+        }
+
+        _onOptionSelect(option) {   
+            this.value = option.value;
+            this.text = option.label || option.value;
+            this.togglePopup();
+            this.sendEvent("change", this.value);
+        }
+    }
+
+    class MultiComboBox extends gn.ui.input.ComboBox {
+        constructor(placeholder = "", nonEditable = false, classList = "") {
+            super(placeholder, nonEditable, classList);
+            this._value = [];
+        }
+
+        set value(val) {
+            if(!Array.isArray(val)) {
+                throw new TypeError("Value for MultiComboBox must be an array");
+            }
+            this._value = val;
+            let opts = this.options.filter(a => val.includes(a.value));
+            this.text = opts.map(o => o.label || o.value).join(", ");
+            this._popup.walkItems(item => {
+                if(this._value.includes(item._id)) {
+                    item._selected = true;
+                    item.addClass("gn-selected");
+                } else {
+                    item._selected = false;
+                    item.removeClass("gn-selected");
+                }
+            });
+        }
+
+        _onOptionSelect(option) {
+            if(this._value.includes(option.value)) {
+                this.value = this._value.filter(v => v !== option.value);
+            } else {
+                this.value = this._value.concat(option.value);
+            }
+            this.text = this._value.map(v => {
+                let opt = this._options.find(o => o.value === v);
+                return opt ? (opt.label || opt.value) : v;
+            }).join(", ");
+            this.sendEvent("change", this.value);
+        }
+    }
+    class Switch extends gn.ui.basic.Widget {
+        constructor(checked, classList) {
+            super(null, "label", classList);
+            this.addClass("gn-switch");
+            this._input = new gn.ui.input.CheckBox(null , checked);
+            this.add(this._input);
+            this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
+            this.add(this._span);
+            this.checked = checked || false;
+            this._input.addEventListener("change", () => {
+                this.sendEvent("change", this.checked);
+            }, this);
+        }
+        set checked(value) {
+            this._input.value = value;
+        }
+        get checked() {
+            return this._input.value;
+        }
+        set value(value) {
+            this.checked = value;
         }
         get value() {
-            return this._element.value;
+            return this.checked;
         }
     }
 }

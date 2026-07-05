@@ -45,107 +45,6 @@ namespace gn.ui.control {
             }
         }
     }
-    class Switch extends gn.ui.basic.Widget {
-        constructor(checked, classList) {
-            super(null, "label", classList);
-            this.addClass("gn-switch");
-            this._input = new gn.ui.input.CheckBox(null , checked);
-            this.add(this._input);
-            this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
-            this.add(this._span);
-            this.checked = checked || false;
-            this._input.addEventListener("change", () => {
-                this.sendEvent("change", this.checked);
-            }, this);
-        }
-        set checked(value) {
-            this._input.value = value;
-        }
-        get checked() {
-            return this._input.value;
-        }
-        set value(value) {
-            this.checked = value;
-        }
-        get value() {
-            return this.checked;
-        }
-    }
-    class Select extends gn.ui.basic.Widget {
-        constructor(classList, options) {
-            super(null, "select", classList);
-            this._options = null;
-            this.options = options;
-        }
-        set value(value) { // sets to selected value if multiple is true, sets to array of selected values
-            this._element.value = value;
-
-        }
-        get value() { // returns selected value
-            return this._element.value;
-        }
-        set text(value) { // sets to selected text
-            this.element.selectedIndex = [...x.element.options].findIndex(opt=>{return opt.text == value;})
-        }
-        get text() { // gets selected text
-            return this._element.options[this.selectedIndex].text;
-        }
-        set options(value) {
-            this._element.innerHTML = ""; // Clear existing options
-            value.forEach((val) => {
-                let item = null;
-                if(val.hr) {
-                    item = document.createElement("hr");
-                }else if(val.options){
-                    item = document.createElement("optgroup");
-                    item.label = val.label;
-                    val.options.forEach((option) => {
-                        let opt = document.createElement("option");
-                        opt.value = option.value;
-                        opt.text = option.label;
-                        if (option.selected) {
-                            opt.selected = true;
-                        }
-                        item.appendChild(opt);
-                    });
-                }else{
-                    item = document.createElement("option");
-                    item.value = val.value;
-                    item.text = val.label || val.value;
-                    if (val.selected) {
-                        item.selected = true;
-                    }
-                }
-                this.addNativeElement(item); 
-            });
-            this._options = value;
-        }
-        get options() { //returns an array of objects with value and label properties
-            return this._options;
-        }
-        get selectedIndex() {
-            return this._element.selectedIndex;
-        }
-        set selectedIndex(value) {
-            this._element.selectedIndex = value;
-        }
-        get selectedOptions() { // Returns an array of native selected options
-            return [...this._element.selectedOptions];
-        }
-        set multiple(value) {
-            this._element.multiple = value || false;
-        }
-        get multiple() {
-            return this._element.multiple;
-        }
-        //example of options array
-        /*[
-            {value:1, label:"Option 1"}, // options
-            {label:"Group 1", options:[{value:5, label:"Option 5", selected:true}, {value:6, label:"Option 6"}]}, // optgroup
-            {hr:1} // horizontal rule
-            ]
-        */
-    }
     class Breadcrumb extends gn.ui.container.Row {
         constructor(mode) {
             super("gn-breadcrumb");
@@ -285,7 +184,7 @@ namespace gn.ui.control {
             sep.parent = this;
             sep.addEventListener("generateMenu", function(e){
                 let el = e.data;
-                el._menu = new gn.ui.popup.Menu(el);
+                el._menu = new gn.ui.control.Menu(el);
                 el._menu.setStyle("min-width", "5rem");
                 el._menu.setStyle("min-height", "1rem");
                 let children = this._model.children(idx);
@@ -293,7 +192,7 @@ namespace gn.ui.control {
                     for (let i = 0; i < children.length; i++) {
                         let data = this._model.data(children[i], gn.model.Model.DataType.all)
                         if(data.type == gn.model.Model.Type.group){
-                            let menuItem = new gn.ui.popup.MenuItem(data.name, null, function(){
+                            let menuItem = new gn.ui.control.MenuItem(data.name, null, function(){
                                 this._setIndex(children[i]);
                                 this.triggered( children[i] );
                             }, this);
@@ -317,5 +216,125 @@ namespace gn.ui.control {
         history : 1,
         layer : 2
     })
-
+    class Menu extends gn.ui.popup.PopupBase {
+        constructor(menuParent, bParentWide = false, multiSelect = false) {
+            super("gn-popup-menu");
+            this._items = [];
+            this._menuParent = menuParent; // we need parent in order to position the menu correctly
+            this._selected = [];
+            this._bParentWide = bParentWide; // if true menu will be as wide as parent
+            this._multiSelect = multiSelect;
+        }
+        addItem(item){
+            if(!(item instanceof gn.ui.control.MenuItem)){
+                throw new Error("Item must be instance of MenuItem");
+            }
+            this._items.push(item);
+            this.add(item);
+            item.addEventListener("click", function () {
+                if(this._multiSelect) {
+                    this.hide();
+                }
+                if (item.action) {
+                    item.action();
+                }
+            }, this);
+        }
+        get items() {
+            return this._items;
+        }
+        show() {
+            super.show();
+            let rect = this._menuParent.rect;
+            let trect = this.rect;
+            this.setStyle("top", rect.bottom + "px");
+            if (this._bParentWide) {
+                this.setStyle("left", rect.left + "px");
+                this.setStyle("width", rect.width + "px");
+            } else {
+                this.setStyle("left", rect.right - trect.width + "px");
+            }
+            this._windowClickBound = this._windowClick.bind(this)
+            document.addEventListener("click", this._windowClickBound);
+        }
+        hide() {
+            this.sendEvent("aboutToHide");
+            super.hide();
+            this.c = false; // we reset click state so that next click will close the menu
+            document.removeEventListener("click", this._windowClickBound);
+        }
+        walkItems(cb, ctx) {
+            this._items.forEach(item => {
+                cb.call(ctx, item);
+            });
+        }
+        clear() {
+            this._items.forEach(item => {
+                this.remove(item);
+            });
+            this._items = [];
+        }
+        _windowClick(event){ //TODO this works for simple one layer menus, for complex we need to rethink how we handle where user clicked
+            if(!this.c){ // we remove first click it is a bug that would/will be solved by focus manager
+                this.c = true;
+                return;
+            }
+            else if (event.target !== this.element && !this.element.contains(event.target)) {
+                this.hide();
+                document.removeEventListener("click", this._windowClickBound);
+            }
+        }
+        createItem(id, label, icon, cb, ctx){
+            let item = new gn.ui.control.MenuItem(id, label, icon, cb, ctx);
+            this.addItem(item);
+            return item;
+        }
+    }
+    class MenuItem extends gn.ui.container.Row {
+        constructor(id, label, icon, cb, ctx) { //TODO id is new here, it will break things
+            super("gn-popup-menu-item");
+            this._id = id;
+            this._label = label;
+            this._icon = icon;
+            this._cb = cb;
+            this._context = ctx;
+            if(icon){
+                this.add(this._icon);
+            }
+            if(gn.lang.Var.isString(label)) {
+                this._label = new gn.ui.basic.Label(label);
+            } else if (!label instanceof gn.ui.basic.Label) {
+                throw new Error("Label must be instance of gn.ui.basic.Label or string");
+            }
+            this.add(this._label);
+            this.setStyle("cursor", "pointer");
+            this.addEventListener("click", function () {
+                this.sendEvent("selected", this._id);
+                if (this._cb) {
+                    if(this._context) {
+                        this._cb.call(this._context);
+                    } else {
+                        this._cb.call(this);
+                    }
+                }
+            }, this);
+            gn.locale.LocaleManager.instance().addEventListener("localeChange", function () {
+                if(this._label instanceof gn.locale.LocaleString) {
+                    this.label = this._label.translate();
+                }
+            }, this);
+        }
+        set label(label) {
+            this._label = label;
+        }
+        get label() {
+            return this._label;
+        }
+        set icon(icon) {
+            this._icon = icon;
+        }
+        get icon() {
+            return this._icon;
+        }
+    }
 }

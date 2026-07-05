@@ -17,35 +17,29 @@ if(!gn.app) gn.app = {};
 if(!gn.ui.list) gn.ui.list = {};
 if(!gn.ui.container) gn.ui.container = {};
 if(!gn.ui.tile) gn.ui.tile = {};
-if(!gn.ui.control) gn.ui.control = {};
 if(!gn.ui.input) gn.ui.input = {};
 if(!gn.ui.popup) gn.ui.popup = {};
+if(!gn.ui.control) gn.ui.control = {};
 
 gn.core.Object = class gn_core_Object {
     constructor() {
         this._internalId = this.internalId;
         this._disposed = false;
-
         gn.core.Object._ObjectMap.set(this._internalId, this);
     }
-
     _destructor() {}
-
     get internalId() {
         if (!this._internalId) {
             this._internalId = gn.core.Object.getInternalId(this);
         }
         return this._internalId;
     }
-
     tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     static tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     dispose() {
         if (this._disposed) {
             return;
@@ -56,35 +50,27 @@ gn.core.Object = class gn_core_Object {
         gn.core.Object._idCache.push(this._internalId);
         this._disposed = true;
     }
-
     addEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
     }
-
     removeEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().removeEventListener(this, type, callback, thisObj);
     }
-
     removeEventListenerById(id, type) {
         return gn.event.Emitter.instance().removeEventListenerById(this, id, type);
     }
-
     sendEvent(type, data, bubbles = false) {
         gn.event.Emitter.instance().sendEvent(this, type, data, bubbles);
     }
-
     forwardEvent(type, object) {
         return gn.event.Emitter.instance().forwardEvent(this, type, object);
     }
-
     stopForwardEvent(type, object) {
         return gn.event.Emitter.instance().stopForwardEvent(this, type, object);
     }
-
     hasListeners(type) {
         return gn.event.Emitter.instance().hasListeners(this, type);
     }
-
     static getInternalId(obj) {
         if (obj == null) {
             return null;
@@ -93,11 +79,9 @@ gn.core.Object = class gn_core_Object {
             return obj._internalId;
         }
         const id = gn.core.Object._idCache.length > 0 ? gn.core.Object._idCache.pop() : (gn.core.Object._nextId++).toString();
-
         obj._internalId = id;
         return id;
     }
-
     static getObjectById(id) {
         if (!id) {
             return null;
@@ -105,12 +89,10 @@ gn.core.Object = class gn_core_Object {
         const cleanId = id.replace(/^gn_/, '');
         return gn.core.Object._ObjectMap.get(cleanId) || null;
     }
-
     static getObjectCount() {
         return gn.core.Object._ObjectMap.size;
     }
 }
-
 gn.core.Object._idCache = [];
 gn.core.Object._nextId = 0;
 gn.core.Object._ObjectMap = new Map();
@@ -178,7 +160,6 @@ gn.lang.Number = class gn_lang_Number {
         return gn.lang.Var.isNumber(value);
     }
 }
-
 gn.lang.Object = class gn_lang_Object {
     static isObject(value) {
         return gn.lang.Var.isObject(value);
@@ -186,7 +167,6 @@ gn.lang.Object = class gn_lang_Object {
     static isEmpty(obj) {
         return Object.keys(obj).length === 0;
     }
-
     static merge(obj1, obj2) {
         return Object.assign(obj1, obj2);
     }
@@ -373,20 +353,10 @@ gn.event.manager.AbstractManager = class gn_event_manager_AbstractManager {
         if (!object) {
             return;
         }
-
-
-
-
         const event = new gn.event.Event(type, object, data, bubbles);
         event.copyFromNative(domEvent);
         gn.lang.Object.merge(event, data);
         gn.lang.Object.merge(event, additionalEventData);
-
-
-
-
-
-
         gn.event.Emitter.instance().dispatchEvent(event);
     }
     _onEvent(domEvent) {
@@ -407,22 +377,18 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
         this._clickTimer.addEventListener("timeout", this._sendClick, this);
         this._clickTimer.singleShot = true;
     }
-
     get supportedEvents() {
         return ["pointerdown", "pointerover", "pointerout", "pointerup", "pointercancel"];
     }
-
     get internalEvents() {
         return ["click", "dblclick", "contextmenu", "hoverover", "hoverout"];
     }
-
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         switch (type) {
             case "pointerdown":
                 this._handleDown(targetObj, domEvent);
@@ -446,21 +412,17 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
             target: targetObj,
             domEvent: domEvent,
         };
-
         if (domEvent.button === 2) {
             this._sendEvent(targetObj, "contextmenu", domEvent, null, true);
         }
     }
-
     _handleUp(targetObj, domEvent) {
         if (!this._lastPointerDown) {
             return;
         }
         this._clickTimer.start();
-
         if (this._lastPointerDown.target === targetObj && domEvent.button !== 2) {
             const now = Date.now();
-
             if (now - this._lastClickTime < this._DOUBLE_CLICK_THRESHOLD) {
                 this._sendEvent(targetObj, "dblclick", domEvent, null, true);
                 this._lastClickTime = 0;
@@ -470,7 +432,6 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
             }
         }
     }
-
     _sendClick() {
         if (this._lastPointerDown === null) {
             return;
@@ -483,27 +444,21 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
     constructor(options = {}) {
         super();
         this._dragStartThreshold = options.dragStartThreshold || 5;
-
         this._pointerId = null;
         this._targetElement = null;
         this._dragActive = false;
         this._dragStarted = false;
-
         this._startPos = null;
         this._currentPos = null;
-
         this._dragTarget = null;
         this._dragTargetObj = null;
     }
-
     get supportedEvents() {
         return ["pointerdown", "pointerup", "pointermove", "pointercancel"];
     }
-
     get internalEvents() {
         return ["dragstart", "drag", "dragend"];
     }
-
     _onEvent(domEvent) {
         switch (domEvent.type) {
             case "pointerdown":
@@ -520,25 +475,20 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
                 break;
         }
     }
-
     _onPointerDown(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         const isInteractive = domEvent.target.matches(
             'input, textarea, select, button, [contenteditable="true"], label, a'
         );
         if (!isInteractive) {
             domEvent.preventDefault();
         }
-
         const isDateInput = domEvent.target.tagName === 'INPUT' && domEvent.target.type === 'date';
-
         this._pointerId = domEvent.pointerId;
         this._targetElement = domEvent.target;
-
         if (this._targetElement && this._targetElement.setPointerCapture && !isDateInput) {
             try {
                 this._targetElement.setPointerCapture(this._pointerId);
@@ -546,12 +496,10 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
                 console.warn('Pointer capture failed:', e);
             }
         }
-
         this._dragActive = true;
         this._dragStarted = false;
         this._dragTarget = domEvent.target;
         this._dragTargetObj = targetObj;
-
         const pos = this._getPosition(domEvent);
         this._startPos = {
             ...pos
@@ -560,63 +508,48 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
             ...pos
         };
     }
-
     _onPointerMove(domEvent) {
         if (!this._dragActive || !this._dragTargetObj) {
             return;
         }
         this._currentPos = this._getPosition(domEvent);
-
         if (!this._dragStarted) {
             const dx = Math.abs(this._currentPos.x - this._startPos.x);
             const dy = Math.abs(this._currentPos.y - this._startPos.y);
-
             if (dx >= this._dragStartThreshold || dy >= this._dragStartThreshold) {
                 this._dragStarted = true;
-
                 this._sendEvent(this._dragTargetObj, "dragstart", domEvent);
             }
             return;
         }
-
         this._sendEvent(this._dragTargetObj, "drag", domEvent);
     }
-
     _onPointerUp(domEvent) {
         if (!this._dragActive || !this._dragTargetObj) {
             this._reset();
             return;
         }
         this._sendEvent(this._dragTargetObj, "dragend", domEvent);
-
         this._reset();
     }
-
     _onPointerCancel(domEvent) {
         console.log('Pointer cancel');
         if (!this._dragActive || !this._dragTargetObj) {
             this._reset();
             return;
         }
-
         if (this._dragStarted && this._dragTargetObj) {
             this._sendEvent(this._dragTargetObj, "dragend", domEvent);
         }
-
         this._reset();
     }
-
     _startDrag(domEvent) {
         this._dragStarted = true;
-
         if (!this._dragTargetObj) {
             return;
         }
-
-
         this._sendEvent(this._dragTargetObj, "dragstart", domEvent);
     }
-
     _getPosition(domEvent) {
         let a = domEvent;
         if (domEvent.touches && domEvent.touches.length > 0) {
@@ -627,7 +560,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
             y: a.clientY
         };
     }
-
     _reset() {
         if (this._targetElement && this._pointerId && this._targetElement.releasePointerCapture) {
             try {
@@ -643,7 +575,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
         this._dragTarget = null;
         this._pendingMoveEvent = null;
     }
-
     destroy() {
         if (this._dragActive) {
             this._cleanup();
@@ -655,7 +586,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
         super.destroy();
     }
 }
-
 gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManager extends gn.event.manager.AbstractManager {
     constructor(options = {}) {
         super();
@@ -663,38 +593,30 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._velocityFrames = options.velocityFrames || 5;
         this._minVelocity = options.minVelocity || 0.2;
         this._velocityDecay = options.velocityDecay || 0.95;
-
         this._pointerId = null;
         this._targetElement = null;
         this._dragActive = false;
         this._dragStarted = false;
-
         this._startPos = null;
         this._lastPos = null;
         this._currentPos = null;
-
         this._velocityHistory = [];
         this._lastTimestamp = 0;
         this._currentVelocity = {
             x: 0,
             y: 0
         };
-
         this._scrollAnimationId = null;
         this._lastScrollTime = 0;
-
         this._target = null;
         this._targetObj = null;
     }
-
     get supportedEvents() {
         return ["touchstart", "touchmove", "touchend", "touchcancel"];
     }
-
     get internalEvents() {
         return ["scroll"];
     }
-
     _onEvent(domEvent) {
         switch (domEvent.type) {
             case "touchstart":
@@ -711,25 +633,20 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 break;
         }
     }
-
     _onTouchStart(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         const isInteractive = domEvent.target.matches(
             'input, textarea, select, button, [contenteditable="true"], label, a'
         );
         if (!isInteractive) {
             domEvent.preventDefault();
         }
-
         this._cancelScrollAnimation();
-
         this._pointerId = domEvent.pointerId;
         this._targetElement = domEvent.target;
-
         if (this._targetElement && this._targetElement.setPointerCapture) {
             try {
                 this._targetElement.setPointerCapture(this._pointerId);
@@ -737,12 +654,10 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 console.warn('Pointer capture failed:', e);
             }
         }
-
         this._dragActive = true;
         this._dragStarted = false;
         this._target = domEvent.target;
         this._targetObj = targetObj;
-
         const pos = this._getPosition(domEvent);
         this._startPos = {
             ...pos
@@ -753,7 +668,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._currentPos = {
             ...pos
         };
-
         this._velocityHistory = [];
         this._currentVelocity = {
             x: 0,
@@ -761,43 +675,34 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         };
         this._lastTimestamp = domEvent.timeStamp;
     }
-
     _onTouchMove(domEvent) {
         if (!this._dragActive) {
             return;
         }
-
         this._currentPos = this._getPosition(domEvent);
         this._updateVelocity(domEvent.timeStamp);
-
         const dx = Math.abs(this._currentPos.x - this._startPos.x);
         const dy = Math.abs(this._currentPos.y - this._startPos.y);
-
         if (!this._dragStarted) {
             if (dx >= this._scrollStartThreshold || dy >= this._scrollStartThreshold) {
-
                 this._dragStarted = true;
             }
             return;
         }
-
         this._sendScrollEvent(domEvent);
         this._lastPos = {
             ...this._currentPos
         };
     }
-
     _updateVelocity(currentTime) {
         if (!this._lastTimestamp || currentTime - this._lastTimestamp === 0) {
             return;
         }
-
         const dt = currentTime - this._lastTimestamp;
         let vx = (this._currentPos.x - this._lastPos.x);
         vx /= dt;
         let vy = (this._currentPos.y - this._lastPos.y);
         vy /= dt;
-
         if (!Number.isNaN(vy) && !Number.isNaN(vx)) {
             this._velocityHistory.push({
                 vx,
@@ -805,7 +710,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 timestamp: currentTime,
             });
         }
-
         const cutoffTime = currentTime - 100;
         this._velocityHistory = this._velocityHistory.filter(v => v.timestamp >= cutoffTime);
         if (this._velocityHistory.length > 0) {
@@ -817,24 +721,20 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 vx: 0,
                 vy: 0
             });
-
             this._currentVelocity = {
                 x: sum.vx / this._velocityHistory.length,
                 y: sum.vy / this._velocityHistory.length,
             };
         }
     }
-
     _onTouchEnd(domEvent) {
         console.log('Touch end');
         if (!this._dragActive) {
             this._reset();
             return;
         }
-
         this._currentPos = this._getPosition(domEvent);
         this._updateVelocity(domEvent.timeStamp);
-
         const velocityMagnitude = Math.sqrt(this._currentVelocity.x * this._currentVelocity.x + this._currentVelocity.y * this._currentVelocity.y);
         console.log('Min velocity:', this._minVelocity, 'magnitude:', velocityMagnitude);
         if (velocityMagnitude >= this._minVelocity) {
@@ -842,21 +742,17 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         }
         this._reset();
     }
-
     _onTouchCancel(domEvent) {
         console.log('Touch cancel');
         if (!this._dragActive) {
             return;
         }
-
         this._reset();
     }
-
     _sendScrollEvent(domEvent) {
         if (!this._dragStarted || !this._lastPos) {
             return;
         }
-
         const scrollData = {
             deltaX: (this._lastPos.x - this._currentPos.x) * 3.2,
             deltaY: (this._lastPos.y - this._currentPos.y) * 3.2,
@@ -864,50 +760,39 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         console.log('Sending scroll event', scrollData.deltaX, scrollData.deltaY);
         this._sendEvent(this._targetObj, "scroll", domEvent, null, true, scrollData);
     }
-
     _startScrollAnimation(initialVelocity) {
         console.log('Starting scroll animation with velocity:', initialVelocity);
-
         this._cancelScrollAnimation();
-
         let velocity = {
             ...initialVelocity
         };
         let lastTime = performance.now();
-
         const animateScroll = (currentTime) => {
             const dt = Math.min(32, currentTime - lastTime);
-
             velocity.x *= Math.pow(this._velocityDecay, dt / 16);
             velocity.y *= Math.pow(this._velocityDecay, dt / 16);
             const deltaX = velocity.x * dt * 15;
             const deltaY = velocity.y * dt * 15;
-
             if (Math.abs(velocity.x) < 0.01 && Math.abs(velocity.y) < 0.01) {
                 return;
             }
-
             const scrollData = {
                 deltaX: -deltaX,
                 deltaY: -deltaY,
             };
             this._sendEvent(this._targetObj, "scroll", null, null, true, scrollData);
-
             lastTime = currentTime;
             this._scrollAnimationId = requestAnimationFrame(animateScroll);
         };
-
         lastTime = performance.now();
         this._scrollAnimationId = requestAnimationFrame(animateScroll);
     }
-
     _cancelScrollAnimation() {
         if (this._scrollAnimationId) {
             cancelAnimationFrame(this._scrollAnimationId);
             this._scrollAnimationId = null;
         }
     }
-
     _getPosition(domEvent) {
         let a = domEvent;
         if (domEvent.touches && domEvent.touches.length > 0) {
@@ -918,7 +803,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
             y: a.clientY
         };
     }
-
     _reset() {
         if (this._targetElement && this._pointerId && this._targetElement.releasePointerCapture) {
             try {
@@ -935,7 +819,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._target = null;
         this._pendingMoveEvent = null;
     }
-
     destroy() {
         if (this._dragActive) {
             this._cleanup();
@@ -950,27 +833,21 @@ gn.event.manager.FocusManager = class gn_event_manager_FocusManager extends gn.e
         this._currentFocused = null;
         this._focusStack = [];
     }
-
     get supportedEvents() {
         return ['focusin', 'focusout'];
     }
-
     get internalEvents() {
         return ['focus', 'blur', 'focusin', 'focusout'];
     }
-
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         const relatedTargetObj = domEvent.relatedTarget ? gn.core.Object.getObjectById(domEvent.relatedTarget.id) : null;
-
         if (type === 'focusin' && targetObj) {
             if (this._currentFocused) {
                 this._focusStack.push(this._currentFocused);
             }
             this._currentFocused = targetObj;
-
-
             this._sendEvent(targetObj, 'focusin', domEvent, {
                 relatedTarget: relatedTargetObj
             }, true);
@@ -978,24 +855,19 @@ gn.event.manager.FocusManager = class gn_event_manager_FocusManager extends gn.e
                 relatedTarget: relatedTargetObj
             }, false);
         }
-
         if (type === 'focusout' && targetObj) {
-
             this._sendEvent(targetObj, 'blur', domEvent, {
                 relatedTarget: relatedTargetObj
             }, false);
             this._sendEvent(targetObj, 'focusout', domEvent, {
                 relatedTarget: relatedTargetObj
             }, true);
-
             this._currentFocused = this._focusStack.pop() || null;
         }
     }
-
     getCurrentFocused() {
         return this._currentFocused;
     }
-
     focusPrevious() {
         if (this._focusStack.length > 0) {
             const previous = this._focusStack.pop();
@@ -1018,11 +890,9 @@ gn.event.manager.WheelManager = class gn_event_manager_WheelManager extends gn.e
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
-
         if (!targetObj) {
             return;
         }
-
         this._sendEvent(targetObj, "scroll", domEvent, null, true);
     }
 }
@@ -1030,15 +900,12 @@ gn.event.manager.InputManager = class gn_event_manager_InputManager extends gn.e
     constructor() {
         super();
     }
-
     get supportedEvents() {
         return ['input', 'change'];
     }
-
     get internalEvents() {
         return this.supportedEvents;
     }
-
     _onEvent(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
@@ -1107,7 +974,6 @@ gn.event.Event = class gn_event_Event {
         return clone;
     }
 }
-
 gn.event.Event.COPY_FROM_NATIVE = {
     'MouseEvent': ['clientX', 'clientY', 'screenX', 'screenY', 'button', 'buttons'],
     'WheelEvent': ['deltaX', 'deltaY', 'deltaZ', 'deltaMode'],
@@ -1152,32 +1018,26 @@ gn.event.Emitter = class gn_event_Emitter {
         if (typeof listener !== 'function') {
             throw new TypeError(`Listener for event "${type}" must be a function`);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         if (!this._listeners.has(internalId)) {
             this._listeners.set(internalId, new Map());
         }
-
         const objectEvents = this._listeners.get(internalId);
         if (!objectEvents.has(type)) {
             objectEvents.set(type, new Set());
         }
-
         const eventListeners = objectEvents.get(type);
-
         for (const existing of eventListeners) {
             if (existing.listener === listener && existing.context === context) {
                 return existing.id;
             }
         }
-
         const entry = {
             listener,
             context,
             id: this._getNextId()
         };
         eventListeners.add(entry);
-
         if (this._managersSupportedTypes.has(type)) {
             if (type.startsWith('focus') && object.focusable === undefined) {
                 object.focusable = -1;
@@ -1185,25 +1045,20 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return entry.id;
     }
-
     removeEventListener(object, type, listener, context) {
         if (gn.lang.Var.isString(object)) {
             return this.removeEventListener(this, object, type, listener);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents || !objectEvents.has(type)) {
             return false;
         }
-
         const eventListeners = objectEvents.get(type);
         for (const entry of eventListeners) {
             if (entry.listener === listener && entry.context === context) {
                 eventListeners.delete(entry);
                 this._idCache.push(entry.id);
-
                 if (eventListeners.size === 0) {
                     objectEvents.delete(type);
                     if (objectEvents.size === 0) {
@@ -1215,32 +1070,25 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return false;
     }
-
     removeEventListenerById(object, id, type) {
         if (gn.lang.Var.isString(object)) {
             return this.removeEventListenerById(this, object, id);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) {
             return false;
         }
-
         const typesToCheck = type ? [type] : Array.from(objectEvents.keys());
-
         for (const t of typesToCheck) {
             const eventListeners = objectEvents.get(t);
             if (!eventListeners) {
                 continue;
             }
-
             for (const entry of eventListeners) {
                 if (entry.id === id) {
                     eventListeners.delete(entry);
                     this._idCache.push(id);
-
                     if (eventListeners.size === 0) {
                         objectEvents.delete(t);
                         if (objectEvents.size === 0) {
@@ -1253,33 +1101,26 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return false;
     }
-
     sendEvent(object, type, data, bubbles = false) {
         if (gn.lang.Var.isString(object)) {
             return this.sendEvent(this, object, type);
         }
-
         const event = new gn.event.Event(type, object, data, bubbles);
         this.dispatchEvent(event);
     }
-
     dispatchEvent(event) {
         if (!event || !event.sender) return;
-
         this._bubblingStack.length = 0;
-
         let current = event.sender;
         while (current) {
             this._bubblingStack.push(current);
             if (!event.bubbles) break;
             current = current.layoutParent || null;
         }
-
         if (event.bubbles) {
             for (let i = 0; i < this._bubblingStack.length; i++) {
                 const target = this._bubblingStack[i];
                 this._dispatchToTarget(target, event);
-
                 if (event.propagationStopped) {
                     break;
                 }
@@ -1288,32 +1129,24 @@ gn.event.Emitter = class gn_event_Emitter {
             this._dispatchToTarget(event.sender, event);
         }
     }
-
     _dispatchToTarget(target, event) {
         const internalId = gn.core.Object.getInternalId(target);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) return;
-
         const listeners = objectEvents.get(event.type);
         if (!listeners || listeners.size === 0) return;
-
         const listenersArray = Array.from(listeners);
-
         for (const entry of listenersArray) {
             if (!listeners.has(entry)) continue;
-
             try {
                 entry.listener.call(entry.context || target, event);
             } catch (error) {
                 console.error(`Error in event listener for ${event.type}:`, error);
             }
-
             if (event.immediatePropagationStopped) {
                 break;
             }
         }
-
         if (listeners.size === 0) {
             objectEvents.delete(event.type);
             if (objectEvents.size === 0) {
@@ -1321,79 +1154,61 @@ gn.event.Emitter = class gn_event_Emitter {
             }
         }
     }
-
     hasListeners(object, type) {
         if (gn.lang.Var.isString(object)) {
             return this.hasListeners(this, object);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) {
             return false;
         }
-
         const listeners = objectEvents.get(type);
         return listeners ? listeners.size > 0 : false;
     }
-
     getListenerCount(object, type) {
         if (!this.hasListeners(object, type)) {
             return 0;
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         return this._listeners.get(internalId).get(type).size;
     }
-
     removeAllEventListeners(object) {
         if (gn.lang.Var.isString(object)) {
             return this.removeAllEventListeners(this, object);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const removed = this._listeners.delete(internalId);
-
         for (const [key, id] of this._forwards) {
             if (key.startsWith(internalId + '|')) {
                 this._forwards.delete(key);
                 this._idCache.push(id);
             }
         }
-
         return removed;
     }
-
     forwardEvent(source, type, target) {
         if (gn.lang.Var.isString(source)) {
             return this.forwardEvent(this, source, type);
         }
-
         const id = source.addEventListener(type, function(event) {
             const clonedEvent = event.clone();
             clonedEvent._sender = target;
             target.sendEvent(clonedEvent.type, clonedEvent.data, clonedEvent.bubbles);
         }, target);
-
         const key = `${source.internalId}|${type}|${target.internalId}`;
         this._forwards.set(key, id);
-
         return true;
     }
-
     stopForwardEvent(source, type, target) {
         if (gn.lang.Var.isString(source)) {
             return this.stopForwardEvent(this, source, type);
         }
-
         const key = `${source.internalId}|${type}|${target.internalId}`;
         const id = this._forwards.get(key);
-
         if (!id) {
             return false;
         }
-
         this._forwards.delete(key);
         return this.removeEventListenerById(source, id, type);
     }
@@ -1410,8 +1225,10 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return dump;
     }
+    static static() {
+        gn.event.Emitter.instance();
+    }
 }
-
 gn.event.Timer = class gn_event_Timer extends gn.core.Object {
     constructor(interval) {
         super();
@@ -1421,7 +1238,6 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         this._intervalId = null;
         this._boundTimeout = this._timeout.bind(this);
     }
-
     _destructor() {
         this.stop();
     }
@@ -1488,9 +1304,7 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         if (!this._enabled) {
             return;
         }
-
         this.sendEvent('timeout');
-
         if (this._singleShot) {
             this.stop();
         }
@@ -1499,7 +1313,6 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         if (typeof func !== 'function') {
             throw new TypeError('Must be a function');
         }
-
         return setTimeout(() => {
             if (obj && !obj._disposed) {
                 func.call(obj);
@@ -1515,7 +1328,6 @@ gn.locale.LocaleString = class gn_locale_LocaleString {
         this._count = count;
         this._args = [];
         gn.locale.LocaleManager.instance().translate(this);
-
     }
     get messageId() {
         return this._messageId;
@@ -1640,7 +1452,6 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
         this._tooltip = null;
         this._tooltipContent = null;
         this._children = [];
-
         this._layoutManager = null;
         this._layoutParent = null;
         if (layout) {
@@ -1795,20 +1606,16 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
     showTooltip() {
         if (!gn.lang.Var.isNull(this._tooltip)) {
             let viewportWidth = document.documentElement.clientWidth;
-
             this.add(this._tooltip);
             let triggerRect = this.rect;
             let tooltipRect = this._tooltip.rect;
-
             if (tooltipRect.top < 0) {
                 this._tooltip.setStyle("bottom", "-150%");
                 this._tooltip.element.style.setProperty("--arrow-rotation", "180deg");
                 this._tooltip.element.style.setProperty("--arrow-top", "-40%");
-
                 this._tooltip._wasMoved = true;
             }
             if (tooltipRect.left < 0) {
-
                 this._tooltip.setStyle("left", "0px");
                 this._tooltip.setStyle("transform", "none");
                 tooltipRect = this._tooltip.rect;
@@ -1819,7 +1626,6 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
             } else if (tooltipRect.right > viewportWidth || tooltipRect.right > document.documentElement.clientWidth) {
                 this._tooltip.setStyle("left", "auto");
                 this._tooltip.setStyle("right", "0px");
-
                 tooltipRect = this._tooltip.rect;
                 this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth +5}px`);
                 tooltipRect = this._tooltip.rect;
@@ -1975,7 +1781,6 @@ gn.ui.basic.Label = class gn_ui_basic_Label extends gn.ui.basic.Widget {
     set text(value) {
         this._text = value;
         this._element.innerText = this._text;
-
         if (this._text instanceof gn.locale.LocaleString) {
             gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
         }
@@ -2123,7 +1928,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
             row = this.rowCount()
         }
         this._checkIndex(obj[this._key]);
-
         this._data[obj[this._key]] = obj;
         this._ensureChildMapping(parent);
         this._mapData[parent].splice(row, 0, obj[this._key]);
@@ -2165,7 +1969,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
         this._mapData[index]?.forEach(idx => this._removeData(idx));
         delete this._mapData[index];
     }
-
     data(index, role = gn.model.Model.DataType.display) {
         if (gn.lang.Var.isNull(index)) {
             throw new Error('Data identifier cannot be null');
@@ -2220,9 +2023,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
         return this._mapData[index];
     }
 }
-
-
-
 gn.model.TableModel = class gn_model_TableModel extends gn.core.Object {
     constructor() {
         super();
@@ -2236,12 +2036,10 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
         this._mapping = {
             null: []
         };
-
         this._filterCB = null;
         this._filter = null;
         this._sortCB = null;
         this._sort = null;
-
         this.sourceModel = model;
     }
     get sourceModel() {
@@ -2249,7 +2047,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
     }
     set sourceModel(value) {
         if (this._source) {
-
             this._source.stopForwardEvent("reset", this);
             this._source.stopForwardEvent("dataSet", this);
             this._source.stopForwardEvent("dataChanged", this);
@@ -2276,12 +2073,10 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
     set sortCB(value) {
         this._sortCB = value;
     }
-
     applyFilter(value) {
         this._filter = value;
         this._applyFilterSort();
     }
-
     applySort(value) {
         this._sort = value;
         this._applyFilterSort();
@@ -2304,7 +2099,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
             filterFunc = this._filterCB;
         }
         let ret = false;
-
         for (let i = 0; i < this._source.rowCount(parent); i++) {
             let index = this._source.index(i, parent)
             let bAccept = false;
@@ -2369,7 +2163,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
         }
         return ret;
     }
-
     set key(value) {
         this._source.key = value;
     }
@@ -2551,7 +2344,6 @@ gn.ui.layout.Grid = class gn_ui_layout_Grid extends gn.ui.layout.AbstractLayout 
         this._templateRows = null;
         this._columns = null;
         this._rows = null;
-
         this.templateColumns = "auto";
         this.templateRows = "auto";
         if (!gn.lang.Var.isNull(columns)) {
@@ -2649,13 +2441,11 @@ gn.ui.layout.Grid = class gn_ui_layout_Grid extends gn.ui.layout.AbstractLayout 
         return ret;
     }
 }
-
 gn.ui.layout.direction = gn.lang.Enum({
     Row: 1,
     Column: 2
 })
 gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.core.Object {
-
     constructor() {
         super();
         this._formData = new FormData();
@@ -2712,7 +2502,6 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         let total = 0;
         for (let [key, value] of this._formData.entries()) {
             total += new TextEncoder().encode(key).length;
-
             if (typeof value === "string") {
                 total += new TextEncoder().encode(value).length;
             } else if (value instanceof Blob || value instanceof File) {
@@ -2726,20 +2515,16 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         const chunks = [];
         let offset = 0;
         let chunkIndex = 0;
-
         while (offset < file.size) {
             const chunk = file.slice(offset, offset + chunkSize);
-
             const chunkFile = new window.File([chunk], file.name, {
                 type: file.type,
                 lastModified: file.lastModified,
             });
-
             chunks.push(chunkFile);
             offset += chunkSize;
             chunkIndex++;
         }
-
         return chunks;
     }
 }
@@ -2767,7 +2552,6 @@ gn.app.App = class gn_app_App extends gn.core.Object {
             if (appClass == gn.app.App) {
                 throw new Error("Application class cannot be the abstract class");
             }
-
             gn.app.App._instance = new appClass();
             gn.app.App.instance().main();
         }
@@ -2822,7 +2606,6 @@ gn.app.App._instance = null;
 gn.ui.list.List = class gn_ui_list_List extends gn.ui.basic.Widget {
     constructor() {
         super();
-
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
@@ -2923,7 +2706,6 @@ gn.ui.list.List = class gn_ui_list_List extends gn.ui.basic.Widget {
             id = null;
         }
         this._groups.set(id, []);
-
         let count = this._model.rowCount(id);
         for (let i = 0; i < count; i++) {
             let index = this._model.index(i, id);
@@ -2979,7 +2761,6 @@ gn.ui.list.ListItem = class gn_ui_list_ListItem extends gn.ui.basic.Widget {
     }
     updateItem(data, key) {
         this._data = data;
-
     }
 }
 gn.ui.list.ListTitle = class gn_ui_list_ListTitle extends gn.ui.basic.Widget {
@@ -2989,7 +2770,6 @@ gn.ui.list.ListTitle = class gn_ui_list_ListTitle extends gn.ui.basic.Widget {
     }
     updateItem(data, key) {
         this._data = data;
-
     }
 }
 gn.ui.container.Row = class gn_ui_container_Row extends gn.ui.basic.Widget {
@@ -3013,18 +2793,15 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         this._order = []
         this._currentWidget;
         this._prevWidget;
-
         this._animDir = null;
         this._animLoop = false;
         this._animBounceDir = true;
         this._animnOnEdge = true;
         this.addClass("gn-stack");
-
     }
     get currentWidget() {
         return this._currentWidget;
     }
-
     add(child, animation) {
         child.addClass("gn-stack-child");
         super.add(child);
@@ -3043,7 +2820,6 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         }
         this._order.splice(this._order.indexOf(child), 1)
     }
-
     setAnimationMode(dir, loop = true) {
         if (!["left", "right", "up", "down"].includes(dir)) {
             this._animDir = null;
@@ -3055,15 +2831,11 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
     activate(widget, forward = true) {
         this._prevWidget = this._currentWidget;
         this._currentWidget = widget;
-
         let x = this._processAnimation(this._prevWidget, true, forward);
         x ? this._prevWidget.setStyle("transform", x) : null;
-
-
         let y = this._processAnimation(this._currentWidget, false, forward);
         y ? this._currentWidget.setStyle("transform", y) : null;
         this._currentWidget.show();
-
         if (x) {
             gn.event.Timer.singleShot(this, () => {
                 this._currentWidget.setStyle("transform", "translate( 0 )");
@@ -3102,7 +2874,6 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
             return ret;
         }
         return
-
     }
     _animHelper(dir, forward) {
         let ret = 100;
@@ -3209,7 +2980,6 @@ gn.ui.container.SplitHandle = class gn_ui_container_SplitHandle extends gn.ui.ba
         return this._after;
     }
     _onDrag(e) {
-
         if (e.clientX == 0 && e.clientY == 0) {
             return;
         }
@@ -3252,72 +3022,52 @@ gn.ui.container.ScrollCustom = class gn_ui_container_ScrollCustom extends gn.ui.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._body.addEventListener("scroll", this._onScroll, this);
-
         this._speed = 0.2;
-
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Row));
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Column));
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     _getClampedOffsets(y, x) {
         const maxScrollTop = Math.max(0, this._body.element.scrollHeight - this.element.clientHeight);
         const maxScrollLeft = Math.max(0, this._body.element.scrollWidth - this.element.clientWidth);
-
         return {
             y: Math.max(0, Math.min(maxScrollTop, y)),
             x: Math.max(0, Math.min(maxScrollLeft, x))
         };
     }
-
     scrollTo(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         y = (y === null || typeof y === 'undefined') ? currentY : y;
         x = (x === null || typeof x === 'undefined') ? currentX : x;
-
         const clamped = this._getClampedOffsets(y, x);
-
         this._body.element.style.top = (-clamped.y) + "px";
         this._body.element.style.left = (-clamped.x) + "px";
-
         this.sendEvent("scrolled");
     }
-
     scrollBy(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         const targetY = currentY + (y || 0);
         const targetX = currentX + (x || 0);
-
         this.scrollTo(targetX, targetY);
     }
-
     _onScroll(e) {
-
         const power = 1.2;
         const dynamicY = Math.pow(Math.abs(e.deltaY), power) * Math.sign(e.deltaY);
         const dynamicX = Math.pow(Math.abs(e.deltaX), power) * Math.sign(e.deltaX);
-
         this.scrollBy(this._speed * dynamicX, this._speed * dynamicY);
     }
 }
@@ -3328,9 +3078,7 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
         this._orientation = orientation;
         this._scroll = scroll;
         this._wheelScrollSpeed = 0.1;
-
         this._thumb = new gn.ui.basic.Widget(null, "div", "thumb");
-
         if (gn.ui.layout.direction.Row == orientation) {
             this.addClass("horizontal");
             this._thumb.setStyle("width", "100px");
@@ -3340,15 +3088,12 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("height", "100px");
             this._thumb.setStyle("width", "100%");
         }
-
         this.addEventListener("scroll", this._onTumbScrolled, this);
         this._thumb.addEventListener("dragstart", this._onDragStart, this);
         this._thumb.addEventListener("drag", this._onDrag, this);
         this._thumb.addEventListener("dragend", this._onDragStop, this);
         this.add(this._thumb);
-
         this._scroll.addEventListener("scrolled", this._updatePositionOfThumb, this);
-
         gn.event.Timer.singleShot(this, () => {
             this._updateLengthOfThumb();
         });
@@ -3357,7 +3102,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._updatePositionOfThumb();
         }, this);
     }
-
     _updateLengthOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let width = this.width;
@@ -3381,7 +3125,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             }
         }
     }
-
     _updatePositionOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let scrollLeft = -parseFloat(this._scroll.body.element.style.left || 0);
@@ -3395,7 +3138,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("top", thumbTop + "px");
         }
     }
-
     _onDrag(e) {
         console.log(e.clientX, e.clientY)
         if (e.clientX == 0 && e.clientY == 0) {
@@ -3443,55 +3185,44 @@ gn.ui.container.ScrollSys = class gn_ui_container_ScrollSys extends gn.ui.basic.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll-sys")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._speed = 0.2;
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     scrollTo(x, y) {
         this.element.scrollTo(x, y);
     }
-
     scrollBy(x, y) {
         this.element.scrollBy(x, y);
     }
 }
 gn.ui.container.Scroll = class gn_ui_container_Scroll extends gn.ui.container.ScrollCustom {}
 gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Widget {
-
     constructor(details) {
         super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
         this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
         super._addInternal(this._scroll);
-
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
         this._currentGroup = null;
         this._breadcrumb = null;
         this._fakeTiles = [];
-
         this._details = gn.lang.Object.merge({
             "header": true,
             "sort": false,
             "filter": false,
         }, details)
-
         this._tileClass = gn.ui.tile.TileItem;
         this._fakeTileClass = gn.ui.tile.FakeTileItem;
         this._subItemContClass = gn.ui.tile.TileSubItemContainer
@@ -3499,7 +3230,6 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
             this._header = new gn.ui.container.Row("gn-tileContainerHeader");
         }
         this.add(this._header);
-
         gn.app.App.instance().addEventListener("resize", this.genFakeTileItems, this);
     }
     set tileClass(value) {
@@ -3735,322 +3465,7 @@ gn.ui.tile.TileSubItemContainer = class gn_ui_tile_TileSubItemContainer extends 
         this._data = data;
     }
 }
-gn.ui.control.Button = class gn_ui_control_Button extends gn.ui.basic.Widget {
-    constructor(text, classList, callback, context) {
-        super(null, "button", classList);
-        this.addClass("gn-button");
-        this._text = "";
-        this.text = text;
-        if (!gn.lang.Var.isNull(callback) && callback instanceof Function) {
-            this.addEventListener("click", callback, context || this);
-        }
-    }
-    _destructor() {
-        if (this._text instanceof gn.locale.LocaleString) {
-            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
-        }
-        super._destructor();
-    }
-    set text(value) {
-        this._text = value;
-        this._element.innerText = this._text;
-
-        if (this._text instanceof gn.locale.LocaleString) {
-            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
-        }
-    }
-    get text() {
-        return this._element.innerText;
-    }
-    set disabled(value) {
-        this._element.disabled = value;
-    }
-    get disabled() {
-        return this._element.disabled;
-    }
-    set type(value) {
-        if (!["submit", "reset", "button"].includes(value)) return
-        this._element.type = value;
-    }
-    get type() {
-        return this._element.type;
-    }
-    _onLocaleChanged() {
-        if (this._text instanceof gn.locale.LocaleString) {
-            this.text = this._text.translate();
-        }
-    }
-}
-gn.ui.control.Switch = class gn_ui_control_Switch extends gn.ui.basic.Widget {
-    constructor(checked, classList) {
-        super(null, "label", classList);
-        this.addClass("gn-switch");
-        this._input = new gn.ui.input.CheckBox(null, checked);
-        this.add(this._input);
-        this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
-        this.add(this._span);
-        this.checked = checked || false;
-        this._input.addEventListener("change", () => {
-            this.sendEvent("change", this.checked);
-        }, this);
-    }
-    set checked(value) {
-        this._input.value = value;
-    }
-    get checked() {
-        return this._input.value;
-    }
-    set value(value) {
-        this.checked = value;
-    }
-    get value() {
-        return this.checked;
-    }
-}
-gn.ui.control.Select = class gn_ui_control_Select extends gn.ui.basic.Widget {
-    constructor(classList, options) {
-        super(null, "select", classList);
-        this._options = null;
-        this.options = options;
-    }
-    set value(value) {
-        this._element.value = value;
-
-    }
-    get value() {
-        return this._element.value;
-    }
-    set text(value) {
-        this.element.selectedIndex = [...x.element.options].findIndex(opt => {
-            return opt.text == value;
-        })
-    }
-    get text() {
-        return this._element.options[this.selectedIndex].text;
-    }
-    set options(value) {
-        this._element.innerHTML = "";
-        value.forEach((val) => {
-            let item = null;
-            if (val.hr) {
-                item = document.createElement("hr");
-            } else if (val.options) {
-                item = document.createElement("optgroup");
-                item.label = val.label;
-                val.options.forEach((option) => {
-                    let opt = document.createElement("option");
-                    opt.value = option.value;
-                    opt.text = option.label;
-                    if (option.selected) {
-                        opt.selected = true;
-                    }
-                    item.appendChild(opt);
-                });
-            } else {
-                item = document.createElement("option");
-                item.value = val.value;
-                item.text = val.label || val.value;
-                if (val.selected) {
-                    item.selected = true;
-                }
-            }
-            this.addNativeElement(item);
-        });
-        this._options = value;
-    }
-    get options() {
-        return this._options;
-    }
-    get selectedIndex() {
-        return this._element.selectedIndex;
-    }
-    set selectedIndex(value) {
-        this._element.selectedIndex = value;
-    }
-    get selectedOptions() {
-        return [...this._element.selectedOptions];
-    }
-    set multiple(value) {
-        this._element.multiple = value || false;
-    }
-    get multiple() {
-        return this._element.multiple;
-    }
-
-
-}
-gn.ui.control.Breadcrumb = class gn_ui_control_Breadcrumb extends gn.ui.container.Row {
-    constructor(mode) {
-        super("gn-breadcrumb");
-        this._model = null;
-        this._mode = mode || gn.ui.control.Breadcrumb.Type.history
-
-        this._history = [null];
-        this._historyIdx = 0;
-
-        this._widgets = new Map();
-        this._activeWidgets = [];
-
-        this._currentIndex = null;
-
-        this.up = null;
-        this._topLevelName = new gn.ui.basic.Label();
-        this._topLevelName.setStyle("cursor", "pointer");
-        this._topLevelName.addEventListener("click", function() {
-            this._setIndex(null);
-            this.triggered(null);
-        }, this);
-        this.add(this._topLevelName);
-        this._rootSeparator = this._generateSeparator(null);
-        this.add(this._rootSeparator);
-
-        if (this._mode == gn.ui.control.Breadcrumb.Type.layer) {
-            this._makeUp()
-        } else {
-            this._makeBack();
-            this._makeForward();
-        }
-
-    }
-    triggered(idx) {
-        this.sendEvent("triggered", idx)
-    }
-    set model(value) {
-        if (gn.lang.Var.isNull(value)) {
-            throw new Error('Model cannot be null');
-        }
-        this._model = value;
-    }
-    get model() {
-        return this._model;
-    }
-    set topLevelName(value) {
-        this._topLevelName.text = value;
-    }
-    get topLevelName() {
-        return this._topLevelName.text;
-    }
-    setIndex(index) {
-        this._setIndex(index)
-    }
-    _setIndex(index, ignoreHistory = false) {
-        if (index == this._currentIndex)
-            return;
-        if (this._mode == gn.ui.control.Breadcrumb.Type.history) {
-            if (!ignoreHistory) {
-                if (this._history.length >= this._historyIdx) {
-                    this._history = this._history.slice(0, this._historyIdx + 1)
-                }
-                this._history.push(index)
-                this._historyIdx++;
-            }
-        }
-        this._currentIndex = index;
-        if (!this._widgets.has(this._currentIndex) && this._currentIndex != null) {
-            let tmp = {};
-            tmp.separator = this._generateSeparator(this._currentIndex);
-            tmp.label = new gn.ui.basic.Label(this.model.data(this._currentIndex));
-            tmp.label.setStyle("cursor", "pointer");
-            var index = this._currentIndex;
-            tmp.label.addEventListener("click", function() {
-                this._setIndex(index);
-                this.triggered(index);
-            }, this);
-            this._widgets.set(this._currentIndex, tmp);
-        }
-        this._openLabels()
-    }
-    _openLabels() {
-        while (this._activeWidgets.length) {
-            this.remove(this._activeWidgets[0]);
-            this._activeWidgets.shift();
-        }
-        this._addWidgets(this._currentIndex);
-    }
-    _addWidgets(idx) {
-        if (idx == null)
-            return;
-        let pidx = this._model.parent(idx);
-        if (pidx != null)
-            this._addWidgets(pidx);
-
-        this.add(this._widgets.get(idx).label);
-        this._activeWidgets.push(this._widgets.get(idx).label);
-        this.add(this._widgets.get(idx).separator);
-        this._activeWidgets.push(this._widgets.get(idx).separator);
-    }
-    _makeUp() {
-        this._up = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"]);
-        this._up.addEventListener("click", function() {
-            if (this._currentIndex == null)
-                return;
-            this._setIndex(this._model.parent(this._currentIndex));
-            this.triggered(this._currentIndex);
-        }, this);
-        this._up.tooltip = this.tr("UP");
-        this.addBefore(this._up, this._topLevelName);
-    }
-    _makeBack() {
-        this._back = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"]);
-        this._back.addEventListener("click", function() {
-            if (this._historyIdx == 0)
-                return;
-            this._setIndex(this._history[--this._historyIdx], true);
-            this.triggered(this._currentIndex);
-        }, this);
-        this._back.tooltip = this.tr("BACK");
-        this.addBefore(this._back, this._topLevelName);
-    }
-    _makeForward() {
-        this._forw = new gn.ui.basic.Icon(20, "fa-angle-right", ["fa-solid"]);
-        this._forw.addEventListener("click", function() {
-            if (this._historyIdx + 1 >= this._history.length)
-                return;
-            this._setIndex(this._history[++this._historyIdx], true);
-            this.triggered(this._currentIndex);
-        }, this);
-        this._forw.tooltip = this.tr("FORWARD");
-        this.addBefore(this._forw, this._topLevelName);
-    }
-    _generateSeparator(idx) {
-        let sep = new gn.ui.basic.Icon(20, "fa-angle-right", ["fa-solid"]);
-        sep.index = idx;
-        sep.parent = this;
-        sep.addEventListener("generateMenu", function(e) {
-            let el = e.data;
-            el._menu = new gn.ui.popup.Menu(el);
-            el._menu.setStyle("min-width", "5rem");
-            el._menu.setStyle("min-height", "1rem");
-            let children = this._model.children(idx);
-            if (children) {
-                for (let i = 0; i < children.length; i++) {
-                    let data = this._model.data(children[i], gn.model.Model.DataType.all)
-                    if (data.type == gn.model.Model.Type.group) {
-                        let menuItem = new gn.ui.popup.MenuItem(data.name, null, function() {
-                            this._setIndex(children[i]);
-                            this.triggered(children[i]);
-                        }, this);
-
-
-                        el._menu.addItem(menuItem);
-                    }
-                }
-            }
-        }, this);
-        sep.addEventListener("click", function() {
-            if (!this._menu) {
-                this.sendEvent("generateMenu", this);
-            }
-            this._menu.show();
-        }, sep)
-        return sep;
-    }
-}
-gn.ui.control.Breadcrumb.Type = gn.lang.Enum({
-    history: 1,
-    layer: 2
-})
-gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.Widget {
+gn.ui.input.BaseInput = class gn_ui_input_BaseInput extends gn.ui.basic.Widget {
     constructor(type, classList) {
         switch (type) {
             case "textarea":
@@ -4062,10 +3477,8 @@ gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.
                 break;
         }
         this._plcText = "";
-
         this.addClasses(classList);
         this.addEventListener("focus", this._onFocus, this);
-
     }
     _destructor() {
         if (this._plcText instanceof gn.locale.LocaleString) {
@@ -4077,10 +3490,10 @@ gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.
         return this._element.type;
     }
     get value() {
-        throw new TypeError("Abstract class");
+        return this._element.value;
     }
     set value(value) {
-        throw new TypeError("Abstract class");
+        this._element.value = value || "";
     }
     set disabled(value) {
         this._element.disabled = value;
@@ -4093,10 +3506,8 @@ gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.
             throw new TypeError("Placeholder for this input type is not supported by standard html")
         }
         this._element.placeholder = value || "";
-
         this._plcText = value;
         this._element.innerText = this._plcText;
-
         if (this._plcText instanceof gn.locale.LocaleString) {
             gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
         }
@@ -4172,30 +3583,21 @@ gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.
     click() {
         this._element.click();
     }
-    _onFocus() {
-
-    }
+    _onFocus() {}
     _onLocaleChanged() {
         if (this._plcText instanceof gn.locale.LocaleString) {
             this.placeholder = this._plcText.translate();
         }
     }
 }
-
-gn.ui.input.Line = class gn_ui_input_Line extends gn.ui.input.AbstractInput {
+gn.ui.input.Line = class gn_ui_input_Line extends gn.ui.input.BaseInput {
     constructor(value, placeholder, classList) {
         super("text", classList);
         this.placeholder = placeholder;
         this.value = value;
     }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this.element.value = value || "";
-    }
 }
-gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.AbstractInput {
+gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.BaseInput {
     constructor(value, placeholder, classList, rows, cols) {
         super("textarea", classList);
         this.placeholder = placeholder;
@@ -4204,12 +3606,6 @@ gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.Abstract
         this.rows = rowsValue;
         this.cols = colsValue;
         this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || "";
     }
     set rows(value) {
         this._element.rows = value;
@@ -4233,18 +3629,11 @@ gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.Abstract
         return this._element.defaultValue;
     }
 }
-
-gn.ui.input.Number = class gn_ui_input_Number extends gn.ui.input.AbstractInput {
+gn.ui.input.Number = class gn_ui_input_Number extends gn.ui.input.BaseInput {
     constructor(value, placeholder, classList) {
         super("number", classList);
         this.placeholder = placeholder;
         this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || "";
     }
     get step() {
         return this._element.step;
@@ -4274,26 +3663,17 @@ gn.ui.input.Number = class gn_ui_input_Number extends gn.ui.input.AbstractInput 
         return this._element.max;
     }
 }
-gn.ui.input.Password = class gn_ui_input_Password extends gn.ui.input.AbstractInput {
+gn.ui.input.Password = class gn_ui_input_Password extends gn.ui.input.BaseInput {
     constructor(value, placeholder, classList) {
         super("password", classList);
         this.placeholder = placeholder;
         value = value;
     }
-    get value() {
-        return this._element.value || "";
-    }
-    set value(value) {
-        this._element.value = value;
-    }
 }
-gn.ui.input.Color = class gn_ui_input_Color extends gn.ui.input.AbstractInput {
+gn.ui.input.Color = class gn_ui_input_Color extends gn.ui.input.BaseInput {
     constructor(value, classList) {
         super("color", classList);
         this.value = value;
-    }
-    get value() {
-        return this._element.value;
     }
     set value(value) {
         if (gn.lang.Var.isString(value) && value.length == 7) {
@@ -4303,7 +3683,7 @@ gn.ui.input.Color = class gn_ui_input_Color extends gn.ui.input.AbstractInput {
         }
     }
 }
-gn.ui.input.CheckBox = class gn_ui_input_CheckBox extends gn.ui.input.AbstractInput {
+gn.ui.input.CheckBox = class gn_ui_input_CheckBox extends gn.ui.input.BaseInput {
     constructor(value, classList) {
         super("checkbox", classList);
         this.value = value;
@@ -4315,18 +3695,12 @@ gn.ui.input.CheckBox = class gn_ui_input_CheckBox extends gn.ui.input.AbstractIn
         this._element.checked = value || false;
     }
 }
-gn.ui.input.Range = class gn_ui_input_Range extends gn.ui.input.AbstractInput {
+gn.ui.input.Range = class gn_ui_input_Range extends gn.ui.input.BaseInput {
     constructor(value, min, max, classList) {
         super("range", classList);
         this.value = value;
         this.min = min;
         this.max = max;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || 0;
     }
     get min() {
         return this._element.min;
@@ -4350,22 +3724,12 @@ gn.ui.input.Range = class gn_ui_input_Range extends gn.ui.input.AbstractInput {
         this._element.step = value;
     }
 }
-gn.ui.input.FileMin = class gn_ui_input_FileMin extends gn.ui.input.AbstractInput {
-    constructor(classList) {
-        super("file", classList)
-    }
-    get value() {
-        return this._element.files
-    }
-    set value(value) {}
-}
-
 gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
-    constructor(classList) {
+    constructor(multi = false, classList) {
         super(classList);
         this.addClass("gn-input-file");
-        this._input = new gn.ui.input.FileMin("gn-exclude");
-        this._input.element.multiple = false;
+        this._input = new gn.ui.input.BaseInput("file", "gn-exclude");
+        this._input.element.multiple = multi;
         this._input.element.accept = "*";
         this.add(this._input);
         this._button = new gn.ui.control.Button(this.tr("SELECT_FILE"));
@@ -4380,7 +3744,7 @@ gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
         this._input.addEventListener("change", this.onChange, this);
     }
     get value() {
-        return this._input.value.length ? this._input.value[0] : null;
+        return this._input.element.files || null;
     }
     set value(value) {
         if (value) {
@@ -4404,11 +3768,14 @@ gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
         return this._button.disabled;
     }
     _updateLabel() {
-        if (this.value) {
-            this._label.text = this.value.name;
-        } else {
-            this._label.text = "";
+        let text = "";
+        for (let i = 0; i < this._input.element.files.length; i++) {
+            text += this._input.element.files[i].name;
+            if (i < this._input.element.files.length - 1) {
+                text += ", ";
+            }
         }
+        this._label.text = text;
     }
     onCancel() {
         this._updateLabel();
@@ -4423,15 +3790,149 @@ gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
         this.sendEvent("change", this.value);
     }
 }
-gn.ui.input.Date = class gn_ui_input_Date extends gn.ui.input.AbstractInput {
-    constructor(classList) {
+gn.ui.input.Date = class gn_ui_input_Date extends gn.ui.input.BaseInput {
+    constructor(value, classList) {
         super("date", classList);
+        this.value = value;
     }
     set value(value) {
-        console.log(value)
+        if (value instanceof Date) {
+            value = value.toISOString().split("T")[0];
+        }
+        this._element.value = value || "";
+    }
+}
+gn.ui.input.ComboBox = class gn_ui_input_ComboBox extends gn.ui.basic.Widget {
+    constructor(placeholder = "", nonEditable = false, classList = "") {
+        super(null, "div", "gn-input-combo");
+        this.addClasses(classList);
+        this._options = [];
+        this._isOpen = false;
+        this._value = null;
+        this._input = new gn.ui.input.Line("", placeholder);
+        if (nonEditable) {
+            this._input.readonly = true;
+            this._input.addEventListener("click", this.togglePopup, this);
+        }
+        this.add(this._input);
+        this._popup = new gn.ui.control.Menu(this, true);
+        this._popup.addEventListener("aboutToHide", () => {
+            this._isOpen = false;
+        }, this);
+        this._toggleBtn = new gn.ui.basic.Widget(null, "div", "gn-toggle");
+        this._toggleBtn.element.innerHTML = "&#9662;";
+        this._toggleBtn.addEventListener("click", this.togglePopup, this);
+        this.add(this._toggleBtn);
+    }
+    set options(items) {
+        this._options = items || [];
+        this._popup.clear();
+        this._options.forEach(opt => {
+            let item = new gn.ui.control.MenuItem(opt.value, opt.label || opt.value, opt.icon || null);
+            item.addEventListener("selected", () => this._onOptionSelect(opt), this);
+            this._popup.addItem(item);
+        });
+    }
+    get options() {
+        return this._options;
+    }
+    set text(value) {
+        this._input.value = value;
+    }
+    get text() {
+        return this._input.value;
     }
     get value() {
-        return this._element.value;
+        return this._value;
+    }
+    set value(val) {
+        this._value = val;
+        let opt = this.options.find(a => a.value == val);
+        this.text = opt ? (opt.label || opt.value) : val;
+        this._popup.walkItems(item => {
+            if (item._id == val) {
+                item._selected = true;
+                item.addClass("gn-selected");
+            } else {
+                item._selected = false;
+                item.removeClass("gn-selected");
+            }
+        });
+    }
+    togglePopup() {
+        this._isOpen = !this._isOpen;
+        if (this._isOpen) {
+            this._popup.show();
+        } else {
+            this._popup.hide();
+        }
+    }
+    _onOptionSelect(option) {
+        this.value = option.value;
+        this.text = option.label || option.value;
+        this.togglePopup();
+        this.sendEvent("change", this.value);
+    }
+}
+gn.ui.input.MultiComboBox = class gn_ui_input_MultiComboBox extends gn.ui.input.ComboBox {
+    constructor(placeholder = "", nonEditable = false, classList = "") {
+        super(placeholder, nonEditable, classList);
+        this._value = [];
+    }
+    set value(val) {
+        if (!Array.isArray(val)) {
+            throw new TypeError("Value for MultiComboBox must be an array");
+        }
+        this._value = val;
+        let opts = this.options.filter(a => val.includes(a.value));
+        this.text = opts.map(o => o.label || o.value).join(", ");
+        this._popup.walkItems(item => {
+            if (this._value.includes(item._id)) {
+                item._selected = true;
+                item.addClass("gn-selected");
+            } else {
+                item._selected = false;
+                item.removeClass("gn-selected");
+            }
+        });
+    }
+    _onOptionSelect(option) {
+        if (this._value.includes(option.value)) {
+            this.value = this._value.filter(v => v !== option.value);
+        } else {
+            this.value = this._value.concat(option.value);
+        }
+        this.text = this._value.map(v => {
+            let opt = this._options.find(o => o.value === v);
+            return opt ? (opt.label || opt.value) : v;
+        }).join(", ");
+        this.sendEvent("change", this.value);
+    }
+}
+gn.ui.input.Switch = class gn_ui_input_Switch extends gn.ui.basic.Widget {
+    constructor(checked, classList) {
+        super(null, "label", classList);
+        this.addClass("gn-switch");
+        this._input = new gn.ui.input.CheckBox(null, checked);
+        this.add(this._input);
+        this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
+        this.add(this._span);
+        this.checked = checked || false;
+        this._input.addEventListener("change", () => {
+            this.sendEvent("change", this.checked);
+        }, this);
+    }
+    set checked(value) {
+        this._input.value = value;
+    }
+    get checked() {
+        return this._input.value;
+    }
+    set value(value) {
+        this.checked = value;
+    }
+    get value() {
+        return this.checked;
     }
 }
 gn.ui.popup.PopupBase = class gn_ui_popup_PopupBase extends gn.ui.container.Column {
@@ -4563,103 +4064,11 @@ gn.ui.popup.Popup = class gn_ui_popup_Popup extends gn.ui.popup.PopupBase {
         return popup;
     }
 }
-gn.ui.popup.Menu = class gn_ui_popup_Menu extends gn.ui.popup.PopupBase {
-    constructor(menuParent) {
-        super("gn-popup-menu");
-        this._items = [];
-        this._menuParent = menuParent;
-    }
-    addItem(item) {
-        if (!(item instanceof gn.ui.popup.MenuItem)) {
-            throw new Error("Item must be instance of MenuItem");
-        }
-        this._items.push(item);
-        this.add(item);
-        item.addEventListener("click", function() {
-            this.hide();
-            if (item.action) {
-                item.action();
-            }
-        }, this);
-    }
-    get items() {
-        return this._items;
-    }
-    show() {
-        super.show();
-        let rect = this._menuParent.rect;
-        let trect = this.rect;
-        this.setStyle("top", rect.bottom + "px");
-        this.setStyle("left", rect.right - trect.width + "px");
-        this._windowClickBound = this._windowClick.bind(this)
-        document.addEventListener("click", this._windowClickBound);
-    }
-    hide() {
-        super.hide();
-        this.c = false;
-        document.removeEventListener("click", this._windowClickBound);
-    }
-    _windowClick(event) {
-        if (!this.c) {
-            this.c = true;
-            return;
-        } else if (event.target !== this.element && !this.element.contains(event.target)) {
-            this.hide();
-            document.removeEventListener("click", this._windowClickBound);
-        }
-    }
-}
-gn.ui.popup.MenuItem = class gn_ui_popup_MenuItem extends gn.ui.container.Row {
-    constructor(label, icon, action, context) {
-        super("gn-popup-menu-item");
-        this._label = label;
-        this._icon = icon;
-        this._action = action;
-        this._context = context;
-        if (icon) {
-            this.add(this._icon);
-        }
-        if (gn.lang.Var.isString(label)) {
-            this._label = new gn.ui.basic.Label(label);
-        } else if (!label instanceof gn.ui.basic.Label) {
-            throw new Error("Label must be instance of gn.ui.basic.Label or string");
-        }
-        this.add(this._label);
-        this.setStyle("cursor", "pointer");
-        this.addEventListener("click", function() {
-            if (this._action) {
-                if (this._context) {
-                    this._action.call(this._context);
-                } else {
-                    this._action.call(this);
-                }
-            }
-        }, this);
-        gn.locale.LocaleManager.instance().addEventListener("localeChange", function() {
-            if (this._label instanceof gn.locale.LocaleString) {
-                this.label = this._label.translate();
-            }
-        }, this);
-    }
-    set label(label) {
-        this._label = label;
-    }
-    get label() {
-        return this._label;
-    }
-    set icon(icon) {
-        this._icon = icon;
-    }
-    get icon() {
-        return this._icon;
-    }
-}
 gn.ui.popup.OK = 1;
 gn.ui.popup.CANCEL = 2;
 gn.ui.popup.CLOSE = 4;
 gn.ui.popup.YES = 8;
 gn.ui.popup.NO = 16;
-
 gn.ui.popup.Blocker = class gn_ui_popup_Blocker extends gn.ui.basic.Widget {
     constructor() {
         super();
@@ -4721,3 +4130,331 @@ gn.ui.Header = class gn_ui_Header extends gn.ui.container.Row {
         return this._right;
     }
 }
+gn.ui.control.Button = class gn_ui_control_Button extends gn.ui.basic.Widget {
+    constructor(text, classList, callback, context) {
+        super(null, "button", classList);
+        this.addClass("gn-button");
+        this._text = "";
+        this.text = text;
+        if (!gn.lang.Var.isNull(callback) && callback instanceof Function) {
+            this.addEventListener("click", callback, context || this);
+        }
+    }
+    _destructor() {
+        if (this._text instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+        super._destructor();
+    }
+    set text(value) {
+        this._text = value;
+        this._element.innerText = this._text;
+        if (this._text instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+    }
+    get text() {
+        return this._element.innerText;
+    }
+    set disabled(value) {
+        this._element.disabled = value;
+    }
+    get disabled() {
+        return this._element.disabled;
+    }
+    set type(value) {
+        if (!["submit", "reset", "button"].includes(value)) return
+        this._element.type = value;
+    }
+    get type() {
+        return this._element.type;
+    }
+    _onLocaleChanged() {
+        if (this._text instanceof gn.locale.LocaleString) {
+            this.text = this._text.translate();
+        }
+    }
+}
+gn.ui.control.Breadcrumb = class gn_ui_control_Breadcrumb extends gn.ui.container.Row {
+    constructor(mode) {
+        super("gn-breadcrumb");
+        this._model = null;
+        this._mode = mode || gn.ui.control.Breadcrumb.Type.history
+        this._history = [null];
+        this._historyIdx = 0;
+        this._widgets = new Map();
+        this._activeWidgets = [];
+        this._currentIndex = null;
+        this.up = null;
+        this._topLevelName = new gn.ui.basic.Label();
+        this._topLevelName.setStyle("cursor", "pointer");
+        this._topLevelName.addEventListener("click", function() {
+            this._setIndex(null);
+            this.triggered(null);
+        }, this);
+        this.add(this._topLevelName);
+        this._rootSeparator = this._generateSeparator(null);
+        this.add(this._rootSeparator);
+        if (this._mode == gn.ui.control.Breadcrumb.Type.layer) {
+            this._makeUp()
+        } else {
+            this._makeBack();
+            this._makeForward();
+        }
+    }
+    triggered(idx) {
+        this.sendEvent("triggered", idx)
+    }
+    set model(value) {
+        if (gn.lang.Var.isNull(value)) {
+            throw new Error('Model cannot be null');
+        }
+        this._model = value;
+    }
+    get model() {
+        return this._model;
+    }
+    set topLevelName(value) {
+        this._topLevelName.text = value;
+    }
+    get topLevelName() {
+        return this._topLevelName.text;
+    }
+    setIndex(index) {
+        this._setIndex(index)
+    }
+    _setIndex(index, ignoreHistory = false) {
+        if (index == this._currentIndex)
+            return;
+        if (this._mode == gn.ui.control.Breadcrumb.Type.history) {
+            if (!ignoreHistory) {
+                if (this._history.length >= this._historyIdx) {
+                    this._history = this._history.slice(0, this._historyIdx + 1)
+                }
+                this._history.push(index)
+                this._historyIdx++;
+            }
+        }
+        this._currentIndex = index;
+        if (!this._widgets.has(this._currentIndex) && this._currentIndex != null) {
+            let tmp = {};
+            tmp.separator = this._generateSeparator(this._currentIndex);
+            tmp.label = new gn.ui.basic.Label(this.model.data(this._currentIndex));
+            tmp.label.setStyle("cursor", "pointer");
+            var index = this._currentIndex;
+            tmp.label.addEventListener("click", function() {
+                this._setIndex(index);
+                this.triggered(index);
+            }, this);
+            this._widgets.set(this._currentIndex, tmp);
+        }
+        this._openLabels()
+    }
+    _openLabels() {
+        while (this._activeWidgets.length) {
+            this.remove(this._activeWidgets[0]);
+            this._activeWidgets.shift();
+        }
+        this._addWidgets(this._currentIndex);
+    }
+    _addWidgets(idx) {
+        if (idx == null)
+            return;
+        let pidx = this._model.parent(idx);
+        if (pidx != null)
+            this._addWidgets(pidx);
+        this.add(this._widgets.get(idx).label);
+        this._activeWidgets.push(this._widgets.get(idx).label);
+        this.add(this._widgets.get(idx).separator);
+        this._activeWidgets.push(this._widgets.get(idx).separator);
+    }
+    _makeUp() {
+        this._up = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"]);
+        this._up.addEventListener("click", function() {
+            if (this._currentIndex == null)
+                return;
+            this._setIndex(this._model.parent(this._currentIndex));
+            this.triggered(this._currentIndex);
+        }, this);
+        this._up.tooltip = this.tr("UP");
+        this.addBefore(this._up, this._topLevelName);
+    }
+    _makeBack() {
+        this._back = new gn.ui.basic.Icon(20, "fa-angle-left", ["fa-solid"]);
+        this._back.addEventListener("click", function() {
+            if (this._historyIdx == 0)
+                return;
+            this._setIndex(this._history[--this._historyIdx], true);
+            this.triggered(this._currentIndex);
+        }, this);
+        this._back.tooltip = this.tr("BACK");
+        this.addBefore(this._back, this._topLevelName);
+    }
+    _makeForward() {
+        this._forw = new gn.ui.basic.Icon(20, "fa-angle-right", ["fa-solid"]);
+        this._forw.addEventListener("click", function() {
+            if (this._historyIdx + 1 >= this._history.length)
+                return;
+            this._setIndex(this._history[++this._historyIdx], true);
+            this.triggered(this._currentIndex);
+        }, this);
+        this._forw.tooltip = this.tr("FORWARD");
+        this.addBefore(this._forw, this._topLevelName);
+    }
+    _generateSeparator(idx) {
+        let sep = new gn.ui.basic.Icon(20, "fa-angle-right", ["fa-solid"]);
+        sep.index = idx;
+        sep.parent = this;
+        sep.addEventListener("generateMenu", function(e) {
+            let el = e.data;
+            el._menu = new gn.ui.control.Menu(el);
+            el._menu.setStyle("min-width", "5rem");
+            el._menu.setStyle("min-height", "1rem");
+            let children = this._model.children(idx);
+            if (children) {
+                for (let i = 0; i < children.length; i++) {
+                    let data = this._model.data(children[i], gn.model.Model.DataType.all)
+                    if (data.type == gn.model.Model.Type.group) {
+                        let menuItem = new gn.ui.control.MenuItem(data.name, null, function() {
+                            this._setIndex(children[i]);
+                            this.triggered(children[i]);
+                        }, this);
+                        el._menu.addItem(menuItem);
+                    }
+                }
+            }
+        }, this);
+        sep.addEventListener("click", function() {
+            if (!this._menu) {
+                this.sendEvent("generateMenu", this);
+            }
+            this._menu.show();
+        }, sep)
+        return sep;
+    }
+}
+gn.ui.control.Breadcrumb.Type = gn.lang.Enum({
+    history: 1,
+    layer: 2
+})
+gn.ui.control.Menu = class gn_ui_control_Menu extends gn.ui.popup.PopupBase {
+    constructor(menuParent, bParentWide = false, multiSelect = false) {
+        super("gn-popup-menu");
+        this._items = [];
+        this._menuParent = menuParent;
+        this._selected = [];
+        this._bParentWide = bParentWide;
+        this._multiSelect = multiSelect;
+    }
+    addItem(item) {
+        if (!(item instanceof gn.ui.control.MenuItem)) {
+            throw new Error("Item must be instance of MenuItem");
+        }
+        this._items.push(item);
+        this.add(item);
+        item.addEventListener("click", function() {
+            if (this._multiSelect) {
+                this.hide();
+            }
+            if (item.action) {
+                item.action();
+            }
+        }, this);
+    }
+    get items() {
+        return this._items;
+    }
+    show() {
+        super.show();
+        let rect = this._menuParent.rect;
+        let trect = this.rect;
+        this.setStyle("top", rect.bottom + "px");
+        if (this._bParentWide) {
+            this.setStyle("left", rect.left + "px");
+            this.setStyle("width", rect.width + "px");
+        } else {
+            this.setStyle("left", rect.right - trect.width + "px");
+        }
+        this._windowClickBound = this._windowClick.bind(this)
+        document.addEventListener("click", this._windowClickBound);
+    }
+    hide() {
+        this.sendEvent("aboutToHide");
+        super.hide();
+        this.c = false;
+        document.removeEventListener("click", this._windowClickBound);
+    }
+    walkItems(cb, ctx) {
+        this._items.forEach(item => {
+            cb.call(ctx, item);
+        });
+    }
+    clear() {
+        this._items.forEach(item => {
+            this.remove(item);
+        });
+        this._items = [];
+    }
+    _windowClick(event) {
+        if (!this.c) {
+            this.c = true;
+            return;
+        } else if (event.target !== this.element && !this.element.contains(event.target)) {
+            this.hide();
+            document.removeEventListener("click", this._windowClickBound);
+        }
+    }
+    createItem(id, label, icon, cb, ctx) {
+        let item = new gn.ui.control.MenuItem(id, label, icon, cb, ctx);
+        this.addItem(item);
+        return item;
+    }
+}
+gn.ui.control.MenuItem = class gn_ui_control_MenuItem extends gn.ui.container.Row {
+    constructor(id, label, icon, cb, ctx) {
+        super("gn-popup-menu-item");
+        this._id = id;
+        this._label = label;
+        this._icon = icon;
+        this._cb = cb;
+        this._context = ctx;
+        if (icon) {
+            this.add(this._icon);
+        }
+        if (gn.lang.Var.isString(label)) {
+            this._label = new gn.ui.basic.Label(label);
+        } else if (!label instanceof gn.ui.basic.Label) {
+            throw new Error("Label must be instance of gn.ui.basic.Label or string");
+        }
+        this.add(this._label);
+        this.setStyle("cursor", "pointer");
+        this.addEventListener("click", function() {
+            this.sendEvent("selected", this._id);
+            if (this._cb) {
+                if (this._context) {
+                    this._cb.call(this._context);
+                } else {
+                    this._cb.call(this);
+                }
+            }
+        }, this);
+        gn.locale.LocaleManager.instance().addEventListener("localeChange", function() {
+            if (this._label instanceof gn.locale.LocaleString) {
+                this.label = this._label.translate();
+            }
+        }, this);
+    }
+    set label(label) {
+        this._label = label;
+    }
+    get label() {
+        return this._label;
+    }
+    set icon(icon) {
+        this._icon = icon;
+    }
+    get icon() {
+        return this._icon;
+    }
+}
+gn.event.Emitter.static();

@@ -41,7 +41,7 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
 
     hashes[filename] = new_hash
 
-    pret = parse(code)
+    pret = parse(code, file_path)
     if not pret:
         return False
 
