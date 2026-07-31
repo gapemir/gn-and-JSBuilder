@@ -4,6 +4,7 @@ var gn = {};
 if(!gn.core) gn.core = {};
 if(!gn.lang) gn.lang = {};
 if(!gn.geometry) gn.geometry = {};
+if(!gn.io) gn.io = {};
 if(!gn.util) gn.util = {};
 if(!gn.event) gn.event = {};
 if(!gn.event.manager) gn.event.manager = {};
@@ -266,7 +267,7 @@ gn.geometry.Point = class gn_geometry_Point {
         return this._y;
     }
 }
-gn.util.Cookie = class gn_util_Cookie {
+gn.io.Cookie = class gn_io_Cookie {
     static get() {
         let cookies = document.cookie.split('; ').reduce((acc, cookie) => {
             let [name, value] = cookie.split('=');
@@ -286,6 +287,71 @@ gn.util.Cookie = class gn_util_Cookie {
     }
     static del(name) {
         document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+}
+gn.io.Clipboard = class gn_io_Clipboard {
+    static writeText(text) {
+        navigator.clipboard.writeText(text);
+    }
+    static async readText() {
+        return await navigator.clipboard.readText();
+    }
+}
+gn.io.Url = class gn_io_Url {
+    static getQueryParamKeys(urlString = window.location.href) {
+        const url = new URL(urlString, window.location.origin);
+        const keys = [];
+        for (const key of url.searchParams.keys()) {
+            keys.push(key);
+        }
+        return keys;
+    }
+    static getQueryParam(key, urlString = window.location.href) {
+        const url = new URL(urlString, window.location.origin);
+        return url.searchParams.get(key);
+    }
+    static getAllQueryParamValues(key, urlString = window.location.href) {
+        const url = new URL(urlString, window.location.origin);
+        return url.searchParams.getAll(key);
+    }
+    static addQueryParam(key, value, urlString = window.location.href) {
+        const url = new URL(urlString);
+        if (value === null || value === undefined || value === '') {
+            url.searchParams.delete(key);
+        } else if (Array.isArray(value)) {
+            url.searchParams.delete(key);
+            value.forEach(v => url.searchParams.append(key, v));
+        } else {
+            url.searchParams.set(key, value);
+        }
+        return url.toString();
+    }
+    static setQueryParams(params, urlString = window.location.href) {
+        const url = new URL(urlString);
+        Object.entries(params).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                url.searchParams.delete(key);
+            } else if (Array.isArray(value)) {
+                url.searchParams.delete(key);
+                value.forEach(v => url.searchParams.append(key, v));
+            } else {
+                url.searchParams.set(key, value);
+            }
+        });
+        return url.toString();
+    }
+    static removeQueryParam(key, urlString = window.location.href) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete(key);
+        return url.toString();
+    }
+    static updateBrowserUrl(url, replace = false, state = {}) {
+        const targetUrl = typeof url === 'string' ? url : url.toString();
+        if (replace) {
+            window.history.replaceState(state, '', targetUrl);
+        } else {
+            window.history.pushState(state, '', targetUrl);
+        }
     }
 }
 gn.util.Geometry = class gn_util_Geometry {
