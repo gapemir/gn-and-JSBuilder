@@ -19,34 +19,28 @@ if(!gn.ui.list) gn.ui.list = {};
 if(!gn.ui.container) gn.ui.container = {};
 if(!gn.ui.tile) gn.ui.tile = {};
 if(!gn.ui.control) gn.ui.control = {};
-if(!gn.ui.popup) gn.ui.popup = {};
 if(!gn.ui.input) gn.ui.input = {};
+if(!gn.ui.popup) gn.ui.popup = {};
 
 gn.core.Object = class gn_core_Object {
     constructor() {
         this._internalId = this.internalId;
         this._disposed = false;
-
         gn.core.Object._ObjectMap.set(this._internalId, this);
     }
-
     _destructor() {}
-
     get internalId() {
         if (!this._internalId) {
             this._internalId = gn.core.Object.getInternalId(this);
         }
         return this._internalId;
     }
-
     tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     static tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     dispose() {
         if (this._disposed) {
             return;
@@ -57,35 +51,27 @@ gn.core.Object = class gn_core_Object {
         gn.core.Object._idCache.push(this._internalId);
         this._disposed = true;
     }
-
     addEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
     }
-
     removeEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().removeEventListener(this, type, callback, thisObj);
     }
-
     removeEventListenerById(id, type) {
         return gn.event.Emitter.instance().removeEventListenerById(this, id, type);
     }
-
     sendEvent(type, data, bubbles = false) {
         gn.event.Emitter.instance().sendEvent(this, type, data, bubbles);
     }
-
     forwardEvent(type, object) {
         return gn.event.Emitter.instance().forwardEvent(this, type, object);
     }
-
     stopForwardEvent(type, object) {
         return gn.event.Emitter.instance().stopForwardEvent(this, type, object);
     }
-
     hasListeners(type) {
         return gn.event.Emitter.instance().hasListeners(this, type);
     }
-
     static getInternalId(obj) {
         if (obj == null) {
             return null;
@@ -94,11 +80,9 @@ gn.core.Object = class gn_core_Object {
             return obj._internalId;
         }
         const id = gn.core.Object._idCache.length > 0 ? gn.core.Object._idCache.pop() : (gn.core.Object._nextId++).toString();
-
         obj._internalId = id;
         return id;
     }
-
     static getObjectById(id) {
         if (!id) {
             return null;
@@ -106,12 +90,10 @@ gn.core.Object = class gn_core_Object {
         const cleanId = id.replace(/^gn_/, '');
         return gn.core.Object._ObjectMap.get(cleanId) || null;
     }
-
     static getObjectCount() {
         return gn.core.Object._ObjectMap.size;
     }
 }
-
 gn.core.Object._idCache = [];
 gn.core.Object._nextId = 0;
 gn.core.Object._ObjectMap = new Map();
@@ -179,7 +161,6 @@ gn.lang.Number = class gn_lang_Number {
         return gn.lang.Var.isNumber(value);
     }
 }
-
 gn.lang.Object = class gn_lang_Object {
     static isObject(value) {
         return gn.lang.Var.isObject(value);
@@ -187,7 +168,6 @@ gn.lang.Object = class gn_lang_Object {
     static isEmpty(obj) {
         return Object.keys(obj).length === 0;
     }
-
     static merge(obj1, obj2) {
         return Object.assign(obj1, obj2);
     }
@@ -374,20 +354,10 @@ gn.event.manager.AbstractManager = class gn_event_manager_AbstractManager {
         if (!object) {
             return;
         }
-
-
-
-
         const event = new gn.event.Event(type, object, data, bubbles);
         event.copyFromNative(domEvent);
         gn.lang.Object.merge(event, data);
         gn.lang.Object.merge(event, additionalEventData);
-
-
-
-
-
-
         gn.event.Emitter.instance().dispatchEvent(event);
     }
     _onEvent(domEvent) {
@@ -408,22 +378,18 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
         this._clickTimer.addEventListener("timeout", this._sendClick, this);
         this._clickTimer.singleShot = true;
     }
-
     get supportedEvents() {
         return ["pointerdown", "pointerover", "pointerout", "pointerup", "pointercancel"];
     }
-
     get internalEvents() {
         return ["click", "dblclick", "contextmenu", "hoverover", "hoverout"];
     }
-
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         switch (type) {
             case "pointerdown":
                 this._handleDown(targetObj, domEvent);
@@ -447,21 +413,17 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
             target: targetObj,
             domEvent: domEvent,
         };
-
         if (domEvent.button === 2) {
             this._sendEvent(targetObj, "contextmenu", domEvent, null, true);
         }
     }
-
     _handleUp(targetObj, domEvent) {
         if (!this._lastPointerDown) {
             return;
         }
         this._clickTimer.start();
-
         if (this._lastPointerDown.target === targetObj && domEvent.button !== 2) {
             const now = Date.now();
-
             if (now - this._lastClickTime < this._DOUBLE_CLICK_THRESHOLD) {
                 this._sendEvent(targetObj, "dblclick", domEvent, null, true);
                 this._lastClickTime = 0;
@@ -471,7 +433,6 @@ gn.event.manager.PointerManager = class gn_event_manager_PointerManager extends 
             }
         }
     }
-
     _sendClick() {
         if (this._lastPointerDown === null) {
             return;
@@ -484,27 +445,21 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
     constructor(options = {}) {
         super();
         this._dragStartThreshold = options.dragStartThreshold || 5;
-
         this._pointerId = null;
         this._targetElement = null;
         this._dragActive = false;
         this._dragStarted = false;
-
         this._startPos = null;
         this._currentPos = null;
-
         this._dragTarget = null;
         this._dragTargetObj = null;
     }
-
     get supportedEvents() {
         return ["pointerdown", "pointerup", "pointermove", "pointercancel"];
     }
-
     get internalEvents() {
         return ["dragstart", "drag", "dragend"];
     }
-
     _onEvent(domEvent) {
         switch (domEvent.type) {
             case "pointerdown":
@@ -521,25 +476,20 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
                 break;
         }
     }
-
     _onPointerDown(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         const isInteractive = domEvent.target.matches(
             'input, textarea, select, button, [contenteditable="true"], label, a'
         );
         if (!isInteractive) {
             domEvent.preventDefault();
         }
-
         const isDateInput = domEvent.target.tagName === 'INPUT' && domEvent.target.type === 'date';
-
         this._pointerId = domEvent.pointerId;
         this._targetElement = domEvent.target;
-
         if (this._targetElement && this._targetElement.setPointerCapture && !isDateInput) {
             try {
                 this._targetElement.setPointerCapture(this._pointerId);
@@ -547,12 +497,10 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
                 console.warn('Pointer capture failed:', e);
             }
         }
-
         this._dragActive = true;
         this._dragStarted = false;
         this._dragTarget = domEvent.target;
         this._dragTargetObj = targetObj;
-
         const pos = this._getPosition(domEvent);
         this._startPos = {
             ...pos
@@ -561,63 +509,48 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
             ...pos
         };
     }
-
     _onPointerMove(domEvent) {
         if (!this._dragActive || !this._dragTargetObj) {
             return;
         }
         this._currentPos = this._getPosition(domEvent);
-
         if (!this._dragStarted) {
             const dx = Math.abs(this._currentPos.x - this._startPos.x);
             const dy = Math.abs(this._currentPos.y - this._startPos.y);
-
             if (dx >= this._dragStartThreshold || dy >= this._dragStartThreshold) {
                 this._dragStarted = true;
-
                 this._sendEvent(this._dragTargetObj, "dragstart", domEvent);
             }
             return;
         }
-
         this._sendEvent(this._dragTargetObj, "drag", domEvent);
     }
-
     _onPointerUp(domEvent) {
         if (!this._dragActive || !this._dragTargetObj) {
             this._reset();
             return;
         }
         this._sendEvent(this._dragTargetObj, "dragend", domEvent);
-
         this._reset();
     }
-
     _onPointerCancel(domEvent) {
         console.log('Pointer cancel');
         if (!this._dragActive || !this._dragTargetObj) {
             this._reset();
             return;
         }
-
         if (this._dragStarted && this._dragTargetObj) {
             this._sendEvent(this._dragTargetObj, "dragend", domEvent);
         }
-
         this._reset();
     }
-
     _startDrag(domEvent) {
         this._dragStarted = true;
-
         if (!this._dragTargetObj) {
             return;
         }
-
-
         this._sendEvent(this._dragTargetObj, "dragstart", domEvent);
     }
-
     _getPosition(domEvent) {
         let a = domEvent;
         if (domEvent.touches && domEvent.touches.length > 0) {
@@ -628,7 +561,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
             y: a.clientY
         };
     }
-
     _reset() {
         if (this._targetElement && this._pointerId && this._targetElement.releasePointerCapture) {
             try {
@@ -644,7 +576,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
         this._dragTarget = null;
         this._pendingMoveEvent = null;
     }
-
     destroy() {
         if (this._dragActive) {
             this._cleanup();
@@ -656,7 +587,6 @@ gn.event.manager.DragManager = class gn_event_manager_DragManager extends gn.eve
         super.destroy();
     }
 }
-
 gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManager extends gn.event.manager.AbstractManager {
     constructor(options = {}) {
         super();
@@ -664,38 +594,30 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._velocityFrames = options.velocityFrames || 5;
         this._minVelocity = options.minVelocity || 0.2;
         this._velocityDecay = options.velocityDecay || 0.95;
-
         this._pointerId = null;
         this._targetElement = null;
         this._dragActive = false;
         this._dragStarted = false;
-
         this._startPos = null;
         this._lastPos = null;
         this._currentPos = null;
-
         this._velocityHistory = [];
         this._lastTimestamp = 0;
         this._currentVelocity = {
             x: 0,
             y: 0
         };
-
         this._scrollAnimationId = null;
         this._lastScrollTime = 0;
-
         this._target = null;
         this._targetObj = null;
     }
-
     get supportedEvents() {
         return ["touchstart", "touchmove", "touchend", "touchcancel"];
     }
-
     get internalEvents() {
         return ["scroll"];
     }
-
     _onEvent(domEvent) {
         switch (domEvent.type) {
             case "touchstart":
@@ -712,25 +634,20 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 break;
         }
     }
-
     _onTouchStart(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
             return;
         }
-
         const isInteractive = domEvent.target.matches(
             'input, textarea, select, button, [contenteditable="true"], label, a'
         );
         if (!isInteractive) {
             domEvent.preventDefault();
         }
-
         this._cancelScrollAnimation();
-
         this._pointerId = domEvent.pointerId;
         this._targetElement = domEvent.target;
-
         if (this._targetElement && this._targetElement.setPointerCapture) {
             try {
                 this._targetElement.setPointerCapture(this._pointerId);
@@ -738,12 +655,10 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 console.warn('Pointer capture failed:', e);
             }
         }
-
         this._dragActive = true;
         this._dragStarted = false;
         this._target = domEvent.target;
         this._targetObj = targetObj;
-
         const pos = this._getPosition(domEvent);
         this._startPos = {
             ...pos
@@ -754,7 +669,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._currentPos = {
             ...pos
         };
-
         this._velocityHistory = [];
         this._currentVelocity = {
             x: 0,
@@ -762,43 +676,34 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         };
         this._lastTimestamp = domEvent.timeStamp;
     }
-
     _onTouchMove(domEvent) {
         if (!this._dragActive) {
             return;
         }
-
         this._currentPos = this._getPosition(domEvent);
         this._updateVelocity(domEvent.timeStamp);
-
         const dx = Math.abs(this._currentPos.x - this._startPos.x);
         const dy = Math.abs(this._currentPos.y - this._startPos.y);
-
         if (!this._dragStarted) {
             if (dx >= this._scrollStartThreshold || dy >= this._scrollStartThreshold) {
-
                 this._dragStarted = true;
             }
             return;
         }
-
         this._sendScrollEvent(domEvent);
         this._lastPos = {
             ...this._currentPos
         };
     }
-
     _updateVelocity(currentTime) {
         if (!this._lastTimestamp || currentTime - this._lastTimestamp === 0) {
             return;
         }
-
         const dt = currentTime - this._lastTimestamp;
         let vx = (this._currentPos.x - this._lastPos.x);
         vx /= dt;
         let vy = (this._currentPos.y - this._lastPos.y);
         vy /= dt;
-
         if (!Number.isNaN(vy) && !Number.isNaN(vx)) {
             this._velocityHistory.push({
                 vx,
@@ -806,7 +711,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 timestamp: currentTime,
             });
         }
-
         const cutoffTime = currentTime - 100;
         this._velocityHistory = this._velocityHistory.filter(v => v.timestamp >= cutoffTime);
         if (this._velocityHistory.length > 0) {
@@ -818,24 +722,20 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
                 vx: 0,
                 vy: 0
             });
-
             this._currentVelocity = {
                 x: sum.vx / this._velocityHistory.length,
                 y: sum.vy / this._velocityHistory.length,
             };
         }
     }
-
     _onTouchEnd(domEvent) {
         console.log('Touch end');
         if (!this._dragActive) {
             this._reset();
             return;
         }
-
         this._currentPos = this._getPosition(domEvent);
         this._updateVelocity(domEvent.timeStamp);
-
         const velocityMagnitude = Math.sqrt(this._currentVelocity.x * this._currentVelocity.x + this._currentVelocity.y * this._currentVelocity.y);
         console.log('Min velocity:', this._minVelocity, 'magnitude:', velocityMagnitude);
         if (velocityMagnitude >= this._minVelocity) {
@@ -843,21 +743,17 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         }
         this._reset();
     }
-
     _onTouchCancel(domEvent) {
         console.log('Touch cancel');
         if (!this._dragActive) {
             return;
         }
-
         this._reset();
     }
-
     _sendScrollEvent(domEvent) {
         if (!this._dragStarted || !this._lastPos) {
             return;
         }
-
         const scrollData = {
             deltaX: (this._lastPos.x - this._currentPos.x) * 3.2,
             deltaY: (this._lastPos.y - this._currentPos.y) * 3.2,
@@ -865,50 +761,39 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         console.log('Sending scroll event', scrollData.deltaX, scrollData.deltaY);
         this._sendEvent(this._targetObj, "scroll", domEvent, null, true, scrollData);
     }
-
     _startScrollAnimation(initialVelocity) {
         console.log('Starting scroll animation with velocity:', initialVelocity);
-
         this._cancelScrollAnimation();
-
         let velocity = {
             ...initialVelocity
         };
         let lastTime = performance.now();
-
         const animateScroll = (currentTime) => {
             const dt = Math.min(32, currentTime - lastTime);
-
             velocity.x *= Math.pow(this._velocityDecay, dt / 16);
             velocity.y *= Math.pow(this._velocityDecay, dt / 16);
             const deltaX = velocity.x * dt * 15;
             const deltaY = velocity.y * dt * 15;
-
             if (Math.abs(velocity.x) < 0.01 && Math.abs(velocity.y) < 0.01) {
                 return;
             }
-
             const scrollData = {
                 deltaX: -deltaX,
                 deltaY: -deltaY,
             };
             this._sendEvent(this._targetObj, "scroll", null, null, true, scrollData);
-
             lastTime = currentTime;
             this._scrollAnimationId = requestAnimationFrame(animateScroll);
         };
-
         lastTime = performance.now();
         this._scrollAnimationId = requestAnimationFrame(animateScroll);
     }
-
     _cancelScrollAnimation() {
         if (this._scrollAnimationId) {
             cancelAnimationFrame(this._scrollAnimationId);
             this._scrollAnimationId = null;
         }
     }
-
     _getPosition(domEvent) {
         let a = domEvent;
         if (domEvent.touches && domEvent.touches.length > 0) {
@@ -919,7 +804,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
             y: a.clientY
         };
     }
-
     _reset() {
         if (this._targetElement && this._pointerId && this._targetElement.releasePointerCapture) {
             try {
@@ -936,7 +820,6 @@ gn.event.manager.MobileScrollManager = class gn_event_manager_MobileScrollManage
         this._target = null;
         this._pendingMoveEvent = null;
     }
-
     destroy() {
         if (this._dragActive) {
             this._cleanup();
@@ -951,27 +834,21 @@ gn.event.manager.FocusManager = class gn_event_manager_FocusManager extends gn.e
         this._currentFocused = null;
         this._focusStack = [];
     }
-
     get supportedEvents() {
         return ['focusin', 'focusout'];
     }
-
     get internalEvents() {
         return ['focus', 'blur', 'focusin', 'focusout'];
     }
-
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         const relatedTargetObj = domEvent.relatedTarget ? gn.core.Object.getObjectById(domEvent.relatedTarget.id) : null;
-
         if (type === 'focusin' && targetObj) {
             if (this._currentFocused) {
                 this._focusStack.push(this._currentFocused);
             }
             this._currentFocused = targetObj;
-
-
             this._sendEvent(targetObj, 'focusin', domEvent, {
                 relatedTarget: relatedTargetObj
             }, true);
@@ -979,24 +856,19 @@ gn.event.manager.FocusManager = class gn_event_manager_FocusManager extends gn.e
                 relatedTarget: relatedTargetObj
             }, false);
         }
-
         if (type === 'focusout' && targetObj) {
-
             this._sendEvent(targetObj, 'blur', domEvent, {
                 relatedTarget: relatedTargetObj
             }, false);
             this._sendEvent(targetObj, 'focusout', domEvent, {
                 relatedTarget: relatedTargetObj
             }, true);
-
             this._currentFocused = this._focusStack.pop() || null;
         }
     }
-
     getCurrentFocused() {
         return this._currentFocused;
     }
-
     focusPrevious() {
         if (this._focusStack.length > 0) {
             const previous = this._focusStack.pop();
@@ -1019,11 +891,9 @@ gn.event.manager.WheelManager = class gn_event_manager_WheelManager extends gn.e
     _onEvent(domEvent) {
         const type = domEvent.type;
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
-
         if (!targetObj) {
             return;
         }
-
         this._sendEvent(targetObj, "scroll", domEvent, null, true);
     }
 }
@@ -1031,15 +901,12 @@ gn.event.manager.InputManager = class gn_event_manager_InputManager extends gn.e
     constructor() {
         super();
     }
-
     get supportedEvents() {
         return ['input', 'change'];
     }
-
     get internalEvents() {
         return this.supportedEvents;
     }
-
     _onEvent(domEvent) {
         const targetObj = domEvent.target ? gn.core.Object.getObjectById(domEvent.target.id) : null;
         if (!targetObj) {
@@ -1938,7 +1805,6 @@ gn.event.Event = class gn_event_Event {
         return clone;
     }
 }
-
 gn.event.Event.COPY_FROM_NATIVE = {
     'MouseEvent': ['clientX', 'clientY', 'screenX', 'screenY', 'button', 'buttons'],
     'WheelEvent': ['deltaX', 'deltaY', 'deltaZ', 'deltaMode'],
@@ -1983,32 +1849,26 @@ gn.event.Emitter = class gn_event_Emitter {
         if (typeof listener !== 'function') {
             throw new TypeError(`Listener for event "${type}" must be a function`);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         if (!this._listeners.has(internalId)) {
             this._listeners.set(internalId, new Map());
         }
-
         const objectEvents = this._listeners.get(internalId);
         if (!objectEvents.has(type)) {
             objectEvents.set(type, new Set());
         }
-
         const eventListeners = objectEvents.get(type);
-
         for (const existing of eventListeners) {
             if (existing.listener === listener && existing.context === context) {
                 return existing.id;
             }
         }
-
         const entry = {
             listener,
             context,
             id: this._getNextId()
         };
         eventListeners.add(entry);
-
         if (this._managersSupportedTypes.has(type)) {
             if (type.startsWith('focus') && object.focusable === undefined) {
                 object.focusable = -1;
@@ -2016,25 +1876,20 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return entry.id;
     }
-
     removeEventListener(object, type, listener, context) {
         if (gn.lang.Var.isString(object)) {
             return this.removeEventListener(this, object, type, listener);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents || !objectEvents.has(type)) {
             return false;
         }
-
         const eventListeners = objectEvents.get(type);
         for (const entry of eventListeners) {
             if (entry.listener === listener && entry.context === context) {
                 eventListeners.delete(entry);
                 this._idCache.push(entry.id);
-
                 if (eventListeners.size === 0) {
                     objectEvents.delete(type);
                     if (objectEvents.size === 0) {
@@ -2046,32 +1901,25 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return false;
     }
-
     removeEventListenerById(object, id, type) {
         if (gn.lang.Var.isString(object)) {
             return this.removeEventListenerById(this, object, id);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) {
             return false;
         }
-
         const typesToCheck = type ? [type] : Array.from(objectEvents.keys());
-
         for (const t of typesToCheck) {
             const eventListeners = objectEvents.get(t);
             if (!eventListeners) {
                 continue;
             }
-
             for (const entry of eventListeners) {
                 if (entry.id === id) {
                     eventListeners.delete(entry);
                     this._idCache.push(id);
-
                     if (eventListeners.size === 0) {
                         objectEvents.delete(t);
                         if (objectEvents.size === 0) {
@@ -2084,33 +1932,26 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return false;
     }
-
     sendEvent(object, type, data, bubbles = false) {
         if (gn.lang.Var.isString(object)) {
             return this.sendEvent(this, object, type);
         }
-
         const event = new gn.event.Event(type, object, data, bubbles);
         this.dispatchEvent(event);
     }
-
     dispatchEvent(event) {
         if (!event || !event.sender) return;
-
         this._bubblingStack.length = 0;
-
         let current = event.sender;
         while (current) {
             this._bubblingStack.push(current);
             if (!event.bubbles) break;
             current = current.layoutParent || null;
         }
-
         if (event.bubbles) {
             for (let i = 0; i < this._bubblingStack.length; i++) {
                 const target = this._bubblingStack[i];
                 this._dispatchToTarget(target, event);
-
                 if (event.propagationStopped) {
                     break;
                 }
@@ -2119,32 +1960,24 @@ gn.event.Emitter = class gn_event_Emitter {
             this._dispatchToTarget(event.sender, event);
         }
     }
-
     _dispatchToTarget(target, event) {
         const internalId = gn.core.Object.getInternalId(target);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) return;
-
         const listeners = objectEvents.get(event.type);
         if (!listeners || listeners.size === 0) return;
-
         const listenersArray = Array.from(listeners);
-
         for (const entry of listenersArray) {
             if (!listeners.has(entry)) continue;
-
             try {
                 entry.listener.call(entry.context || target, event);
             } catch (error) {
                 console.error(`Error in event listener for ${event.type}:`, error);
             }
-
             if (event.immediatePropagationStopped) {
                 break;
             }
         }
-
         if (listeners.size === 0) {
             objectEvents.delete(event.type);
             if (objectEvents.size === 0) {
@@ -2152,79 +1985,61 @@ gn.event.Emitter = class gn_event_Emitter {
             }
         }
     }
-
     hasListeners(object, type) {
         if (gn.lang.Var.isString(object)) {
             return this.hasListeners(this, object);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const objectEvents = this._listeners.get(internalId);
-
         if (!objectEvents) {
             return false;
         }
-
         const listeners = objectEvents.get(type);
         return listeners ? listeners.size > 0 : false;
     }
-
     getListenerCount(object, type) {
         if (!this.hasListeners(object, type)) {
             return 0;
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         return this._listeners.get(internalId).get(type).size;
     }
-
     removeAllEventListeners(object) {
         if (gn.lang.Var.isString(object)) {
             return this.removeAllEventListeners(this, object);
         }
-
         const internalId = gn.core.Object.getInternalId(object);
         const removed = this._listeners.delete(internalId);
-
         for (const [key, id] of this._forwards) {
             if (key.startsWith(internalId + '|')) {
                 this._forwards.delete(key);
                 this._idCache.push(id);
             }
         }
-
         return removed;
     }
-
     forwardEvent(source, type, target) {
         if (gn.lang.Var.isString(source)) {
             return this.forwardEvent(this, source, type);
         }
-
         const id = source.addEventListener(type, function(event) {
             const clonedEvent = event.clone();
             clonedEvent._sender = target;
             target.sendEvent(clonedEvent.type, clonedEvent.data, clonedEvent.bubbles);
         }, target);
-
         const key = `${source.internalId}|${type}|${target.internalId}`;
         this._forwards.set(key, id);
-
         return true;
     }
-
     stopForwardEvent(source, type, target) {
         if (gn.lang.Var.isString(source)) {
             return this.stopForwardEvent(this, source, type);
         }
-
         const key = `${source.internalId}|${type}|${target.internalId}`;
         const id = this._forwards.get(key);
-
         if (!id) {
             return false;
         }
-
         this._forwards.delete(key);
         return this.removeEventListenerById(source, id, type);
     }
@@ -2241,8 +2056,10 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         return dump;
     }
+    static static() {
+        gn.event.Emitter.instance();
+    }
 }
-
 gn.event.Timer = class gn_event_Timer extends gn.core.Object {
     constructor(interval) {
         super();
@@ -2252,7 +2069,6 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         this._intervalId = null;
         this._boundTimeout = this._timeout.bind(this);
     }
-
     _destructor() {
         this.stop();
     }
@@ -2319,9 +2135,7 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         if (!this._enabled) {
             return;
         }
-
         this.sendEvent('timeout');
-
         if (this._singleShot) {
             this.stop();
         }
@@ -2330,7 +2144,6 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
         if (typeof func !== 'function') {
             throw new TypeError('Must be a function');
         }
-
         return setTimeout(() => {
             if (obj && !obj._disposed) {
                 func.call(obj);
@@ -2339,6 +2152,546 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
     }
 }
 gn.event.Emitter._instance = null;
+gn.locale.LocaleString = class gn_locale_LocaleString {
+    constructor(messageId, text, count) {
+        this._messageId = messageId;
+        this._text = text;
+        this._count = count;
+        this._args = [];
+        gn.locale.LocaleManager.instance().translate(this);
+
+    }
+    get messageId() {
+        return this._messageId;
+    }
+    get text() {
+        return this._text;
+    }
+    set text(value) {
+        this._text = value;
+    }
+    get count() {
+        return this._count;
+    }
+    get argz() {
+        return this._args
+    }
+    translate() {
+        return gn.locale.LocaleManager.instance().translate(this);
+    }
+    args(...argz) {
+        this._args = argz;
+        if (this._args.length != 0) {
+            if (this._args.length == 1) {
+                this._count = this._args[0];
+            }
+            let newText = this._text;
+            for (let i = 0; newText.match(/%\d+/); i++) {
+                newText = newText.replace(/%\d+/, this._args[i])
+            }
+            this._text = newText;
+        }
+        return this;
+    }
+    toString() {
+        return this._text;
+    }
+}
+gn.locale.LocaleManager = class gn_locale_LocaleManager extends gn.core.Object {
+    constructor() {
+        super();
+        this._locale = "";
+        this._locales = {};
+    }
+    static instance() {
+        if (gn.locale.LocaleManager._instance == null) {
+            gn.locale.LocaleManager._instance = new gn.locale.LocaleManager();
+        }
+        return gn.locale.LocaleManager._instance;
+    }
+    set locale(locale) {
+        if (gn.lang.Var.isNull(locale)) {
+            return;
+        }
+        if (gn.lang.Var.isNull(this._locales[locale])) {
+            this._loadLocale(locale);
+        } else if (locale !== this._locale) {
+            this._locale = locale;
+            this._changeLocale();
+        }
+    }
+    get locale() {
+        return this._locale;
+    }
+    async _loadLocale(locale) {
+        let localeFiles = gn.app.App.instance().getLocalePath();
+        for (let file of localeFiles) {
+            try {
+                let loc = await gn.app.App.instance().requestJ(file + locale + ".json");
+                if (!gn.lang.Var.isNull(loc)) {
+                    if (!this._locales[locale]) {
+                        this._locales[locale] = loc;
+                        this._locales[locale].pluralCB = new Function("n", loc.plural)
+                    } else {
+                        gn.lang.Object.merge(this._locales[locale].tr, loc.tr);
+                    }
+                } else {
+                    throw new Error("Locale file is empty or not found: " + file + locale + ".json");
+                }
+            } catch (e) {
+                console.error("Failed to load locale: " + locale + " file: " + file + locale + ".json", e);
+                return;
+            }
+        }
+        this._locale = locale;
+        this._changeLocale();
+    }
+    _getLocalisedText(text, count) {
+        if (this._locales[this.locale] && this._locales[this._locale].tr[text]) {
+            if (gn.lang.Var.isArray(this._locales[this._locale].tr[text])) {
+                let idx = this._locales[this._locale].pluralCB(count || 1)
+                if (this._locales[this._locale].tr[text].length > idx) {
+                    return this._locales[this._locale].tr[text][idx];
+                } else if (this._locales[this._locale].tr[text].length) {
+                    return this._locales[this._locale].tr[text][this._locales[this._locale].tr[text].length - 1];
+                }
+                return text;
+            }
+            return this._locales[this.locale].tr[text];
+        } else {
+            return text;
+        }
+    }
+    translate(ls) {
+        if (this._locale == "") {
+            return ls;
+        }
+        ls.text = this._getLocalisedText(ls.messageId, ls.count);
+        return ls.args(ls.argz);
+    }
+    _changeLocale() {
+        this.sendEvent("changeLocale");
+    }
+}
+gn.locale.LocaleManager._instance = null;
+gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
+    constructor(layout, type, classList) {
+        super();
+        this._element = this._createElement(type);
+        this._element.id = "gn_" + this._internalId;
+        this._element.setAttribute("gn_name", this.constructor.name);
+        this.addClasses(classList);
+        this._tooltip = null;
+        this._tooltipContent = null;
+        this._children = [];
+
+        this._layoutManager = null;
+        this._layoutParent = null;
+        if (layout) {
+            this.layoutManager = layout
+        }
+    }
+    _destructor() {
+        if (!gn.lang.Var.isNull(this._layoutParent)) {
+            this._layoutParent.remove(this);
+        }
+    }
+    get layoutParent() {
+        return this._layoutParent;
+    }
+    set layoutParent(value) {
+        if (gn.lang.Var.isNull(value)) {
+            this._layoutParent = null;
+        } else if (!(value instanceof gn.ui.basic.Widget)) {
+            throw new TypeError("Layout parent must be a gn.ui.basic.Widget");
+        } else if (value === this) {
+            throw new Error("Widget cannot be its own layout parent");
+        } else {
+            this._layoutParent = value;
+        }
+    }
+    get element() {
+        return this._element;
+    }
+    set layoutManager(value) {
+        if (gn.lang.Var.isNull(value)) {
+            if (!gn.lang.Var.isNull(this._layoutManager)) {
+                this._layoutManager.dispose();
+                this._layoutManager = null;
+            }
+            return;
+        }
+        if (!(value instanceof gn.ui.layout.AbstractLayout)) {
+            throw new TypeError("Layout manager must be a subclass of AbstractLayout");
+        }
+        this._layoutManager = value;
+        this._layoutManager.widget = this;
+    }
+    get layoutManager() {
+        return this._layoutManager;
+    }
+    get rect() {
+        return gn.util.Geometry.rect(this._element);
+    }
+    get size() {
+        return gn.util.Geometry.size(this._element);
+    }
+    get width() {
+        return gn.util.Geometry.width(this._element);
+    }
+    set width(value) {
+        if (gn.lang.Var.isNumber(value) && value >= 0) {
+            this.setStyle("width", value + "px");
+        } else {
+            this.setStyle("width", value);
+        }
+    }
+    get height() {
+        return gn.util.Geometry.height(this._element);
+    }
+    set height(value) {
+        if (gn.lang.Var.isNumber(value) && value >= 0) {
+            this.setStyle("height", value + "px");
+        } else {
+            this.setStyle("height", value);
+        }
+    }
+    addClass(className) {
+        if (gn.lang.Var.isEmpty(className)) {
+            return;
+        }
+        this._element.classList.add(className);
+    }
+    addClasses(classNames) {
+        if (!gn.lang.Var.isArray(classNames)) {
+            if (gn.lang.Var.isString(classNames) && !gn.lang.Var.isEmpty(classNames)) {
+                this.addClasses(classNames.split(" "));
+            }
+            return;
+        }
+        for (let i = 0; i < classNames.length; i++) {
+            this.addClass(classNames[i]);
+        }
+    }
+    removeClass(className) {
+        this._element.classList.remove(className);
+    }
+    removeClasses(classNames) {
+        if (!gn.lang.Var.isArray(classNames)) {
+            if (gn.lang.Var.isString(classNames)) {
+                this.removeClasses(classNames.split(" "));
+            }
+            return;
+        }
+        for (let i = 0; i < classNames.length; i++) {
+            this.removeClass(classNames[i]);
+        }
+    }
+    setStyle(styleName, value = "", important = false) {
+        this._element.style[styleName] = (value ? value : "") + (important ? " !important" : "");
+    }
+    resetStyle(styleName) {
+        this.setStyle(styleName, null);
+    }
+    getStyle(styleName) {
+        return this._element.style[styleName];
+    }
+    setStyles(map) {
+        for (let key in map) {
+            if (map.hasOwnProperty(key)) {
+                this.setStyle(key, map[key]);
+            }
+        }
+    }
+    set tooltip(value) {
+        this.addEventListener("hoverover", this.onMouseOver, this);
+        this.addEventListener("hoverout", this.onMouseOut, this);
+        if (value instanceof gn.ui.basic.Widget) {
+            this._tooltip = value;
+            this._tooltip.addClass("gn-tooltip");
+            this.addClass("gn-tooltip-parent");
+        } else if (!gn.lang.Var.isNull(value)) {
+            this._tooltip = new gn.ui.basic.Widget();
+            this._tooltip.addClass("gn-tooltip");
+            this.addClass("gn-tooltip-parent");
+            this._tooltipContent = value;
+            this._tooltip.label = new gn.ui.basic.Label(value);
+            this._tooltip.add(this._tooltip.label)
+        } else {
+            if (!gn.lang.Var.isNull(this._tooltip)) {
+                this._tooltip.dispose();
+                delete this._tooltip;
+            }
+        }
+    }
+    set tooltipContent(value) {
+        if (gn.lang.Var.isNull(value)) {
+            this.tooltip = null;
+        } else if (gn.lang.Var.isString(value)) {
+            this.tooltip = value;
+        } else {
+            throw new TypeError("gn.ui.basic.Widget.tooltipContent must be a string, localizedString or null");
+        }
+    }
+    get tooltipContent() {
+        return this._tooltipContent
+    }
+    showTooltip() {
+        if (!gn.lang.Var.isNull(this._tooltip)) {
+            let viewportWidth = document.documentElement.clientWidth;
+
+            this.add(this._tooltip);
+            let triggerRect = this.rect;
+            let tooltipRect = this._tooltip.rect;
+
+            if (tooltipRect.top < 0) {
+                this._tooltip.setStyle("bottom", "-150%");
+                this._tooltip.element.style.setProperty("--arrow-rotation", "180deg");
+                this._tooltip.element.style.setProperty("--arrow-top", "-40%");
+
+                this._tooltip._wasMoved = true;
+            }
+            if (tooltipRect.left < 0) {
+
+                this._tooltip.setStyle("left", "0px");
+                this._tooltip.setStyle("transform", "none");
+                tooltipRect = this._tooltip.rect;
+                this._tooltip.setStyle("left", `${-tooltipRect.left+5}px`);
+                let arrowMargin = (triggerRect.x + triggerRect.width / 2);
+                this._tooltip.element.style.setProperty("--arrow-left", arrowMargin - 5 + "px");
+                this._tooltip._wasMoved = true;
+            } else if (tooltipRect.right > viewportWidth || tooltipRect.right > document.documentElement.clientWidth) {
+                this._tooltip.setStyle("left", "auto");
+                this._tooltip.setStyle("right", "0px");
+
+                tooltipRect = this._tooltip.rect;
+                this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth +5}px`);
+                tooltipRect = this._tooltip.rect;
+                let bIsScrollBarVisible = window.innerWidth > document.documentElement.clientWidth;
+                let arrowMargin = (triggerRect.x + triggerRect.width / 2) - tooltipRect.x + !bIsScrollBarVisible * 15;
+                this._tooltip.element.style.setProperty("--arrow-left", arrowMargin + "px");
+                this._tooltip._wasMoved = true;
+            }
+        }
+    }
+    hideTooltip() {
+        if (!gn.lang.Var.isNull(this._tooltip)) {
+            this.remove(this._tooltip);
+            if (this._tooltip._wasMoved) {
+                this._tooltip.setStyles({
+                    "left": "",
+                    "right": "",
+                    "top": "",
+                    "bottom": "",
+                    "transform": ""
+                })
+                this._tooltip.element.style.removeProperty("--arrow-left");
+                this._tooltip.element.style.removeProperty("--arrow-rotate");
+                this._tooltip.element.style.removeProperty("--arrow-top");
+                delete this._tooltip._wasMoved
+            }
+        }
+    }
+    addNativeElement(nativeElement) {
+        this.element.appendChild(nativeElement);
+        this._children.push("nativeElement");
+    }
+    removeNativeElement(nativeElement) {
+        let index = [...this._element.children].indexOf(nativeElement)
+        this.element.removeChild(nativeElement);
+        this._children.splice(index, 1);
+    }
+    add(child) {
+        this._addInternal(child);
+    }
+    addFirst(child) {
+        if (this._children.length) {
+            this._addInternal(child, "before", this._children[0]);
+        } else {
+            this._addInternal(child);
+        }
+    }
+    addBefore(child, refChild) {
+        this._addInternal(child, "before", refChild);
+    }
+    addAfter(child, refChild) {
+        this._addInternal(child, "after", refChild);
+    }
+    _addInternal(child, where = null, refChild = null) {
+        child.layoutParent?.remove(child);
+        child.layoutParent = this;
+        if (child.element) {
+            switch (where) {
+                case "before":
+                    gn.lang.Array.insertBefore(this._children, child, refChild);
+                    this._element.insertBefore(child.element, refChild.element);
+                    break;
+                case "after":
+                    gn.lang.Array.insertAfter(this._children, child, refChild);
+                    this._element.insertBefore(child.element, refChild.element.nextSibling);
+                    index++
+                    break;
+                default:
+                    this._children.push(child);
+                    this._element.appendChild(child.element);
+                    break;
+            }
+        }
+    }
+    remove(child) {
+        child.layoutParent = null;
+        gn.lang.Array.remove(this._children, child);
+        this._element.removeChild(child.element);
+    }
+    get visibility() {
+        return this._visibility;
+    }
+    set visibility(value) {
+        if (this._visibility != value) {
+            this._visibility = value;
+            if (value == "visible") {
+                this.removeClass("gn-exclude");
+                this.setStyle("visibility", "visible");
+            } else if (value == "hidden") {
+                this.removeClass("gn-exclude");
+                this.setStyle("visibility", "hidden");
+            } else if (value == "excluded") {
+                this.addClass("gn-exclude");
+            }
+        }
+    }
+    show() {
+        this.visibility = "visible";
+    }
+    hide() {
+        this.visibility = "hidden";
+    }
+    exclude() {
+        this.visibility = "excluded";
+    }
+    isVisible() {
+        this.visibility == "visible";
+    }
+    set focusable(value) {
+        if (value === true || value >= 0) {
+            value = 0;
+        } else {
+            value = -1;
+        }
+        this._element.tabIndex = value;
+    }
+    get focusable() {
+        return this._element.tabIndex;
+    }
+    _createElement(type) {
+        return document.createElement(type ? type : "div");
+    }
+    onMouseOver() {
+        if (!gn.lang.Var.isNull(this._tooltip)) {
+            this.showTooltip();
+        }
+    }
+    onMouseOut() {
+        if (!gn.lang.Var.isNull(this._tooltip)) {
+            this.hideTooltip();
+        }
+    }
+    dispose() {
+        if (this._element) {
+            this._element.remove();
+        }
+        super.dispose();
+    }
+}
+gn.ui.basic.Label = class gn_ui_basic_Label extends gn.ui.basic.Widget {
+    constructor(text, classList) {
+        super(null, "label", "gn-label");
+        this._text = "";
+        this.text = text;
+        this.addClasses(classList);
+    }
+    _destructor() {
+        if (this._text instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+        super._destructor();
+    }
+    set text(value) {
+        this._text = value;
+        this._element.innerText = this._text;
+
+        if (this._text instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+    }
+    get text() {
+        return this._text;
+    }
+    _onLocaleChanged() {
+        if (this._text instanceof gn.locale.LocaleString) {
+            this.text = this._text.translate();
+        }
+    }
+}
+gn.ui.basic.Icon = class gn_ui_basic_Icon extends gn.ui.basic.Widget {
+    constructor(size, iconName, iconSet) {
+        super(null, "i", "gn-icon");
+        this._size = size;
+        this._iconName = iconName;
+        if (!gn.lang.Var.isNull(iconSet) && !gn.lang.Var.isArray(iconSet)) {
+            throw new Error('Icon set must be an array');
+        }
+        this._iconSet = iconSet || [];
+        if (!gn.lang.Var.isArray(this._iconSet)) {
+            this._iconSet = [this._iconSet];
+        }
+        this.addClasses([this._iconName, ...this._iconSet]);
+        this.setStyle('font-size', this._size + 'px');
+    }
+    set iconName(value) {
+        this.removeClass(this._iconName);
+        this._iconName = value;
+        this.addClasses([this._iconName, ...this._iconSet]);
+    }
+    get iconName() {
+        return this._iconName;
+    }
+    set iconSet(value) {
+        this.removeClasses(this._iconSet);
+        this._iconSet = value || [];
+        this.addClasses([this._iconName, ...this._iconSet]);
+    }
+    get iconSet() {
+        return this._iconSet;
+    }
+    set size(value) {
+        this._size = value;
+        this.setStyle('font-size', this._size + 'px');
+    }
+    get size() {
+        return this._size;
+    }
+}
+gn.ui.basic.Image = class gn_ui_basic_Image extends gn.ui.basic.Widget {
+    constructor(src, classList) {
+        super(null, "img");
+        this._element.src = src;
+        this._element.className = 'gn-img';
+        this.addClasses(classList);
+    }
+    set src(value) {
+        this._element.src = src;
+    }
+    get src() {
+        return this._element.src;
+    }
+    set alt(value) {
+        this._element.alt = value;
+    }
+    get alt() {
+        return this._element.alt;
+    }
+}
 gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
     constructor() {
         super();
@@ -2414,7 +2767,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
             row = this.rowCount()
         }
         this._checkIndex(obj[this._key]);
-
         this._data[obj[this._key]] = obj;
         this._ensureChildMapping(parent);
         this._mapData[parent].splice(row, 0, obj[this._key]);
@@ -2456,7 +2808,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
         this._mapData[index]?.forEach(idx => this._removeData(idx));
         delete this._mapData[index];
     }
-
     data(index, role = gn.model.Model.DataType.display) {
         if (gn.lang.Var.isNull(index)) {
             throw new Error('Data identifier cannot be null');
@@ -2511,9 +2862,6 @@ gn.model.TreeModel = class gn_model_TreeModel extends gn.core.Object {
         return this._mapData[index];
     }
 }
-
-
-
 gn.model.TableModel = class gn_model_TableModel extends gn.core.Object {
     constructor() {
         super();
@@ -2527,12 +2875,10 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
         this._mapping = {
             null: []
         };
-
         this._filterCB = null;
         this._filter = null;
         this._sortCB = null;
         this._sort = null;
-
         this.sourceModel = model;
     }
     get sourceModel() {
@@ -2540,7 +2886,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
     }
     set sourceModel(value) {
         if (this._source) {
-
             this._source.stopForwardEvent("reset", this);
             this._source.stopForwardEvent("dataSet", this);
             this._source.stopForwardEvent("dataChanged", this);
@@ -2567,12 +2912,10 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
     set sortCB(value) {
         this._sortCB = value;
     }
-
     applyFilter(value) {
         this._filter = value;
         this._applyFilterSort();
     }
-
     applySort(value) {
         this._sort = value;
         this._applyFilterSort();
@@ -2595,7 +2938,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
             filterFunc = this._filterCB;
         }
         let ret = false;
-
         for (let i = 0; i < this._source.rowCount(parent); i++) {
             let index = this._source.index(i, parent)
             let bAccept = false;
@@ -2660,7 +3002,6 @@ gn.model.FilterSortTreeModel = class gn_model_FilterSortTreeModel extends gn.cor
         }
         return ret;
     }
-
     set key(value) {
         this._source.key = value;
     }
@@ -2734,8 +3075,218 @@ gn.model.Model.Type = gn.lang.Enum({
     item: 1,
     group: 2
 });
-gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.core.Object {
+gn.ui.layout.AbstractLayout = class gn_ui_layout_AbstractLayout extends gn.core.Object {
+    constructor() {
+        super();
+        this._widget = null;
+        this._gap = 0;
+    }
+    set widget(value) {
+        if (gn.lang.Var.isNull(value)) {
+            if (this._widget) {
+                this._widget.removeClasses(this._getClasses());
+                this._widget = null;
+            }
+            return;
+        } else if (!(value instanceof gn.ui.basic.Widget)) {
+            throw new Error("Widget must be instance of Widget");
+        }
+        this._widget = value;
+        this._widget.addClasses(this._getClasses());
+        this._widget.setStyles(this._getStyles());
+    }
+    get gap() {
+        return this._gap;
+    }
+    set gap(value) {
+        if (!gn.lang.Var.isString(value) && (!gn.lang.Var.isNumber(value) || value < 0)) {
+            throw new Error("Spacing must be a non-negative number or any of the permited strings");
+        }
+        this._gap = value;
+        if (this._widget) {
+            value = gn.lang.Var.isNumber(value) ? value + "px" : value;
+            this._widget.setStyle("gap", value);
+        }
+    }
+    _getClasses() {
+        throw new Error("Abstract method _getClasses must be implemented in subclass");
+    }
+    _getStyles() {
+        throw new Error("Abstract method _getStyles must be implemented in subclass");
+    }
+}
+gn.ui.layout.Box = class gn_ui_layout_Box extends gn.ui.layout.AbstractLayout {
+    constructor(direction, gap = 0, wrap = false) {
+        super();
+        this._direction = direction;
+        this._gap = 0;
+        this._wrap = false;
+        if (!gn.lang.Var.isNull(gap)) {
+            this.gap = gap;
+        }
+        if (!gn.lang.Var.isNull(wrap)) {
+            this.wrap = wrap;
+        }
+    }
+    get direction() {
+        return this._direction;
+    }
+    set direction(value) {
+        if (this._widget) {
+            this.widget.removeClasses(this._getClasses());
+        }
+        this._direction = value;
+        if (this._widget) {
+            this.widget.addClasses(this._getClasses());
+        }
+    }
+    get wrap() {
+        return this._wrap;
+    }
+    set wrap(value) {
+        if (typeof value !== "boolean") {
+            throw new Error("Wrap must be a boolean");
+        }
+        this._wrap = value;
+        if (this._widget) {
+            this._widget.setStyle("flex-wrap", value ? "wrap" : "nowrap");
+        }
+    }
+    _getClasses() {
+        return "gn-layout-box " + (this.direction === gn.ui.layout.direction.Row ? "gn-layout-row" : "gn-layout-column");
+    }
+    _getStyles() {
+        let ret = {};
+        if (this.spacing != 0) {
+            ret["gap"] = this.spacing + "px";
+        }
+        if (this.wrap) {
+            ret["flex-wrap"] = "wrap";
+        }
+        return ret;
+    }
+}
+gn.ui.layout.Row = class gn_ui_layout_Row extends gn.ui.layout.Box {
+    constructor(spacing, wrap) {
+        super(gn.ui.layout.direction.Row, spacing, wrap);
+    }
+}
+gn.ui.layout.Column = class gn_ui_layout_Column extends gn.ui.layout.Box {
+    constructor(spacing, wrap) {
+        super(gn.ui.layout.direction.Column, spacing, wrap);
+    }
+}
+gn.ui.layout.Grid = class gn_ui_layout_Grid extends gn.ui.layout.AbstractLayout {
+    constructor(columns, rows, gap) {
+        super();
+        this._templateColumns = null;
+        this._templateRows = null;
+        this._columns = null;
+        this._rows = null;
 
+        this.templateColumns = "auto";
+        this.templateRows = "auto";
+        if (!gn.lang.Var.isNull(columns)) {
+            this.templateColumns = columns;
+        }
+        if (!gn.lang.Var.isNull(rows)) {
+            this.templateRows = rows;
+        }
+        if (!gn.lang.Var.isNull(gap)) {
+            this.gap = gap;
+        }
+    }
+    get columns() {
+        return this._columns;
+    }
+    set columns(value) {
+        if (!gn.lang.Var.isNumber(value)) {
+            throw new Error("Columns must be a number");
+        }
+        if (value < 1) {
+            throw new Error("Columns must be a positive number");
+        }
+        this._columns = value;
+        this._templateColumns = "repeat(" + value + ", 1fr)";
+        if (this._widget) {
+            this._widget.setStyle("grid-template-columns", this._templateColumns);
+        }
+    }
+    get templateColumns() {
+        return this._templateColumns;
+    }
+    set templateColumns(value) {
+        if (!gn.lang.Var.isString(value) && !gn.lang.Var.isArray(value) && !gn.lang.Var.isNumber(value) && !gn.lang.Var.isNumber(value)) {
+            throw new Error("Row template must be a string of sizes, e.g. '100px 200px auto' or 'repeat(3, 1fr)' or array of those values or number");
+        } else if (gn.lang.Var.isArray(value)) {
+            value = value.join(" ");
+        } else if (gn.lang.Var.isNumber(value)) {
+            this.columns = value;
+            return;
+        }
+        this._columns = null;
+        this._templateColumns = value;
+        if (this._widget) {
+            this._widget.setStyle("grid-template-columns", this._templateColumns);
+        }
+    }
+    get rows() {
+        return this._rows;
+    }
+    set rows(value) {
+        if (!gn.lang.Var.isNumber(value)) {
+            throw new Error("Columns must be a number");
+        }
+        if (value < 1) {
+            throw new Error("Columns must be a positive number");
+        }
+        this._rows = value;
+        this._templateRows = "repeat(" + value + ", 1fr)";
+        if (this._widget) {
+            this._widget.setStyle("grid-template-rows", this._templateRows);
+        }
+    }
+    get templateRows() {
+        return this._templateRows;
+    }
+    set templateRows(value) {
+        if (!gn.lang.Var.isString(value) && !gn.lang.Var.isArray(value) && !gn.lang.Var.isNumber(value) && !gn.lang.Var.isNumber(value)) {
+            throw new Error("Row template must be a string of sizes, e.g. '100px 200px auto' or 'repeat(3, 1fr)' or array of those values or number");
+        } else if (gn.lang.Var.isArray(value)) {
+            value = value.join(" ");
+        } else if (gn.lang.Var.isNumber(value)) {
+            this.rows = value;
+            return;
+        }
+        this._rows = null;
+        this._templateRows = value;
+        if (this._widget) {
+            this._widget.setStyle("grid-template-rows", this._templateRows);
+        }
+    }
+    _getClasses() {
+        return "gn-layout-grid";
+    }
+    _getStyles() {
+        let ret = {};
+        if (!gn.lang.Var.isNull(this.templateColumns)) {
+            ret["grid-template-columns"] = this.templateColumns;
+        }
+        if (!gn.lang.Var.isNull(this.templateRows)) {
+            ret["grid-template-rows"] = this.templateRows;
+        }
+        if (this.spacing != 0) {
+            ret["gap"] = this.spacing ?? 0 + "px";
+        }
+        return ret;
+    }
+}
+
+gn.ui.layout.direction = gn.lang.Enum({
+    Row: 1,
+    Column: 2
+})
+gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.core.Object {
     constructor() {
         super();
         this._formData = new FormData();
@@ -2792,7 +3343,6 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         let total = 0;
         for (let [key, value] of this._formData.entries()) {
             total += new TextEncoder().encode(key).length;
-
             if (typeof value === "string") {
                 total += new TextEncoder().encode(value).length;
             } else if (value instanceof Blob || value instanceof File) {
@@ -2806,20 +3356,16 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         const chunks = [];
         let offset = 0;
         let chunkIndex = 0;
-
         while (offset < file.size) {
             const chunk = file.slice(offset, offset + chunkSize);
-
             const chunkFile = new window.File([chunk], file.name, {
                 type: file.type,
                 lastModified: file.lastModified,
             });
-
             chunks.push(chunkFile);
             offset += chunkSize;
             chunkIndex++;
         }
-
         return chunks;
     }
 }
@@ -2864,50 +3410,24 @@ gn.ui.progress.ProgressBase = class gn_ui_progress_ProgressBase extends gn.ui.ba
     get infinite() {
         return this._infinite;
     }
-    set infiniteSpeed(value) {
-        this._infiniteSpeed = value;
-    }
-    _updateVisualProgress() {
+    static startup(appClass) {
+        if (gn.app.App._instance == null) {
+            if (appClass == null) {
+                throw new Error("Application class cannot be null");
+            }
+            if (appClass == gn.app.App) {
+                throw new Error("Application class cannot be the abstract class");
+            }
 
-    }
-    _updateInfiniteState() {
-
-    }
-    _calcPercentage() {
-        return (this._value - this._start) / (this._end - this._start);
-    }
-}
-gn.ui.progress.ProgressBar = class gn_ui_progress_ProgressBar extends gn.ui.progress.ProgressBase {
-    constructor() {
-        super();
-        this.addClass("gn-progress-bar");
-
-        this._bar = new gn.ui.basic.Widget();
-        this.add(this._bar);
-    }
-    _updateVisualProgress() {
-        let percentage = this._calcPercentage()
-        let offset = percentage * this.width;
-        this._bar.width = offset;
-    }
-    _updateInfiniteState() {
-        if (this.infinite) {
-            this.addClass("gn-infinite")
-            this._bar.setStyle("animation", "gn-ui-progress-bar-inf " + this._infiniteSpeed + "s infinite linear");
-        } else {
-            this.removeClass("gn-infinite")
-            this._bar.setStyle("animation");
-            this._updateVisualProgress();
+            gn.app.App._instance = new appClass();
+            gn.app.App.instance().main();
         }
+        return gn.app.App._instance;
     }
-}
-gn.ui.progress.ProgressBanner = class gn_ui_progress_ProgressBanner extends gn.ui.progress.ProgressBase {
-    constructor() {
-        super();
-        this.addClass("gn-progress-banner");
-
-        this._bar = new gn.ui.basic.Widget();
-        this.add(this._bar);
+    main() {
+        window.addEventListener("resize", function() {
+            this.sendEvent("resize")
+        }.bind(this));
     }
     _updateVisualProgress() {
         let percentage = this._calcPercentage()
@@ -2976,7 +3496,6 @@ gn.ui.progress.ProgressWheel = class gn_ui_progress_ProgressWheel extends gn.ui.
 gn.ui.list.List = class gn_ui_list_List extends gn.ui.basic.Widget {
     constructor() {
         super();
-
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
@@ -3077,7 +3596,6 @@ gn.ui.list.List = class gn_ui_list_List extends gn.ui.basic.Widget {
             id = null;
         }
         this._groups.set(id, []);
-
         let count = this._model.rowCount(id);
         for (let i = 0; i < count; i++) {
             let index = this._model.index(i, id);
@@ -3133,7 +3651,6 @@ gn.ui.list.ListItem = class gn_ui_list_ListItem extends gn.ui.basic.Widget {
     }
     updateItem(data, key) {
         this._data = data;
-
     }
 }
 gn.ui.list.ListTitle = class gn_ui_list_ListTitle extends gn.ui.basic.Widget {
@@ -3143,7 +3660,6 @@ gn.ui.list.ListTitle = class gn_ui_list_ListTitle extends gn.ui.basic.Widget {
     }
     updateItem(data, key) {
         this._data = data;
-
     }
 }
 gn.ui.container.Row = class gn_ui_container_Row extends gn.ui.basic.Widget {
@@ -3167,18 +3683,15 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         this._order = []
         this._currentWidget;
         this._prevWidget;
-
         this._animDir = null;
         this._animLoop = false;
         this._animBounceDir = true;
         this._animnOnEdge = true;
         this.addClass("gn-stack");
-
     }
     get currentWidget() {
         return this._currentWidget;
     }
-
     add(child, animation) {
         child.addClass("gn-stack-child");
         super.add(child);
@@ -3197,7 +3710,6 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         }
         this._order.splice(this._order.indexOf(child), 1)
     }
-
     setAnimationMode(dir, loop = true) {
         if (!["left", "right", "up", "down"].includes(dir)) {
             this._animDir = null;
@@ -3209,15 +3721,11 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
     activate(widget, forward = true) {
         this._prevWidget = this._currentWidget;
         this._currentWidget = widget;
-
         let x = this._processAnimation(this._prevWidget, true, forward);
         x ? this._prevWidget.setStyle("transform", x) : null;
-
-
         let y = this._processAnimation(this._currentWidget, false, forward);
         y ? this._currentWidget.setStyle("transform", y) : null;
         this._currentWidget.show();
-
         if (x) {
             gn.event.Timer.singleShot(this, () => {
                 this._currentWidget.setStyle("transform", "translate( 0 )");
@@ -3256,7 +3764,6 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
             return ret;
         }
         return
-
     }
     _animHelper(dir, forward) {
         let ret = 100;
@@ -3363,7 +3870,6 @@ gn.ui.container.SplitHandle = class gn_ui_container_SplitHandle extends gn.ui.ba
         return this._after;
     }
     _onDrag(e) {
-
         if (e.clientX == 0 && e.clientY == 0) {
             return;
         }
@@ -3406,72 +3912,52 @@ gn.ui.container.ScrollCustom = class gn_ui_container_ScrollCustom extends gn.ui.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._body.addEventListener("scroll", this._onScroll, this);
-
         this._speed = 0.2;
-
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Row));
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Column));
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     _getClampedOffsets(y, x) {
         const maxScrollTop = Math.max(0, this._body.element.scrollHeight - this.element.clientHeight);
         const maxScrollLeft = Math.max(0, this._body.element.scrollWidth - this.element.clientWidth);
-
         return {
             y: Math.max(0, Math.min(maxScrollTop, y)),
             x: Math.max(0, Math.min(maxScrollLeft, x))
         };
     }
-
     scrollTo(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         y = (y === null || typeof y === 'undefined') ? currentY : y;
         x = (x === null || typeof x === 'undefined') ? currentX : x;
-
         const clamped = this._getClampedOffsets(y, x);
-
         this._body.element.style.top = (-clamped.y) + "px";
         this._body.element.style.left = (-clamped.x) + "px";
-
         this.sendEvent("scrolled");
     }
-
     scrollBy(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         const targetY = currentY + (y || 0);
         const targetX = currentX + (x || 0);
-
         this.scrollTo(targetX, targetY);
     }
-
     _onScroll(e) {
-
         const power = 1.2;
         const dynamicY = Math.pow(Math.abs(e.deltaY), power) * Math.sign(e.deltaY);
         const dynamicX = Math.pow(Math.abs(e.deltaX), power) * Math.sign(e.deltaX);
-
         this.scrollBy(this._speed * dynamicX, this._speed * dynamicY);
     }
 }
@@ -3482,9 +3968,7 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
         this._orientation = orientation;
         this._scroll = scroll;
         this._wheelScrollSpeed = 0.1;
-
         this._thumb = new gn.ui.basic.Widget(null, "div", "thumb");
-
         if (gn.ui.layout.direction.Row == orientation) {
             this.addClass("horizontal");
             this._thumb.setStyle("width", "100px");
@@ -3494,15 +3978,12 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("height", "100px");
             this._thumb.setStyle("width", "100%");
         }
-
         this.addEventListener("scroll", this._onTumbScrolled, this);
         this._thumb.addEventListener("dragstart", this._onDragStart, this);
         this._thumb.addEventListener("drag", this._onDrag, this);
         this._thumb.addEventListener("dragend", this._onDragStop, this);
         this.add(this._thumb);
-
         this._scroll.addEventListener("scrolled", this._updatePositionOfThumb, this);
-
         gn.event.Timer.singleShot(this, () => {
             this._updateLengthOfThumb();
         });
@@ -3511,7 +3992,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._updatePositionOfThumb();
         }, this);
     }
-
     _updateLengthOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let width = this.width;
@@ -3535,7 +4015,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             }
         }
     }
-
     _updatePositionOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let scrollLeft = -parseFloat(this._scroll.body.element.style.left || 0);
@@ -3549,7 +4028,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("top", thumbTop + "px");
         }
     }
-
     _onDrag(e) {
         console.log(e.clientX, e.clientY)
         if (e.clientX == 0 && e.clientY == 0) {
@@ -3597,55 +4075,44 @@ gn.ui.container.ScrollSys = class gn_ui_container_ScrollSys extends gn.ui.basic.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll-sys")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._speed = 0.2;
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     scrollTo(x, y) {
         this.element.scrollTo(x, y);
     }
-
     scrollBy(x, y) {
         this.element.scrollBy(x, y);
     }
 }
 gn.ui.container.Scroll = class gn_ui_container_Scroll extends gn.ui.container.ScrollCustom {}
 gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Widget {
-
     constructor(details) {
         super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
         this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
         super._addInternal(this._scroll);
-
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
         this._currentGroup = null;
         this._breadcrumb = null;
         this._fakeTiles = [];
-
         this._details = gn.lang.Object.merge({
             "header": true,
             "sort": false,
             "filter": false,
         }, details)
-
         this._tileClass = gn.ui.tile.TileItem;
         this._fakeTileClass = gn.ui.tile.FakeTileItem;
         this._subItemContClass = gn.ui.tile.TileSubItemContainer
@@ -3653,7 +4120,6 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
             this._header = new gn.ui.container.Row("gn-tileContainerHeader");
         }
         this.add(this._header);
-
         gn.app.App.instance().addEventListener("resize", this.genFakeTileItems, this);
     }
     set tileClass(value) {
@@ -4204,50 +4670,474 @@ gn.ui.control.Breadcrumb.Type = gn.lang.Enum({
     history: 1,
     layer: 2
 })
-gn.ui.Header = class gn_ui_Header extends gn.ui.container.Row {
-    constructor(options) {
-        super("gn-header");
-        this._options = gn.lang.Object.merge({
-            "left": true,
-            "center": true,
-            "right": true,
-        }, options);
-        this._left = null;
-        this._center = null;
-        this._right = null;
-        if (this._options.left) {
-            this._left = new gn.ui.container.Row("gn-header-left");
-            this.add(this._left);
+gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.Widget {
+    constructor(type, classList) {
+        switch (type) {
+            case "textarea":
+                super(null, "textarea", "gn-text-area");
+                break;
+            default:
+                super(null, "input", "gn-input");
+                this._element.type = type;
+                break;
         }
-        if (this._options.center) {
-            this._center = new gn.ui.container.Row("gn-header-center");
-            this.add(this._center);
-        }
-        if (this._options.right) {
-            this._right = new gn.ui.container.Row("gn-header-right");
-            this.add(this._right);
-        }
-        this._sticky = false;
+        this._plcText = "";
+        this.addClasses(classList);
+        this.addEventListener("focus", this._onFocus, this);
     }
-    set sticky(value) {
-        if (value) {
-            this.setStyle("position", "sticky");
+    _destructor() {
+        if (this._plcText instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+        super._destructor();
+    }
+    get type() {
+        return this._element.type;
+    }
+    get value() {
+        return this._element.value;
+    }
+    set value(value) {
+        this._element.value = value || "";
+    }
+    set disabled(value) {
+        this._element.disabled = value;
+    }
+    get disabled() {
+        return this._element.disabled;
+    }
+    set placeholder(value) {
+        if (!["text", "textarea", "search", "url", "tel", "email", "password", "number"].includes(this.type)) {
+            throw new TypeError("Placeholder for this input type is not supported by standard html")
+        }
+        this._element.placeholder = value || "";
+        this._plcText = value;
+        this._element.innerText = this._plcText;
+        if (this._plcText instanceof gn.locale.LocaleString) {
+            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
+        }
+    }
+    get placeholder() {
+        return this._element.placeholder;
+    }
+    set readonly(value) {
+        if (typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)) {
+            throw new TypeError("Readonly property can be boolan or 0&1");
+        }
+        this._element.readonly = value;
+    }
+    get readonly() {
+        return this._element.readonly;
+    }
+    set required(value) {
+        if (typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)) {
+            throw new TypeError("Readonly property can be boolan or 0&1");
+        }
+        if (!["text", "textarea", "search", "url", "tel", "email", "password", "date", "month", "week", "time", "datetime-local", "number", "checkbox", "radio", "file"].includes(this.type)) {
+            throw new TypeError("Required for this input type is not supported by standard html")
+        }
+        this.element.required = value;
+    }
+    get required() {
+        return this.element.required;
+    }
+    set maxlength(value) {
+        if (typeof value !== "number" || value < 0) {
+            throw new TypeError("Maxlength must be a positive number");
+        }
+        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
+            throw new TypeError("Maxlength for this input type is not supported by standard html")
+        }
+    }
+    get maxlength() {
+        return this._element.maxLength;
+    }
+    set minlength(value) {
+        if (typeof value !== "number" || value < 0) {
+            throw new TypeError("Minlength must be a positive number");
+        }
+        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
+            throw new TypeError("Minlength for this input type is not supported by standard html")
+        }
+        this._element.minLength = value;
+    }
+    get minlength() {
+        return this._element.minLength;
+    }
+    set autocomplete(value) {
+        if (!["text", "textarea", "search", "url", "tel", "email", "password", "date", "month", "week", "time", "datetime-local", "number", "range", "color"].includes(this.type)) {
+            throw new TypeError("Autocomplete for this input type is not supported by standard html")
+        }
+        this._element.autocomplete = value;
+    }
+    get autocomplete() {
+        return this._element.autocomplete;
+    }
+    set pattern(value) {
+        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
+            throw new TypeError("Pattern for this input type is not supported by standard html")
+        }
+        if (gn.lang.Var.isNull(value)) {
+            value = "";
+        }
+        this._element.pattern = value;
+    }
+    get pattern() {
+        return this._element.pattern;
+    }
+    click() {
+        this._element.click();
+    }
+    _onFocus() {}
+    _onLocaleChanged() {
+        if (this._plcText instanceof gn.locale.LocaleString) {
+            this.placeholder = this._plcText.translate();
+        }
+    }
+}
+gn.ui.input.Line = class gn_ui_input_Line extends gn.ui.input.BaseInput {
+    constructor(value, placeholder, classList) {
+        super("text", classList);
+        this.placeholder = placeholder;
+        this.value = value;
+    }
+}
+gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.BaseInput {
+    constructor(value, placeholder, classList, rows, cols) {
+        super("textarea", classList);
+        this.placeholder = placeholder;
+        let rowsValue = rows || 3;
+        let colsValue = cols || 20;
+        this.rows = rowsValue;
+        this.cols = colsValue;
+        this.value = value;
+    }
+    set rows(value) {
+        this._element.rows = value;
+    }
+    get rows() {
+        return this._element.rows;
+    }
+    set cols(value) {
+        this._element.cols = value;
+    }
+    get cols() {
+        return this._element.cols;
+    }
+    get type() {
+        return "textarea";
+    }
+    set defaultValue(value) {
+        this._element.defaultValue = value;
+    }
+    get defaultValue() {
+        return this._element.defaultValue;
+    }
+}
+gn.ui.input.Number = class gn_ui_input_Number extends gn.ui.input.BaseInput {
+    constructor(value, placeholder, classList) {
+        super("number", classList);
+        this.placeholder = placeholder;
+        this.value = value;
+    }
+    get step() {
+        return this._element.step;
+    }
+    set step(value) {
+        if (typeof value !== "number" || value <= 0) {
+            throw new TypeError("Step must be a positive number");
+        }
+        this._element.step = value;
+    }
+    set min(value) {
+        if (typeof value !== "number") {
+            throw new TypeError("Min must be a number");
+        }
+        this._element.min = value;
+    }
+    get min() {
+        return this._element.min;
+    }
+    set max(value) {
+        if (typeof value !== "number") {
+            throw new TypeError("Max must be a number");
+        }
+        this._element.max = value;
+    }
+    get max() {
+        return this._element.max;
+    }
+}
+gn.ui.input.Password = class gn_ui_input_Password extends gn.ui.input.BaseInput {
+    constructor(value, placeholder, classList) {
+        super("password", classList);
+        this.placeholder = placeholder;
+        value = value;
+    }
+}
+gn.ui.input.Color = class gn_ui_input_Color extends gn.ui.input.BaseInput {
+    constructor(value, classList) {
+        super("color", classList);
+        this.value = value;
+    }
+    set value(value) {
+        if (gn.lang.Var.isString(value) && value.length == 7) {
+            this._element.value = value;
         } else {
-            this.setStyle("position", "")
+            throw new TypeError("Color value must be a string in the format '#RRGGBB'");
         }
-        this._sticky = value;
     }
-    get sticky() {
-        return this._sticky;
+}
+gn.ui.input.CheckBox = class gn_ui_input_CheckBox extends gn.ui.input.BaseInput {
+    constructor(value, classList) {
+        super("checkbox", classList);
+        this.value = value;
     }
-    get left() {
-        return this._left;
+    get value() {
+        return this._element.checked;
     }
-    get center() {
-        return this._center;
+    set value(value) {
+        this._element.checked = value || false;
     }
-    get right() {
-        return this._right;
+}
+gn.ui.input.Range = class gn_ui_input_Range extends gn.ui.input.BaseInput {
+    constructor(value, min, max, classList) {
+        super("range", classList);
+        this.value = value;
+        this.min = min;
+        this.max = max;
+    }
+    get min() {
+        return this._element.min;
+    }
+    set min(value) {
+        this._element.min = value || 0;
+    }
+    set max(value) {
+        this._element.max = value || 100;
+    }
+    get max() {
+        return this._element.max;
+    }
+    get step() {
+        return this._element.step;
+    }
+    set step(value) {
+        if (typeof value !== "number" || value <= 0) {
+            throw new TypeError("Step must be a positive number");
+        }
+        this._element.step = value;
+    }
+}
+gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
+    constructor(multi = false, classList) {
+        super(classList);
+        this.addClass("gn-input-file");
+        this._input = new gn.ui.input.BaseInput("file", "gn-exclude");
+        this._input.element.multiple = multi;
+        this._input.element.accept = "*";
+        this.add(this._input);
+        this._button = new gn.ui.control.Button(this.tr("SELECT_FILE"));
+        this._button.addEventListener("click", function() {
+            this._input.click();
+        }, this)
+        this.add(this._button);
+        this._label = new gn.ui.basic.Label("");
+        this.add(this._label);
+        this._input.element.addEventListener("cancel", this.onCancel.bind(this));
+        this._input.addEventListener("input", this.onInput, this);
+        this._input.addEventListener("change", this.onChange, this);
+    }
+    get value() {
+        return this._input.element.files || null;
+    }
+    set value(value) {
+        if (value) {
+            throw new TypeError("File set value is made to clear it.")
+        }
+        this._input.element.files = null;
+    }
+    set accept(value) {
+        this._input.element.accept = value;
+    }
+    get accept() {
+        return this._input.element.accept;
+    }
+    get type() {
+        return this._input.type;
+    }
+    set disabled(value) {
+        this._button.disabled = value;
+    }
+    get disabled() {
+        return this._button.disabled;
+    }
+    _updateLabel() {
+        let text = "";
+        for (let i = 0; i < this._input.element.files.length; i++) {
+            text += this._input.element.files[i].name;
+            if (i < this._input.element.files.length - 1) {
+                text += ", ";
+            }
+        }
+        this._label.text = text;
+    }
+    onCancel() {
+        this._updateLabel();
+        this.sendEvent("cancel", null);
+    }
+    onInput() {
+        this._updateLabel();
+        this.sendEvent("input", this.value);
+    }
+    onChange() {
+        this._updateLabel();
+        this.sendEvent("change", this.value);
+    }
+}
+gn.ui.input.Date = class gn_ui_input_Date extends gn.ui.input.BaseInput {
+    constructor(value, classList) {
+        super("date", classList);
+        this.value = value;
+    }
+    set value(value) {
+        if (value instanceof Date) {
+            value = value.toISOString().split("T")[0];
+        }
+        this._element.value = value || "";
+    }
+}
+gn.ui.input.ComboBox = class gn_ui_input_ComboBox extends gn.ui.basic.Widget {
+    constructor(placeholder = "", nonEditable = false, classList = "") {
+        super(null, "div", "gn-input-combo");
+        this.addClasses(classList);
+        this._options = [];
+        this._isOpen = false;
+        this._value = null;
+        this._input = new gn.ui.input.Line("", placeholder);
+        if (nonEditable) {
+            this._input.readonly = true;
+            this._input.addEventListener("click", this.togglePopup, this);
+        }
+        this.add(this._input);
+        this._popup = new gn.ui.control.Menu(this, true);
+        this._popup.addEventListener("aboutToHide", () => {
+            this._isOpen = false;
+        }, this);
+        this._toggleBtn = new gn.ui.basic.Widget(null, "div", "gn-toggle");
+        this._toggleBtn.element.innerHTML = "&#9662;";
+        this._toggleBtn.addEventListener("click", this.togglePopup, this);
+        this.add(this._toggleBtn);
+    }
+    set options(items) {
+        this._options = items || [];
+        this._popup.clear();
+        this._options.forEach(opt => {
+            let item = new gn.ui.control.MenuItem(opt.value, opt.label || opt.value, opt.icon || null);
+            item.addEventListener("selected", () => this._onOptionSelect(opt), this);
+            this._popup.addItem(item);
+        });
+    }
+    get options() {
+        return this._options;
+    }
+    set text(value) {
+        this._input.value = value;
+    }
+    get text() {
+        return this._input.value;
+    }
+    get value() {
+        return this._value;
+    }
+    set value(val) {
+        this._value = val;
+        let opt = this.options.find(a => a.value == val);
+        this.text = opt ? (opt.label || opt.value) : val;
+        this._popup.walkItems(item => {
+            if (item._id == val) {
+                item._selected = true;
+                item.addClass("gn-selected");
+            } else {
+                item._selected = false;
+                item.removeClass("gn-selected");
+            }
+        });
+    }
+    togglePopup() {
+        this._isOpen = !this._isOpen;
+        if (this._isOpen) {
+            this._popup.show();
+        } else {
+            this._popup.hide();
+        }
+    }
+    _onOptionSelect(option) {
+        this.value = option.value;
+        this.text = option.label || option.value;
+        this.togglePopup();
+        this.sendEvent("change", this.value);
+    }
+}
+gn.ui.input.MultiComboBox = class gn_ui_input_MultiComboBox extends gn.ui.input.ComboBox {
+    constructor(placeholder = "", nonEditable = false, classList = "") {
+        super(placeholder, nonEditable, classList);
+        this._value = [];
+    }
+    set value(val) {
+        if (!Array.isArray(val)) {
+            throw new TypeError("Value for MultiComboBox must be an array");
+        }
+        this._value = val;
+        let opts = this.options.filter(a => val.includes(a.value));
+        this.text = opts.map(o => o.label || o.value).join(", ");
+        this._popup.walkItems(item => {
+            if (this._value.includes(item._id)) {
+                item._selected = true;
+                item.addClass("gn-selected");
+            } else {
+                item._selected = false;
+                item.removeClass("gn-selected");
+            }
+        });
+    }
+    _onOptionSelect(option) {
+        if (this._value.includes(option.value)) {
+            this.value = this._value.filter(v => v !== option.value);
+        } else {
+            this.value = this._value.concat(option.value);
+        }
+        this.text = this._value.map(v => {
+            let opt = this._options.find(o => o.value === v);
+            return opt ? (opt.label || opt.value) : v;
+        }).join(", ");
+        this.sendEvent("change", this.value);
+    }
+}
+gn.ui.input.Switch = class gn_ui_input_Switch extends gn.ui.basic.Widget {
+    constructor(checked, classList) {
+        super(null, "label", classList);
+        this.addClass("gn-switch");
+        this._input = new gn.ui.input.CheckBox(null, checked);
+        this.add(this._input);
+        this._span = new gn.ui.basic.Widget(null, "span", "gn-switch");
+        this.add(this._span);
+        this.checked = checked || false;
+        this._input.addEventListener("change", () => {
+            this.sendEvent("change", this.checked);
+        }, this);
+    }
+    set checked(value) {
+        this._input.value = value;
+    }
+    get checked() {
+        return this._input.value;
+    }
+    set value(value) {
+        this.checked = value;
+    }
+    get value() {
+        return this.checked;
     }
 }
 gn.ui.popup.PopupBase = class gn_ui_popup_PopupBase extends gn.ui.container.Column {
@@ -4491,387 +5381,49 @@ gn.ui.popup.Blocker = class gn_ui_popup_Blocker extends gn.ui.basic.Widget {
         document.body.appendChild(this.element);
     }
 }
-gn.ui.input.AbstractInput = class gn_ui_input_AbstractInput extends gn.ui.basic.Widget {
-    constructor(type, classList) {
-        switch (type) {
-            case "textarea":
-                super(null, "textarea", "gn-text-area");
-                break;
-            default:
-                super(null, "input", "gn-input");
-                this._element.type = type;
-                break;
+gn.ui.Header = class gn_ui_Header extends gn.ui.container.Row {
+    constructor(options) {
+        super("gn-header");
+        this._options = gn.lang.Object.merge({
+            "left": true,
+            "center": true,
+            "right": true,
+        }, options);
+        this._left = null;
+        this._center = null;
+        this._right = null;
+        if (this._options.left) {
+            this._left = new gn.ui.container.Row("gn-header-left");
+            this.add(this._left);
         }
-        this._plcText = "";
-
-        this.addClasses(classList);
-        this.addEventListener("focus", this._onFocus, this);
-
-    }
-    _destructor() {
-        if (this._plcText instanceof gn.locale.LocaleString) {
-            gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
+        if (this._options.center) {
+            this._center = new gn.ui.container.Row("gn-header-center");
+            this.add(this._center);
         }
-        super._destructor();
-    }
-    get type() {
-        return this._element.type;
-    }
-    get value() {
-        throw new TypeError("Abstract class");
-    }
-    set value(value) {
-        throw new TypeError("Abstract class");
-    }
-    set disabled(value) {
-        this._element.disabled = value;
-    }
-    get disabled() {
-        return this._element.disabled;
-    }
-    set placeholder(value) {
-        if (!["text", "textarea", "search", "url", "tel", "email", "password", "number"].includes(this.type)) {
-            throw new TypeError("Placeholder for this input type is not supported by standard html")
+        if (this._options.right) {
+            this._right = new gn.ui.container.Row("gn-header-right");
+            this.add(this._right);
         }
-        this._element.placeholder = value || "";
-
-        this._plcText = value;
-        this._element.innerText = this._plcText;
-
-        if (this._plcText instanceof gn.locale.LocaleString) {
-            gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
-        }
+        this._sticky = false;
     }
-    get placeholder() {
-        return this._element.placeholder;
-    }
-    set readonly(value) {
-        if (typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)) {
-            throw new TypeError("Readonly property can be boolan or 0&1");
-        }
-        this._element.readonly = value;
-    }
-    get readonly() {
-        return this._element.readonly;
-    }
-    set required(value) {
-        if (typeof value != "boolean" && (typeof value != "number" || value != 1 && value != 0)) {
-            throw new TypeError("Readonly property can be boolan or 0&1");
-        }
-        if (!["text", "textarea", "search", "url", "tel", "email", "password", "date", "month", "week", "time", "datetime-local", "number", "checkbox", "radio", "file"].includes(this.type)) {
-            throw new TypeError("Required for this input type is not supported by standard html")
-        }
-        this.element.required = value;
-    }
-    get required() {
-        return this.element.required;
-    }
-    set maxlength(value) {
-        if (typeof value !== "number" || value < 0) {
-            throw new TypeError("Maxlength must be a positive number");
-        }
-        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
-            throw new TypeError("Maxlength for this input type is not supported by standard html")
-        }
-    }
-    get maxlength() {
-        return this._element.maxLength;
-    }
-    set minlength(value) {
-        if (typeof value !== "number" || value < 0) {
-            throw new TypeError("Minlength must be a positive number");
-        }
-        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
-            throw new TypeError("Minlength for this input type is not supported by standard html")
-        }
-        this._element.minLength = value;
-    }
-    get minlength() {
-        return this._element.minLength;
-    }
-    set autocomplete(value) {
-        if (!["text", "textarea", "search", "url", "tel", "email", "password", "date", "month", "week", "time", "datetime-local", "number", "range", "color"].includes(this.type)) {
-            throw new TypeError("Autocomplete for this input type is not supported by standard html")
-        }
-        this._element.autocomplete = value;
-    }
-    get autocomplete() {
-        return this._element.autocomplete;
-    }
-    set pattern(value) {
-        if (!["text", "search", "url", "tel", "email", "password"].includes(this.type)) {
-            throw new TypeError("Pattern for this input type is not supported by standard html")
-        }
-        if (gn.lang.Var.isNull(value)) {
-            value = "";
-        }
-        this._element.pattern = value;
-    }
-    get pattern() {
-        return this._element.pattern;
-    }
-    click() {
-        this._element.click();
-    }
-    _onFocus() {
-
-    }
-    _onLocaleChanged() {
-        if (this._plcText instanceof gn.locale.LocaleString) {
-            this.placeholder = this._plcText.translate();
-        }
-    }
-}
-
-gn.ui.input.Line = class gn_ui_input_Line extends gn.ui.input.AbstractInput {
-    constructor(value, placeholder, classList) {
-        super("text", classList);
-        this.placeholder = placeholder;
-        this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this.element.value = value || "";
-    }
-}
-gn.ui.input.MultiLine = class gn_ui_input_MultiLine extends gn.ui.input.AbstractInput {
-    constructor(value, placeholder, classList, rows, cols) {
-        super("textarea", classList);
-        this.placeholder = placeholder;
-        let rowsValue = rows || 3;
-        let colsValue = cols || 20;
-        this.rows = rowsValue;
-        this.cols = colsValue;
-        this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || "";
-    }
-    set rows(value) {
-        this._element.rows = value;
-    }
-    get rows() {
-        return this._element.rows;
-    }
-    set cols(value) {
-        this._element.cols = value;
-    }
-    get cols() {
-        return this._element.cols;
-    }
-    get type() {
-        return "textarea";
-    }
-    set defaultValue(value) {
-        this._element.defaultValue = value;
-    }
-    get defaultValue() {
-        return this._element.defaultValue;
-    }
-}
-
-gn.ui.input.Number = class gn_ui_input_Number extends gn.ui.input.AbstractInput {
-    constructor(value, placeholder, classList) {
-        super("number", classList);
-        this.placeholder = placeholder;
-        this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || "";
-    }
-    get step() {
-        return this._element.step;
-    }
-    set step(value) {
-        if (typeof value !== "number" || value <= 0) {
-            throw new TypeError("Step must be a positive number");
-        }
-        this._element.step = value;
-    }
-    set min(value) {
-        if (typeof value !== "number") {
-            throw new TypeError("Min must be a number");
-        }
-        this._element.min = value;
-    }
-    get min() {
-        return this._element.min;
-    }
-    set max(value) {
-        if (typeof value !== "number") {
-            throw new TypeError("Max must be a number");
-        }
-        this._element.max = value;
-    }
-    get max() {
-        return this._element.max;
-    }
-}
-gn.ui.input.Password = class gn_ui_input_Password extends gn.ui.input.AbstractInput {
-    constructor(value, placeholder, classList) {
-        super("password", classList);
-        this.placeholder = placeholder;
-        value = value;
-    }
-    get value() {
-        return this._element.value || "";
-    }
-    set value(value) {
-        this._element.value = value;
-    }
-}
-gn.ui.input.Color = class gn_ui_input_Color extends gn.ui.input.AbstractInput {
-    constructor(value, classList) {
-        super("color", classList);
-        this.value = value;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        if (gn.lang.Var.isString(value) && value.length == 7) {
-            this._element.value = value;
-        } else {
-            throw new TypeError("Color value must be a string in the format '#RRGGBB'");
-        }
-    }
-}
-gn.ui.input.CheckBox = class gn_ui_input_CheckBox extends gn.ui.input.AbstractInput {
-    constructor(value, classList) {
-        super("checkbox", classList);
-        this.value = value;
-    }
-    get value() {
-        return this._element.checked;
-    }
-    set value(value) {
-        this._element.checked = value || false;
-    }
-}
-gn.ui.input.Range = class gn_ui_input_Range extends gn.ui.input.AbstractInput {
-    constructor(value, min, max, classList) {
-        super("range", classList);
-        this.value = value;
-        this.min = min;
-        this.max = max;
-    }
-    get value() {
-        return this._element.value;
-    }
-    set value(value) {
-        this._element.value = value || 0;
-    }
-    get min() {
-        return this._element.min;
-    }
-    set min(value) {
-        this._element.min = value || 0;
-    }
-    set max(value) {
-        this._element.max = value || 100;
-    }
-    get max() {
-        return this._element.max;
-    }
-    get step() {
-        return this._element.step;
-    }
-    set step(value) {
-        if (typeof value !== "number" || value <= 0) {
-            throw new TypeError("Step must be a positive number");
-        }
-        this._element.step = value;
-    }
-}
-gn.ui.input.FileMin = class gn_ui_input_FileMin extends gn.ui.input.AbstractInput {
-    constructor(classList) {
-        super("file", classList)
-    }
-    get value() {
-        return this._element.files
-    }
-    set value(value) {}
-}
-
-gn.ui.input.File = class gn_ui_input_File extends gn.ui.container.Column {
-    constructor(classList) {
-        super(classList);
-        this.addClass("gn-input-file");
-        this._input = new gn.ui.input.FileMin("gn-exclude");
-        this._input.element.multiple = false;
-        this._input.element.accept = "*";
-        this.add(this._input);
-        this._button = new gn.ui.control.Button(this.tr("SELECT_FILE"));
-        this._button.addEventListener("click", function() {
-            this._input.click();
-        }, this)
-        this.add(this._button);
-        this._label = new gn.ui.basic.Label("");
-        this.add(this._label);
-        this._input.element.addEventListener("cancel", this.onCancel.bind(this));
-        this._input.addEventListener("input", this.onInput, this);
-        this._input.addEventListener("change", this.onChange, this);
-    }
-    get value() {
-        return this._input.value.length ? this._input.value[0] : null;
-    }
-    set value(value) {
+    set sticky(value) {
         if (value) {
-            throw new TypeError("File set value is made to clear it.")
-        }
-        this._input.element.files = null;
-    }
-    set accept(value) {
-        this._input.element.accept = value;
-    }
-    get accept() {
-        return this._input.element.accept;
-    }
-    get type() {
-        return this._input.type;
-    }
-    set disabled(value) {
-        this._button.disabled = value;
-    }
-    get disabled() {
-        return this._button.disabled;
-    }
-    _updateLabel() {
-        if (this.value) {
-            this._label.text = this.value.name;
+            this.setStyle("position", "sticky");
         } else {
-            this._label.text = "";
+            this.setStyle("position", "")
         }
+        this._sticky = value;
     }
-    onCancel() {
-        this._updateLabel();
-        this.sendEvent("cancel", null);
+    get sticky() {
+        return this._sticky;
     }
-    onInput() {
-        this._updateLabel();
-        this.sendEvent("input", this.value);
+    get left() {
+        return this._left;
     }
-    onChange() {
-        this._updateLabel();
-        this.sendEvent("change", this.value);
+    get center() {
+        return this._center;
     }
-}
-gn.ui.input.Date = class gn_ui_input_Date extends gn.ui.input.AbstractInput {
-    constructor(classList) {
-        super("date", classList);
-    }
-    set value(value) {
-        console.log(value)
-    }
-    get value() {
-        return this._element.value;
+    get right() {
+        return this._right;
     }
 }

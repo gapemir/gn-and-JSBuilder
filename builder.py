@@ -42,7 +42,7 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
 
     hashes[filename] = new_hash
 
-    pret = parse(code)
+    pret = parse(code, file_path)
     if not pret:
         return False
 
@@ -51,6 +51,8 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
     # format code
     opts = jsbeautifier.default_options()
     opts.indent_size = 4
+    opts.max_preserve_newlines = 1 
+    opts.preserve_newlines = True
     code = jsbeautifier.beautify(code, opts)
 
     ret = {

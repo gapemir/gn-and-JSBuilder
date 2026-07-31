@@ -3,6 +3,10 @@ body {
   overflow: hidden;
 }
 
+.gn-selected {
+  background-color: #77aaff;
+}
+
 .gn-exclude{
   display: none !important;
 }
@@ -141,6 +145,26 @@ input[type="color" i]::-webkit-color-swatch {
   resize: none;
 }
 
+.gn-input-combo{
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  border: 1px solid #000;
+  padding: 0px;
+  background-color: #fff;
+
+  & > .gn-input{
+    flex-grow: 1;
+    /* border-radius: 5px, 5px, 0, 0; */
+  }
+  & > .gn-toggle{
+    width: 25px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
 
 
 
@@ -201,6 +225,7 @@ input[type="color" i]::-webkit-color-swatch {
   width: auto;
   height: auto;
   background-color: aliceblue;
+  border-radius: 5px;
 }
 .gn-popup{
   border-radius: 5px;

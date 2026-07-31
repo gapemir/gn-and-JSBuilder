@@ -358,6 +358,10 @@ namespace gn.event {
             }
             return dump;
         }
+
+        static static() {
+            gn.event.Emitter.instance(); // inits event system
+        }
     }
 
     class Timer extends gn.core.Object {
