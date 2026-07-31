@@ -382,3 +382,91 @@ input[type="color" i]::-webkit-color-swatch {
   }
 
 }
+
+.gn-progress-bar,
+.gn-progress-banner {
+  overflow: hidden;
+
+  div {
+    height: 100%;
+    width: 0;
+
+    background-color: #007bff;
+    transition: width 0.3s ease-out;
+  }
+  &.gn-infinite {
+    position: relative;
+
+    div {
+      transition: none;
+      position: absolute;
+      left: -35%;
+      width: 35%;
+    }
+  }
+}
+
+.gn-progress-bar {
+  height: 10px;
+  width: 200px;
+  border-radius: 5px;
+}
+.gn-progress-banner {
+  height: 1px;
+  width: 100%;
+}
+
+/*progress*/
+@keyframes gn-ui-progress-bar-inf {
+    0% {
+        left: -35%;
+        right: 100%;
+    }
+    50% {
+        left: 100%;
+        right: -35%;
+    }
+    100% {
+        left: -35%;
+        right: 100%;
+    }
+}
+
+.progress-wheel {
+  circle {
+    fill: none;
+    stroke-width: 10px;
+  }
+
+  .gn-bg-circle {
+    stroke: #e6e6e6;
+  }
+
+  .gn-fg-circle {
+    stroke: #007bff;
+    stroke-linecap: round;
+    stroke-dasharray: 408.4; 
+    stroke-dashoffset: 408.4; /* Starts empty */
+    transition: stroke-dashoffset 0.3s ease-in-out;
+    transform-origin: center;
+  }
+
+  &.gn-infinite .fg-circle {
+    animation: gn-ui-progress-wheel-inf 1.4s linear infinite;
+    transition: none; /* Disable transitions during infinite animation */
+  } 
+}
+@keyframes gn-ui-progress-wheel-inf {
+    0% {
+        stroke-dashoffset: 408.4;
+        transform: rotate(0deg);
+    }
+    50% {
+        stroke-dashoffset: 102.1;
+        transform: rotate(180deg);
+    }
+    100% {
+        stroke-dashoffset: 408.4;
+        transform: rotate(360deg);
+    }
+}

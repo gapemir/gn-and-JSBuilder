@@ -115,6 +115,9 @@ namespace gn.ui.basic {
                 this.removeClass(classNames[i]);
             }
         }
+        classes() {
+            return  Array.from(this._element.classList);
+        }
         setStyle(styleName, value = "", important = false){
             this._element.style[styleName] = ( value ? value : "" ) + (important ? " !important" : "");
         }
@@ -223,6 +226,9 @@ namespace gn.ui.basic {
                     delete this._tooltip._wasMoved
                 }
             }
+        }
+        setHTML(value) {
+            this.element.innerHTML = value;
         }
         addNativeElement(nativeElement){
             this.element.appendChild(nativeElement);

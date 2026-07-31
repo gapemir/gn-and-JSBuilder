@@ -12,6 +12,7 @@ VERSION = "1.0.0"
 VERBOSE = False
 
 CACHE_FOLDER = ".bdata/"
+ROOT_DIR = ""
 
 def calc_hash(string :str):
     md5 = hashlib.md5()
@@ -30,8 +31,8 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
         code = f.read()
 
     new_hash = calc_hash(code)
-    if filename in hashes and hashes[filename]["md5"] == new_hash["md5"] and hashes[filename]["sha1"] == new_hash["sha1"] and os.path.exists(os.path.join(CACHE_FOLDER, filename + ".obj")):
-        with open(os.path.join(CACHE_FOLDER, filename + ".obj"), 'rb') as f:
+    if filename in hashes and hashes[filename]["md5"] == new_hash["md5"] and hashes[filename]["sha1"] == new_hash["sha1"] and os.path.exists(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj")):
+        with open(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj"), 'rb') as f:
             return pickle.load(f)
 
     if VERBOSE:
@@ -61,11 +62,8 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
         "content": code
     }
 
-    with open(os.path.join(CACHE_FOLDER, filename + ".obj"), 'wb') as f:
+    with open(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj"), 'wb') as f:
         pickle.dump(ret, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    if VERBOSE:
-        print("--- %s seconds ---" % (time.time() - start_time))
 
     return ret
 
@@ -144,6 +142,7 @@ def build(hashes: dict, js_folder :str, js_out :str):
 def main():
     parser = argparse.ArgumentParser(description="A script to generate bundled .js file from many js files")
     parser.add_argument("-c", "--clean", help="clean the cache files", action="store_true")
+    parser.add_argument("-d", "--dir", help="root dir or script")
     parser.add_argument("-s","--src", help="dir where .js files are located")
     parser.add_argument("-o", "--out", help="name of output .js file")
     parser.add_argument("-v", "--verbose", help="output verbose", action="store_true")
@@ -155,9 +154,11 @@ def main():
         print(f"js_builder version: {VERSION}")
         exit(0)
 
-    global VERBOSE
+    global VERBOSE, ROOT_DIR
     VERBOSE = args.verbose
     parse.VERBOSE = VERBOSE
+    if args.dir:
+        ROOT_DIR = args.dir
 
     js_folder = "js_src"
     if args.src is not None:
@@ -169,14 +170,14 @@ def main():
     if js_out[-3:] != ".js":
         js_out += ".js"
 
-    init_cache(CACHE_FOLDER)
+    init_cache(os.path.join(ROOT_DIR, CACHE_FOLDER))
 
     if args.clean:
         remove_cache(VERBOSE)
 
     hashes = read_builder_hashes()
 
-    bOk = build(hashes, js_folder, js_out)
+    bOk = build(hashes, os.path.join(ROOT_DIR, js_folder), os.path.join(ROOT_DIR, js_out))
 
     if bOk:
         write_builder_hashes(hashes)
