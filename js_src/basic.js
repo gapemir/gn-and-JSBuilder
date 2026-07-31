@@ -345,8 +345,8 @@ namespace gn.ui.basic {
             if(this._layoutParent) {
                 this._layoutParent.remove(this);
             }
-            for(let child of this._children) {
-                child.dispose();
+            while(this._children.length) {
+                this._children[0].dispose();
             }
             super.dispose();
         }

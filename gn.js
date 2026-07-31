@@ -18,6 +18,7 @@ if(!gn.ui.progress) gn.ui.progress = {};
 if(!gn.ui.list) gn.ui.list = {};
 if(!gn.ui.container) gn.ui.container = {};
 if(!gn.ui.tile) gn.ui.tile = {};
+if(!gn.ui.window) gn.ui.window = {};
 if(!gn.ui.popup) gn.ui.popup = {};
 if(!gn.ui.input) gn.ui.input = {};
 if(!gn.ui.control) gn.ui.control = {};
@@ -26,27 +27,21 @@ gn.core.Object = class gn_core_Object {
     constructor() {
         this._internalId = this.internalId;
         this._disposed = false;
-
         gn.core.Object._ObjectMap.set(this._internalId, this);
     }
-
     _destructor() {}
-
     get internalId() {
         if (!this._internalId) {
             this._internalId = gn.core.Object.getInternalId(this);
         }
         return this._internalId;
     }
-
     tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     static tr(messageId, count) {
         return new gn.locale.LocaleString(messageId, messageId, count);
     }
-
     dispose() {
         if (this._disposed) {
             return;
@@ -57,35 +52,30 @@ gn.core.Object = class gn_core_Object {
         gn.core.Object._idCache.push(this._internalId);
         this._disposed = true;
     }
-
+    get disposed() {
+        return this._disposed;
+    }
     addEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);
     }
-
     removeEventListener(type, callback, thisObj) {
         return gn.event.Emitter.instance().removeEventListener(this, type, callback, thisObj);
     }
-
     removeEventListenerById(id, type) {
         return gn.event.Emitter.instance().removeEventListenerById(this, id, type);
     }
-
     sendEvent(type, data, bubbles = false) {
         gn.event.Emitter.instance().sendEvent(this, type, data, bubbles);
     }
-
     forwardEvent(type, object) {
         return gn.event.Emitter.instance().forwardEvent(this, type, object);
     }
-
     stopForwardEvent(type, object) {
         return gn.event.Emitter.instance().stopForwardEvent(this, type, object);
     }
-
     hasListeners(type) {
         return gn.event.Emitter.instance().hasListeners(this, type);
     }
-
     static getInternalId(obj) {
         if (obj == null) {
             return null;
@@ -94,11 +84,9 @@ gn.core.Object = class gn_core_Object {
             return obj._internalId;
         }
         const id = gn.core.Object._idCache.length > 0 ? gn.core.Object._idCache.pop() : (gn.core.Object._nextId++).toString();
-
         obj._internalId = id;
         return id;
     }
-
     static getObjectById(id) {
         if (!id) {
             return null;
@@ -106,12 +94,10 @@ gn.core.Object = class gn_core_Object {
         const cleanId = id.replace(/^gn_/, '');
         return gn.core.Object._ObjectMap.get(cleanId) || null;
     }
-
     static getObjectCount() {
         return gn.core.Object._ObjectMap.size;
     }
 }
-
 gn.core.Object._idCache = [];
 gn.core.Object._nextId = 0;
 gn.core.Object._ObjectMap = new Map();
@@ -120,7 +106,7 @@ gn.lang.Var = class gn_lang_Var {
         return value === undefined || value === null;
     }
     static isEmpty(value) {
-        return gn.lang.Var.isNull(value) || value.length === 0 || value.size === 0 || (gn.lang.Var.isObject(value) && Object.keys(value).length === 0);
+        return gn.lang.Var.isNull(value) || ((gn.lang.Var.isArray(value) || gn.lang.Var.isString(value)) && value.length === 0) || value.size === 0 || (gn.lang.Var.isObject(value) && Object.keys(value).length === 0);
     }
     static isArray(value) {
         return value instanceof Array;
@@ -138,7 +124,16 @@ gn.lang.Var = class gn_lang_Var {
         return typeof value === 'function';
     }
     static isObject(value) {
-        return value !== null && value.constructor.name === "Object"
+        return typeof value === 'object' && value !== null && value.constructor === Object;
+    }
+    static isConstructable(value) {
+        return typeof value === 'function' && /^class\s/.test(Function.prototype.toString.call(value))
+    }
+    static isConstructableChildOf(value, parentConstructable) {
+        if (!gn.lang.Var.isConstructable(value) || !gn.lang.Var.isConstructable(parentConstructable)) {
+            return false;
+        }
+        return parentConstructable.prototype.isPrototypeOf(value.prototype);
     }
 }
 gn.lang.Array = class gn_lang_Array {
@@ -179,7 +174,6 @@ gn.lang.Number = class gn_lang_Number {
         return gn.lang.Var.isNumber(value);
     }
 }
-
 gn.lang.Object = class gn_lang_Object {
     static isObject(value) {
         return gn.lang.Var.isObject(value);
@@ -187,7 +181,6 @@ gn.lang.Object = class gn_lang_Object {
     static isEmpty(obj) {
         return Object.keys(obj).length === 0;
     }
-
     static merge(obj1, obj2) {
         return Object.assign(obj1, obj2);
     }
@@ -1058,18 +1051,13 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
         this._tooltip = null;
         this._tooltipContent = null;
         this._children = [];
-
         this._layoutManager = null;
         this._layoutParent = null;
         if (layout) {
             this.layoutManager = layout
         }
     }
-    _destructor() {
-        if (!gn.lang.Var.isNull(this._layoutParent)) {
-            this._layoutParent.remove(this);
-        }
-    }
+    _destructor() {}
     get layoutParent() {
         return this._layoutParent;
     }
@@ -1216,20 +1204,16 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
     showTooltip() {
         if (!gn.lang.Var.isNull(this._tooltip)) {
             let viewportWidth = document.documentElement.clientWidth;
-
             this.add(this._tooltip);
             let triggerRect = this.rect;
             let tooltipRect = this._tooltip.rect;
-
             if (tooltipRect.top < 0) {
                 this._tooltip.setStyle("bottom", "-150%");
                 this._tooltip.element.style.setProperty("--arrow-rotation", "180deg");
                 this._tooltip.element.style.setProperty("--arrow-top", "-40%");
-
                 this._tooltip._wasMoved = true;
             }
             if (tooltipRect.left < 0) {
-
                 this._tooltip.setStyle("left", "0px");
                 this._tooltip.setStyle("transform", "none");
                 tooltipRect = this._tooltip.rect;
@@ -1240,7 +1224,6 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
             } else if (tooltipRect.right > viewportWidth || tooltipRect.right > document.documentElement.clientWidth) {
                 this._tooltip.setStyle("left", "auto");
                 this._tooltip.setStyle("right", "0px");
-
                 tooltipRect = this._tooltip.rect;
                 this._tooltip.setStyle("right", `${tooltipRect.right - viewportWidth +5}px`);
                 tooltipRect = this._tooltip.rect;
@@ -1298,6 +1281,9 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
         this._addInternal(child, "after", refChild);
     }
     _addInternal(child, where = null, refChild = null) {
+        if (this._disposed) {
+            return;
+        }
         child.layoutParent?.remove(child);
         child.layoutParent = this;
         if (child.element) {
@@ -1321,7 +1307,9 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
     remove(child) {
         child.layoutParent = null;
         gn.lang.Array.remove(this._children, child);
-        this._element.removeChild(child.element);
+        if (child.element.parentNode == this._element) {
+            this._element.removeChild(child.element);
+        }
     }
     get visibility() {
         return this._visibility;
@@ -1377,8 +1365,14 @@ gn.ui.basic.Widget = class gn_ui_basic_Widget extends gn.core.Object {
         }
     }
     dispose() {
-        if (this._element) {
-            this._element.remove();
+        if (this._disposed) {
+            return;
+        }
+        if (this._layoutParent) {
+            this._layoutParent.remove(this);
+        }
+        while (this._children.length) {
+            this._children[0].dispose();
         }
         super.dispose();
     }
@@ -1399,7 +1393,6 @@ gn.ui.basic.Label = class gn_ui_basic_Label extends gn.ui.basic.Widget {
     set text(value) {
         this._text = value;
         this._element.innerText = this._text;
-
         if (this._text instanceof gn.locale.LocaleString) {
             gn.locale.LocaleManager.instance().addEventListener("changeLocale", this._onLocaleChanged, this);
         }
@@ -1554,8 +1547,8 @@ gn.ui.layout.Box = class gn_ui_layout_Box extends gn.ui.layout.AbstractLayout {
     }
     _getStyles() {
         let ret = {};
-        if (this.spacing != 0) {
-            ret["gap"] = this.spacing + "px";
+        if (this.gap != 0) {
+            ret["gap"] = this.gap + "px";
         }
         if (this.wrap) {
             ret["flex-wrap"] = "wrap";
@@ -1564,23 +1557,22 @@ gn.ui.layout.Box = class gn_ui_layout_Box extends gn.ui.layout.AbstractLayout {
     }
 }
 gn.ui.layout.Row = class gn_ui_layout_Row extends gn.ui.layout.Box {
-    constructor(spacing, wrap) {
-        super(gn.ui.layout.direction.Row, spacing, wrap);
+    constructor(gap, wrap) {
+        super(gn.ui.layout.direction.Row, gap, wrap);
     }
 }
 gn.ui.layout.Column = class gn_ui_layout_Column extends gn.ui.layout.Box {
-    constructor(spacing, wrap) {
-        super(gn.ui.layout.direction.Column, spacing, wrap);
+    constructor(gap, wrap) {
+        super(gn.ui.layout.direction.Column, gap, wrap);
     }
 }
 gn.ui.layout.Grid = class gn_ui_layout_Grid extends gn.ui.layout.AbstractLayout {
-    constructor(columns, rows, gap) {
+    constructor(gap, columns, rows) {
         super();
         this._templateColumns = null;
         this._templateRows = null;
         this._columns = null;
         this._rows = null;
-
         this.templateColumns = "auto";
         this.templateRows = "auto";
         if (!gn.lang.Var.isNull(columns)) {
@@ -1672,13 +1664,12 @@ gn.ui.layout.Grid = class gn_ui_layout_Grid extends gn.ui.layout.AbstractLayout 
         if (!gn.lang.Var.isNull(this.templateRows)) {
             ret["grid-template-rows"] = this.templateRows;
         }
-        if (this.spacing != 0) {
-            ret["gap"] = this.spacing ?? 0 + "px";
+        if (this.gap != 0) {
+            ret["gap"] = this.gap ?? 0 + "px";
         }
         return ret;
     }
 }
-
 gn.ui.layout.direction = gn.lang.Enum({
     Row: 1,
     Column: 2
@@ -1690,7 +1681,6 @@ gn.locale.LocaleString = class gn_locale_LocaleString {
         this._count = count;
         this._args = [];
         gn.locale.LocaleManager.instance().translate(this);
-
     }
     get messageId() {
         return this._messageId;
@@ -1758,7 +1748,7 @@ gn.locale.LocaleManager = class gn_locale_LocaleManager extends gn.core.Object {
         let localeFiles = gn.app.App.instance().getLocalePath();
         for (let file of localeFiles) {
             try {
-                let loc = await gn.app.App.instance().requestJ(file + locale + ".json");
+                let loc = await gn.app.App.requestJ(file + locale + ".json");
                 if (!gn.lang.Var.isNull(loc)) {
                     if (!this._locales[locale]) {
                         this._locales[locale] = loc;
@@ -1826,13 +1816,13 @@ gn.app.App = class gn_app_App extends gn.core.Object {
             if (appClass == gn.app.App) {
                 throw new Error("Application class cannot be the abstract class");
             }
-
             gn.app.App._instance = new appClass();
             gn.app.App.instance().main();
         }
         return gn.app.App._instance;
     }
     main() {
+        this.root = new gn.ui.window.WindowManager();
         window.addEventListener("resize", function() {
             this.sendEvent("resize")
         }.bind(this));
@@ -1851,7 +1841,7 @@ gn.app.App = class gn_app_App extends gn.core.Object {
     get header() {
         return this._header;
     }
-    async request(url, data) {
+    static async request(url, data) {
         let promise = await fetch(url, {
             method: 'POST',
             body: JSON.stringify(data)
@@ -1861,15 +1851,15 @@ gn.app.App = class gn_app_App extends gn.core.Object {
         }
         return promise;
     }
-    async requestJ(url, data) {
+    static async requestJ(url, data) {
         let promise = await this.request(url, data);
         return await promise.json();
     }
-    async requestT(url, data) {
+    static async requestT(url, data) {
         let promise = await this.request(url, data);
         return await promise.text();
     }
-    async requestA(url, data) {
+    static async requestA(url, data) {
         let promise = await this.request(url, data);
         return await promise.arrayBuffer();
     }
@@ -1981,6 +1971,9 @@ gn.event.Emitter = class gn_event_Emitter {
         }
         if (typeof listener !== 'function') {
             throw new TypeError(`Listener for event "${type}" must be a function`);
+        }
+        if (object.disposed) {
+            throw new TypeError("Trying to add lisner to disposed object")
         }
         const internalId = gn.core.Object.getInternalId(object);
         if (!this._listeners.has(internalId)) {
@@ -2258,8 +2251,8 @@ gn.event.Timer = class gn_event_Timer extends gn.core.Object {
     restart() {
         if (this._enabled) {
             this._stop();
-            this._start();
         }
+        this._start();
     }
     stop() {
         this.enabled = false;
@@ -2681,7 +2674,6 @@ gn.model.Model.Type = gn.lang.Enum({
     group: 2
 });
 gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.core.Object {
-
     constructor() {
         super();
         this._formData = new FormData();
@@ -2694,6 +2686,12 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
     }
     get done() {
         return this._done;
+    }
+    get currentIdx() {
+        return this._currentChunkIndex;
+    }
+    get allChunks() {
+        return this._filechunks.length;
     }
     addField(key, value) {
         this._formData.append(key, value);
@@ -2738,7 +2736,6 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         let total = 0;
         for (let [key, value] of this._formData.entries()) {
             total += new TextEncoder().encode(key).length;
-
             if (typeof value === "string") {
                 total += new TextEncoder().encode(value).length;
             } else if (value instanceof Blob || value instanceof File) {
@@ -2752,20 +2749,16 @@ gn.helper.FormDataFileUpload = class gn_helper_FormDataFileUpload extends gn.cor
         const chunks = [];
         let offset = 0;
         let chunkIndex = 0;
-
         while (offset < file.size) {
             const chunk = file.slice(offset, offset + chunkSize);
-
             const chunkFile = new window.File([chunk], file.name, {
                 type: file.type,
                 lastModified: file.lastModified,
             });
-
             chunks.push(chunkFile);
             offset += chunkSize;
             chunkIndex++;
         }
-
         return chunks;
     }
 }
@@ -3093,18 +3086,18 @@ gn.ui.list.ListTitle = class gn_ui_list_ListTitle extends gn.ui.basic.Widget {
     }
 }
 gn.ui.container.Row = class gn_ui_container_Row extends gn.ui.basic.Widget {
-    constructor(classList) {
-        super(new gn.ui.layout.Row(), "div", classList);
+    constructor(classList, gap, wrap) {
+        super(new gn.ui.layout.Row(gap, wrap), "div", classList);
     }
 }
 gn.ui.container.Column = class gn_ui_container_Column extends gn.ui.basic.Widget {
-    constructor(classList) {
-        super(new gn.ui.layout.Column(), "div", classList);
+    constructor(classList, gap, wrap) {
+        super(new gn.ui.layout.Column(gap, wrap), "div", classList);
     }
 }
 gn.ui.container.Grid = class gn_ui_container_Grid extends gn.ui.basic.Widget {
-    constructor(classList) {
-        super(new gn.ui.layout.Grid(), "div", classList);
+    constructor(classList, gap, columns, rows) {
+        super(new gn.ui.layout.Grid(gap, columns, rows), "div", classList);
     }
 }
 gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
@@ -3113,18 +3106,15 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         this._order = []
         this._currentWidget;
         this._prevWidget;
-
         this._animDir = null;
         this._animLoop = false;
         this._animBounceDir = true;
         this._animnOnEdge = true;
         this.addClass("gn-stack");
-
     }
     get currentWidget() {
         return this._currentWidget;
     }
-
     add(child, animation) {
         child.addClass("gn-stack-child");
         super.add(child);
@@ -3140,10 +3130,10 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         super.remove(child);
         if (child == this._currentWidget) {
             this.next();
+            this._prevWidget = null;
         }
         this._order.splice(this._order.indexOf(child), 1)
     }
-
     setAnimationMode(dir, loop = true) {
         if (!["left", "right", "up", "down"].includes(dir)) {
             this._animDir = null;
@@ -3153,23 +3143,22 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
         this._animLoop = loop;
     }
     activate(widget, forward = true) {
+        if (widget == null) {
+            return;
+        }
         this._prevWidget = this._currentWidget;
         this._currentWidget = widget;
-
         let x = this._processAnimation(this._prevWidget, true, forward);
         x ? this._prevWidget.setStyle("transform", x) : null;
-
-
         let y = this._processAnimation(this._currentWidget, false, forward);
         y ? this._currentWidget.setStyle("transform", y) : null;
         this._currentWidget.show();
-
         if (x) {
             gn.event.Timer.singleShot(this, () => {
                 this._currentWidget.setStyle("transform", "translate( 0 )");
             }, 1);
             gn.event.Timer.singleShot(this, () => {
-                this._prevWidget.exclude();
+                this._prevWidget?.exclude();
             }, 500);
         } else {
             this._prevWidget.exclude();
@@ -3202,7 +3191,6 @@ gn.ui.container.Stack = class gn_ui_container_Stack extends gn.ui.basic.Widget {
             return ret;
         }
         return
-
     }
     _animHelper(dir, forward) {
         let ret = 100;
@@ -3309,7 +3297,6 @@ gn.ui.container.SplitHandle = class gn_ui_container_SplitHandle extends gn.ui.ba
         return this._after;
     }
     _onDrag(e) {
-
         if (e.clientX == 0 && e.clientY == 0) {
             return;
         }
@@ -3352,72 +3339,52 @@ gn.ui.container.ScrollCustom = class gn_ui_container_ScrollCustom extends gn.ui.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._body.addEventListener("scroll", this._onScroll, this);
-
         this._speed = 0.2;
-
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Row));
         super._addInternal(new gn.ui.container.ScrollBar(this, gn.ui.layout.direction.Column));
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     _getClampedOffsets(y, x) {
         const maxScrollTop = Math.max(0, this._body.element.scrollHeight - this.element.clientHeight);
         const maxScrollLeft = Math.max(0, this._body.element.scrollWidth - this.element.clientWidth);
-
         return {
             y: Math.max(0, Math.min(maxScrollTop, y)),
             x: Math.max(0, Math.min(maxScrollLeft, x))
         };
     }
-
     scrollTo(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         y = (y === null || typeof y === 'undefined') ? currentY : y;
         x = (x === null || typeof x === 'undefined') ? currentX : x;
-
         const clamped = this._getClampedOffsets(y, x);
-
         this._body.element.style.top = (-clamped.y) + "px";
         this._body.element.style.left = (-clamped.x) + "px";
-
         this.sendEvent("scrolled");
     }
-
     scrollBy(x, y) {
         const currentY = -parseFloat(this._body.element.style.top || 0);
         const currentX = -parseFloat(this._body.element.style.left || 0);
-
         const targetY = currentY + (y || 0);
         const targetX = currentX + (x || 0);
-
         this.scrollTo(targetX, targetY);
     }
-
     _onScroll(e) {
-
         const power = 1.2;
         const dynamicY = Math.pow(Math.abs(e.deltaY), power) * Math.sign(e.deltaY);
         const dynamicX = Math.pow(Math.abs(e.deltaX), power) * Math.sign(e.deltaX);
-
         this.scrollBy(this._speed * dynamicX, this._speed * dynamicY);
     }
 }
@@ -3428,9 +3395,7 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
         this._orientation = orientation;
         this._scroll = scroll;
         this._wheelScrollSpeed = 0.1;
-
         this._thumb = new gn.ui.basic.Widget(null, "div", "thumb");
-
         if (gn.ui.layout.direction.Row == orientation) {
             this.addClass("horizontal");
             this._thumb.setStyle("width", "100px");
@@ -3440,15 +3405,12 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("height", "100px");
             this._thumb.setStyle("width", "100%");
         }
-
         this.addEventListener("scroll", this._onTumbScrolled, this);
         this._thumb.addEventListener("dragstart", this._onDragStart, this);
         this._thumb.addEventListener("drag", this._onDrag, this);
         this._thumb.addEventListener("dragend", this._onDragStop, this);
         this.add(this._thumb);
-
         this._scroll.addEventListener("scrolled", this._updatePositionOfThumb, this);
-
         gn.event.Timer.singleShot(this, () => {
             this._updateLengthOfThumb();
         });
@@ -3457,7 +3419,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._updatePositionOfThumb();
         }, this);
     }
-
     _updateLengthOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let width = this.width;
@@ -3481,7 +3442,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             }
         }
     }
-
     _updatePositionOfThumb() {
         if (gn.ui.layout.direction.Row == this._orientation) {
             let scrollLeft = -parseFloat(this._scroll.body.element.style.left || 0);
@@ -3495,7 +3455,6 @@ gn.ui.container.ScrollBar = class gn_ui_container_ScrollBar extends gn.ui.basic.
             this._thumb.setStyle("top", thumbTop + "px");
         }
     }
-
     _onDrag(e) {
         console.log(e.clientX, e.clientY)
         if (e.clientX == 0 && e.clientY == 0) {
@@ -3543,55 +3502,45 @@ gn.ui.container.ScrollSys = class gn_ui_container_ScrollSys extends gn.ui.basic.
     constructor(content, classList) {
         super(null, null, classList);
         this.addClass("gn-scroll-sys")
-
         this._body = content || new gn.ui.basic.Widget();
         this._body.addClass("body");
         super._addInternal(this._body);
-
         this._speed = 0.2;
     }
-
     get body() {
         return this._body;
     }
-
     _addInternal(child, where, refChild) {
         this._body._addInternal(child, where, refChild);
     }
-
     remove(child) {
         this._body.remove(child);
     }
-
     scrollTo(x, y) {
         this.element.scrollTo(x, y);
     }
-
     scrollBy(x, y) {
         this.element.scrollBy(x, y);
     }
 }
 gn.ui.container.Scroll = class gn_ui_container_Scroll extends gn.ui.container.ScrollCustom {}
 gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Widget {
-
-    constructor(details) {
-        super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
+    constructor(details, classList) {
+        super(new gn.ui.layout.Row(), "div", classList);
+        this.addClass("gn-tileContainer");
         this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
         super._addInternal(this._scroll);
-
         this._model = null;
         this._idElementMap = new Map();
         this._groups = new Map();
         this._currentGroup = null;
         this._breadcrumb = null;
         this._fakeTiles = [];
-
         this._details = gn.lang.Object.merge({
             "header": true,
             "sort": false,
             "filter": false,
         }, details)
-
         this._tileClass = gn.ui.tile.TileItem;
         this._fakeTileClass = gn.ui.tile.FakeTileItem;
         this._subItemContClass = gn.ui.tile.TileSubItemContainer
@@ -3599,7 +3548,6 @@ gn.ui.tile.TileContainer = class gn_ui_tile_TileContainer extends gn.ui.basic.Wi
             this._header = new gn.ui.container.Row("gn-tileContainerHeader");
         }
         this.add(this._header);
-
         gn.app.App.instance().addEventListener("resize", this.genFakeTileItems, this);
     }
     set tileClass(value) {
@@ -3835,28 +3783,108 @@ gn.ui.tile.TileSubItemContainer = class gn_ui_tile_TileSubItemContainer extends 
         this._data = data;
     }
 }
-gn.ui.Header = class gn_ui_Header extends gn.ui.container.Row {
+gn.ui.window.Window = class gn_ui_window_Window extends gn.ui.basic.Widget {
+    constructor(id, layout, classList) {
+        super(layout, null, classList);
+        this.addClass("gn-window");
+        if (gn.lang.String.isEmpty(id)) {
+            id = "id" + Math.random();
+        }
+        this._id = id;
+    }
+    get id() {
+        return this._id;
+    }
+    onActivated() {}
+}
+gn.ui.window.WindowManager = class gn_ui_window_WindowManager extends gn.ui.container.Stack {
+    constructor() {
+        super();
+        this.addClass("gn-window-manager");
+        this._windows = {};
+        this._constructables = {};
+    }
+    registerConstructable(id, window) {
+        if (!gn.lang.Var.isConstructableChildOf(window, gn.ui.window.Window)) {
+            return false;
+        }
+        this._constructables[id] = window;
+        return true;
+    }
+    unregisterConstructable(id) {
+        delete this._constructables[id];
+    }
+    add(window) {
+        if (!window instanceof gn.ui.window.Window) {
+            return;
+        }
+        this._windows[window.id] = window;
+        super.add(window);
+        if (this._currentWidget == window) {
+            window.onActivated();
+        }
+    }
+    remove(windowOrId) {
+        if (!(windowOrId instanceof gn.ui.window.Window)) {
+            if (!gn.lang.Var.isNull(this._windows[windowOrId])) {
+                windowOrId = this._windows[windowOrId];
+            } else {
+                return;
+            }
+        }
+        delete this._windows[windowOrId.id];
+        super.remove(windowOrId);
+        windowOrId.dispose();
+    }
+    activate(windowOrId) {
+        if (windowOrId instanceof gn.ui.window.Window) {
+            super.activate(windowOrId);
+            windowOrId.onActivated();
+            return;
+        }
+        let window = this._windows[windowOrId];
+        if (gn.lang.Var.isEmpty(window)) {
+            if (gn.lang.Var.isEmpty(this._constructables[windowOrId])) {
+                return false;
+            }
+            window = new this._constructables[windowOrId]();
+            this.add(window);
+        }
+        super.activate(window);
+        window.onActivated();
+        return true;
+    }
+}
+gn.ui.Header = class gn_ui_Header extends gn.ui.container.Column {
     constructor(options) {
         super("gn-header");
         this._options = gn.lang.Object.merge({
             "left": true,
             "center": true,
             "right": true,
+            "progress": true
         }, options);
         this._left = null;
         this._center = null;
         this._right = null;
+        this._progressBanner = null;
+        this._top = new gn.ui.container.Row();
+        this.add(this._top);
         if (this._options.left) {
             this._left = new gn.ui.container.Row("gn-header-left");
-            this.add(this._left);
+            this._top.add(this._left);
         }
         if (this._options.center) {
             this._center = new gn.ui.container.Row("gn-header-center");
-            this.add(this._center);
+            this._top.add(this._center);
         }
         if (this._options.right) {
             this._right = new gn.ui.container.Row("gn-header-right");
-            this.add(this._right);
+            this._top.add(this._right);
+        }
+        if (this._options.progress) {
+            this._progressBanner = new gn.ui.progress.ProgressBanner();
+            this.add(this._progressBanner);
         }
         this._sticky = false;
     }
@@ -3879,6 +3907,9 @@ gn.ui.Header = class gn_ui_Header extends gn.ui.container.Row {
     }
     get right() {
         return this._right;
+    }
+    get progress() {
+        return this._progressBanner;
     }
 }
 gn.ui.popup.PopupBase = class gn_ui_popup_PopupBase extends gn.ui.container.Column {
@@ -4797,7 +4828,6 @@ gn.ui.control.MenuItem = class gn_ui_control_MenuItem extends gn.ui.container.Ro
             throw new Error("Label must be instance of gn.ui.basic.Label or string");
         }
         this.add(this._label);
-        this.setStyle("cursor", "pointer");
         this.addEventListener("click", function() {
             this.sendEvent("selected", this._id);
             if (this._cb) {

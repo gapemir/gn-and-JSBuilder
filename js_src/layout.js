@@ -82,8 +82,8 @@ namespace gn.ui.layout {
         }
         _getStyles() {
             let ret = {};
-            if(this.spacing != 0){
-                ret["gap"] = this.spacing + "px";
+            if(this.gap != 0){
+                ret["gap"] = this.gap + "px";
             }
             if(this.wrap){
                 ret["flex-wrap"] = "wrap";
@@ -92,17 +92,17 @@ namespace gn.ui.layout {
         }
     }
     class Row extends gn.ui.layout.Box {
-        constructor(spacing, wrap) {
-            super(gn.ui.layout.direction.Row, spacing, wrap);
+        constructor(gap, wrap) {
+            super(gn.ui.layout.direction.Row, gap, wrap);
         }
     }
     class Column extends gn.ui.layout.Box {
-        constructor(spacing, wrap) {
-            super(gn.ui.layout.direction.Column, spacing, wrap);
+        constructor(gap, wrap) {
+            super(gn.ui.layout.direction.Column, gap, wrap);
         }
     }
     class Grid extends gn.ui.layout.AbstractLayout {
-        constructor(columns, rows, gap) {
+        constructor(gap, columns, rows) {
             super();
             this._templateColumns = null;
             this._templateRows = null;
@@ -204,8 +204,8 @@ namespace gn.ui.layout {
             if(!gn.lang.Var.isNull(this.templateRows)) {
                 ret["grid-template-rows"] = this.templateRows;
             }
-            if (this.spacing != 0) {
-                ret["gap"] = this.spacing ?? 0 + "px";
+            if (this.gap != 0) {
+                ret["gap"] = this.gap ?? 0 + "px";
             }
             return ret;
         }

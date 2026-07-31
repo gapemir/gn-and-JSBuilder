@@ -433,8 +433,8 @@ namespace gn.event {
         restart() {
             if (this._enabled) {
                 this._stop();
-                this._start();
             }
+            this._start();
         }
         stop() {
             this.enabled = false;

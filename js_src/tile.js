@@ -1,8 +1,9 @@
 namespace gn.ui.tile {
     class TileContainer extends gn.ui.basic.Widget {
     // class TileContainer extends gn.ui.container.Scroll {
-        constructor( details ) {
-            super(new gn.ui.layout.Row(), "div", "gn-tileContainer");
+        constructor( details, classList ) {
+            super(new gn.ui.layout.Row(), "div", classList);
+            this.addClass("gn-tileContainer");
             this._scroll = new gn.ui.container.Scroll(new gn.ui.basic.Widget(new gn.ui.layout.Row()));
             super._addInternal(this._scroll);
             

@@ -1,17 +1,17 @@
 namespace gn.ui.container {
     class Row extends gn.ui.basic.Widget {
-        constructor(classList) {
-            super(new gn.ui.layout.Row(), "div", classList);
+        constructor(classList, gap, wrap) {
+            super(new gn.ui.layout.Row(gap, wrap), "div", classList);
         }
     }
     class Column extends gn.ui.basic.Widget {
-        constructor(classList) {
-            super(new gn.ui.layout.Column(), "div", classList);
+        constructor(classList, gap, wrap) {
+            super(new gn.ui.layout.Column(gap, wrap), "div", classList);
         }
     }
     class Grid extends gn.ui.basic.Widget {
-        constructor(classList) {
-            super(new gn.ui.layout.Grid(), "div", classList);
+        constructor(classList, gap, columns, rows) {
+            super(new gn.ui.layout.Grid(gap, columns, rows), "div", classList);
         }
     }
     class Stack extends gn.ui.basic.Widget {
@@ -57,6 +57,7 @@ namespace gn.ui.container {
             super.remove( child);
             if( child == this._currentWidget ) {
                 this.next();
+                this._prevWidget = null; // clear reference to removed obj
             }
             this._order.splice( this._order.indexOf( child ), 1 )
         }
@@ -74,6 +75,9 @@ namespace gn.ui.container {
             this._animLoop = loop;
         }
         activate( widget, forward = true ) {
+            if( widget == null ){
+                return;
+            }
             this._prevWidget = this._currentWidget;
             this._currentWidget = widget;
 
@@ -90,7 +94,7 @@ namespace gn.ui.container {
                     this._currentWidget.setStyle( "transform", "translate( 0 )" ); 
                 }, 1 );
                 gn.event.Timer.singleShot( this, () => { 
-                    this._prevWidget.exclude(); 
+                    this._prevWidget?.exclude(); 
                 }, 500 );
             } else {
                 this._prevWidget.exclude(); 

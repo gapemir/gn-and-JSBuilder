@@ -27,6 +27,7 @@ namespace gn.app {
             return gn.app.App._instance;
         }
         main(){
+            this.root = new gn.ui.window.WindowManager();
             window.addEventListener( "resize", function() {
                 this.sendEvent( "resize" )
             }.bind( this ) );
@@ -45,7 +46,7 @@ namespace gn.app {
         get header() {
             return this._header;
         }
-        async request(url, data) {
+        static async request(url, data) {
             let promise = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -55,15 +56,15 @@ namespace gn.app {
             }
             return promise;
         }
-        async requestJ(url, data) {
+        static async requestJ(url, data) {
             let promise = await this.request(url, data);
             return await promise.json();
         }
-        async requestT(url, data) {
+        static async requestT(url, data) {
             let promise = await this.request(url, data);
             return await promise.text();
         }
-        async requestA(url, data) {
+        static async requestA(url, data) {
             let promise = await this.request(url, data);
             return await promise.arrayBuffer();
         }
