@@ -16,10 +16,7 @@ namespace gn.ui.basic {
                 this.layoutManager = layout
             }
         }
-        _destructor(){
-            if(!gn.lang.Var.isNull(this._layoutParent)){
-                this._layoutParent.remove(this);
-            }
+        _destructor() {
         }
         get layoutParent(){
             return this._layoutParent;
@@ -256,6 +253,9 @@ namespace gn.ui.basic {
             this._addInternal( child, "after", refChild );
         }
         _addInternal( child, where = null, refChild = null ) {
+            if (this._disposed) {
+                return;
+            }
             child.layoutParent?.remove( child );
             child.layoutParent = this;
             if( child.element ) {
@@ -279,7 +279,9 @@ namespace gn.ui.basic {
         remove( child ) {
             child.layoutParent = null;
             gn.lang.Array.remove( this._children, child );
-            this._element.removeChild( child.element );
+            if(child.element.parentNode == this._element) {
+                this._element.removeChild(child.element);
+            }
         }
         get visibility() {
             return this._visibility;
@@ -336,9 +338,15 @@ namespace gn.ui.basic {
                 this.hideTooltip();
             }
         }
-        dispose(){
-            if(this._element){
-                this._element.remove();
+        dispose() {
+            if (this._disposed) {
+                return;
+            }
+            if(this._layoutParent) {
+                this._layoutParent.remove(this);
+            }
+            for(let child of this._children) {
+                child.dispose();
             }
             super.dispose();
         }

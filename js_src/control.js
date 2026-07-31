@@ -307,7 +307,6 @@ namespace gn.ui.control {
                 throw new Error("Label must be instance of gn.ui.basic.Label or string");
             }
             this.add(this._label);
-            this.setStyle("cursor", "pointer");
             this.addEventListener("click", function () {
                 this.sendEvent("selected", this._id);
                 if (this._cb) {

@@ -104,6 +104,9 @@ namespace gn.event {
             if( typeof listener !== 'function' ) {
                 throw new TypeError( `Listener for event "${type}" must be a function` );
             }
+            if(object.disposed) {
+                throw new TypeError("Trying to add lisner to disposed object")
+            }
 
             const internalId = gn.core.Object.getInternalId( object );
             if( !this._listeners.has(internalId)) {

@@ -35,6 +35,10 @@ namespace gn.core {
             gn.core.Object._idCache.push(this._internalId);
             this._disposed = true;
         }
+
+        get disposed() {
+            return this._disposed;
+        }
         
         addEventListener(type, callback, thisObj) {
             return gn.event.Emitter.instance().addEventListener(this, type, callback, thisObj);

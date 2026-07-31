@@ -4,7 +4,7 @@ namespace gn.lang {
             return value === undefined || value === null;
         }
         static isEmpty(value){
-            return gn.lang.Var.isNull(value) || value.length === 0 || value.size === 0 || (gn.lang.Var.isObject(value) && Object.keys(value).length === 0);
+            return gn.lang.Var.isNull(value) || ((gn.lang.Var.isArray(value) || gn.lang.Var.isString(value)) && value.length === 0) || value.size === 0 || (gn.lang.Var.isObject(value) && Object.keys(value).length === 0);
         }
         static isArray(value){
             return value instanceof Array;
@@ -21,8 +21,17 @@ namespace gn.lang {
         static isFunction(value){
             return typeof value === 'function';
         }
-        static isObject(value){
-            return value !== null && value.constructor.name === "Object"
+        static isObject(value) {
+            return typeof value === 'object' && value !== null && value.constructor === Object;
+        }
+        static isConstructable(value) {
+            return typeof value === 'function' && /^class\s/.test(Function.prototype.toString.call(value))
+        }
+        static isConstructableChildOf(value, parentConstructable) {
+            if(!gn.lang.Var.isConstructable(value) || !gn.lang.Var.isConstructable(parentConstructable)) {
+                return false;
+            }
+            return parentConstructable.prototype.isPrototypeOf(value.prototype);
         }
     }
     class Array {

@@ -19,6 +19,12 @@ namespace gn.helper {
         get done(){
             return this._done;
         }
+        get currentIdx() {
+            return this._currentChunkIndex;
+        }
+        get allChunks() {
+            return this._filechunks.length;
+        }
         addField( key, value ) {
             this._formData.append( key, value );
         }
