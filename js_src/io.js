@@ -98,4 +98,86 @@ namespace gn.io {
         }
 
     }
+    class Request {
+        static async request(endpoint, body = null, options = {}) {
+            const {
+                method = 'GET',
+                headers = {},
+                timeout = 1000,
+                ...customConfig
+            } = options;
+
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeout);
+
+            const config = {
+                method,
+                ...headers,
+                signal: controller.signal,
+                ...customConfig,
+            };
+
+            if (body) {
+                if (typeof body === 'object' && !(body instanceof FormData) && !(body instanceof Blob)) {
+                    config.body = JSON.stringify(body);
+                } else {
+                    config.body = body;
+                }
+            }
+
+            try {
+                const response = await fetch(endpoint, config);
+                clearTimeout(timer);
+
+                if (response.status === 204) { // 204 No content
+                    return null;
+                }
+
+                const data = await this._parseResponse(response);
+                if (!response.ok) {
+                    const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    error.status = response.status;
+                    error.data = data;
+                    throw error;
+                }
+
+                return data;
+            } catch (error) {
+                clearTimeout(timer);
+            
+                if (error.name === 'AbortError') {
+                    throw new Error(`Request timed out after ${timeout}ms`);
+                }
+                throw error;
+            }
+        }
+
+        static async _parseResponse(response) {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
+            return await response.text();
+        }
+
+        static async get(endpoint, body = null, options = {}) {
+            return this.request(endpoint, body, { ...options, method: 'GET' });
+        }
+
+        static async post(endpoint, body = null, options = {}) {
+            return this.request(endpoint, body, { ...options, method: 'POST', body });
+        }
+
+        static async put(endpoint, body = null, options = {}) {
+            return this.request(endpoint, body, { ...options, method: 'PUT', body });
+        }
+
+        static async patch(endpoint, body = null, options = {}) {
+            return this.request(endpoint, body, { ...options, method: 'PATCH', body });
+        }
+
+        static async delete(endpoint, body = null, options = {}) {
+            return this.request(endpoint, body, { ...options, method: 'DELETE' });
+        }
+    }
 }

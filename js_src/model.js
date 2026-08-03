@@ -23,24 +23,19 @@ namespace gn.model {
             return null;
         }
         setDataFromFlat( data, parentKey ) {
+            let copy = [...data];
             this._reset();
             let removedData = {};
-            for( let i = 0; i < data.length; i++ ) {
-                if( data[i][parentKey] ) {
-                    let item = data.find( el => el[this._key] == data[i][parentKey] )
-                    if( item ){
+            for( let i = 0; i < copy.length; i++ ) {
+                if( copy[i][parentKey] ) {
+                    let item = copy.find( el => el[this._key] == copy[i][parentKey] );
+                    if( item ) {
                         if( gn.lang.Var.isNull( item.subitems ) ) {
                             item.subitems = [];
                         }
-                        item.subitems.push( data[i] );
-                    } else{
-                        if( gn.lang.Var.isNull( removedData[ data[ i ] ].subitems ) ) {
-                            item.subitems = [];
-                        }
-                        removedData[ data[ i ] ].subitems.push( data[ i ] )
+                        item.subitems.push( copy[i] );
+                        data.splice( data.indexOf( copy[ i ] ), 1 );
                     }
-                    data.splice( data.indexOf( data[ i ] ), 1 );
-                    i--;
                 }
             }
             this._setData( data );

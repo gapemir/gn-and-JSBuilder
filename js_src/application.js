@@ -26,7 +26,7 @@ namespace gn.app {
             }
             return gn.app.App._instance;
         }
-        main(){
+        main() {
             this.root = new gn.ui.window.WindowManager();
             window.addEventListener( "resize", function() {
                 this.sendEvent( "resize" )
@@ -45,28 +45,6 @@ namespace gn.app {
         }
         get header() {
             return this._header;
-        }
-        static async request(url, data) {
-            let promise = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            if(!promise.ok){
-                throw new Error('Network response was not ok' + promise.statusText);
-            }
-            return promise;
-        }
-        static async requestJ(url, data) {
-            let promise = await this.request(url, data);
-            return await promise.json();
-        }
-        static async requestT(url, data) {
-            let promise = await this.request(url, data);
-            return await promise.text();
-        }
-        static async requestA(url, data) {
-            let promise = await this.request(url, data);
-            return await promise.arrayBuffer();
         }
         getLocalePath() {
             return ["./gn/translations/"];
