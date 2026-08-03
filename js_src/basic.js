@@ -345,6 +345,9 @@ namespace gn.ui.basic {
             if(this._layoutParent) {
                 this._layoutParent.remove(this);
             }
+            if(this.element.isConnected) {
+                this.element.remove();
+            }
             while(this._children.length) {
                 this._children[0].dispose();
             }
