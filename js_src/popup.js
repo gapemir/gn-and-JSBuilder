@@ -35,15 +35,17 @@ namespace gn.ui.popup {
         constructor(buttons, blocker) {
             super("gn-popup");
             this._callback = null;
+            this._ctx = null;
             this.header = new gn.ui.container.Row("gn-popup-header");
             this._title = new gn.ui.basic.Label();
             this._header.add(this._title);
+            this._content = null;
             this.body = new gn.ui.container.Column("gn-popup-body");
             this.footer = new gn.ui.container.Row("gn-popup-footer");
             if(buttons & gn.ui.popup.OK) {
                 let button = new gn.ui.control.Button("OK");
                 button.addEventListener("click", function () {
-                    this.sendEvent("ok", this._callback ? this._callback.call(this, "ok", this) : null);
+                    this.sendEvent("ok", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.OK, this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -51,7 +53,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.CLOSE) {
                 let close = new gn.ui.basic.Icon(14, "fa-xmark", ["fa-solid"]);
                 close.addEventListener("click", function () {
-                    this.sendEvent("close", this._callback ? this._callback.call(this, "close", this) : null);
+                    this.sendEvent("close", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.CLOSE, this) : null);
                     this.dispose();
                 }, this);
                 this.header.add(close);
@@ -59,7 +61,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.CANCEL) {
                 let button = new gn.ui.control.Button("CANCEL");
                 button.addEventListener("click", function () {
-                    this.sendEvent("cancel", this._callback ? this._callback.call(this, "cancel", this) : null);
+                    this.sendEvent("cancel", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.CANCEL, this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -67,7 +69,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.YES) {
                 let button = new gn.ui.control.Button("YES");
                 button.addEventListener("click", function () {
-                    this.sendEvent("yes", this._callback ? this._callback.call(this, "yes", this) : null);
+                    this.sendEvent("yes", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.YES, this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -75,7 +77,7 @@ namespace gn.ui.popup {
             if(buttons & gn.ui.popup.NO) {
                 let button = new gn.ui.control.Button("NO");
                 button.addEventListener("click", function () {
-                    this.sendEvent("no", this._callback ? this._callback.call(this, "no", this) : null);
+                    this.sendEvent("no", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.NO, this) : null);
                     this.dispose();
                 }, this);
                 this.footer.add(button);
@@ -105,28 +107,39 @@ namespace gn.ui.popup {
         set title(value) {
             this._title.text = value
         }
-        set callback(value){
+        set callback(value) {
             this._callback = value;
         }
-        static InformationPopup(title, message) {
+        set ctx(value) {
+            this._ctx = value;
+        }
+        set content(value) {
+            this._content = value;
+        }
+        get content() {
+            return this._content;
+        }
+        static InformationPopup(title, content) {
             let popup = new gn.ui.popup.Popup(gn.ui.popup.OK|gn.ui.popup.CLOSE);
             popup.title = title;
-            if(message instanceof gn.ui.basic.Widget){
-                popup.body.add(message);
+            popup.content = content;
+            if(content instanceof gn.ui.basic.Widget) {
+                popup.body.add(content);
             }
-            else if(gn.lang.Var.isString(message)){
-                popup.body.add(new gn.ui.basic.Label(message));
+            else if(gn.lang.Var.isString(content)) {
+                popup.body.add(new gn.ui.basic.Label(content));
             }
             return popup;
         }
-        static ConfirmationPopup(title, message) {
+        static ConfirmationPopup(title, content) {
             let popup = new gn.ui.popup.Popup(gn.ui.popup.YES|gn.ui.popup.NO|gn.ui.popup.CLOSE);
             popup.title = title;
-            if(message instanceof gn.ui.basic.Widget){
-                popup.body.add(message);
+            popup.content = content;
+            if(content instanceof gn.ui.basic.Widget) {
+                popup.body.add(content);
             }
-            else if(gn.lang.Var.isString(message)){
-                popup.body.add(new gn.ui.basic.Label(message));
+            else if(gn.lang.Var.isString(content)) {
+                popup.body.add(new gn.ui.basic.Label(content));
             }
             return popup;
         }
