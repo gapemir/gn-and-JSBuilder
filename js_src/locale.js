@@ -4,7 +4,7 @@ namespace gn.locale{
             this._messageId = messageId;
             this._text = text;
             this._count = count; // for pluratization
-            this._args = [];
+            this._args = null;
             gn.locale.LocaleManager.instance().translate(this);
 
         }
@@ -29,9 +29,6 @@ namespace gn.locale{
         args( ...argz ) {
             this._args = argz;
             if( this._args.length != 0 ){
-                if( this._args.length == 1 ){
-                    this._count = this._args[0];
-                }
                 let newText = this._text;
                 for(let i = 0; newText.match(/%\d+/); i++){
                     newText = newText.replace(/%\d+/, this._args[i])
@@ -117,7 +114,10 @@ namespace gn.locale{
                 return ls;
             }
             ls.text = this._getLocalisedText(ls.messageId, ls.count);
-            return ls.args(ls.argz);
+            if(ls.argz != null) {
+                return ls.args();
+            }
+            return ls;
         }
         _changeLocale(){
             this.sendEvent("changeLocale");

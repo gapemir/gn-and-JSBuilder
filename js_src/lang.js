@@ -107,6 +107,12 @@ namespace gn.lang {
             }
             return value;
         }
+        static invert(obj) {
+            if( gn.lang.Var.isObject(obj) ) {
+                return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));
+            }
+            return null;
+        }
     }
     Enum = function( obj ) {
         return Object.freeze ? ( Object.freeze( obj ) ) : obj;

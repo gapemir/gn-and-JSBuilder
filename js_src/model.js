@@ -233,11 +233,11 @@ namespace gn.model {
         }
         _applyFilterSort() {
             this._mapping = { null : [] };
-            if( !gn.lang.Var.isNull( this._filter ) || !gn.lang.Var.isNull( this._sort ) ) {
+            if( !gn.lang.Var.isNull( this._filter ) ) {
                 this._filterInternal();
-                if( !gn.lang.Var.isNull( this._sort ) ) {
-                    this._sortInternal();
-                }
+            }
+            if( !gn.lang.Var.isNull( this._sort ) ) {
+                this._sortInternal();
             }
             this.sendEvent( "decorationChanged" );
         }

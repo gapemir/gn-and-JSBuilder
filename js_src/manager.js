@@ -58,7 +58,7 @@ namespace gn.event.manager {
             this._lastPointerDown = null;
             this._clickCount = 0;
             this._clickTimer = null;
-            this._DOUBLE_CLICK_THRESHOLD = 200; // ms
+            this._DOUBLE_CLICK_THRESHOLD = 100; // ms
             this._clickTimer = new gn.event.Timer(this._DOUBLE_CLICK_THRESHOLD);
             this._clickTimer.addEventListener("timeout", this._sendClick, this);
             this._clickTimer.singleShot = true;

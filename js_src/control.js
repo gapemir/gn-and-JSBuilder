@@ -191,13 +191,11 @@ namespace gn.ui.control {
                 if(children){
                     for (let i = 0; i < children.length; i++) {
                         let data = this._model.data(children[i], gn.model.Model.DataType.all)
-                        if(data.type == gn.model.Model.Type.group){
-                            let menuItem = new gn.ui.control.MenuItem(data.name, null, function(){
+                        if(data.type == gn.model.Model.Type.group) {
+                            let menuItem = new gn.ui.control.MenuItem(data.name, data.name, null, function() {
                                 this._setIndex(children[i]);
                                 this.triggered( children[i] );
                             }, this);
-                            //let lab = new gn.ui.basic.Label(this.model.data(children[i]));
-                            //el._menu.add(lab);
                             el._menu.addItem(menuItem);
                         }
                     }
