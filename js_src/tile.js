@@ -15,6 +15,7 @@ namespace gn.ui.tile {
             this._fakeTiles = [];
 
             this._details = gn.lang.Object.merge( {
+                "breadcrumb" : true,
                 "header" : true,
                 "sort" : false, // TODO
                 "filter" : false, // TODO
@@ -23,8 +24,16 @@ namespace gn.ui.tile {
             this._tileClass = gn.ui.tile.TileItem;
             this._fakeTileClass = gn.ui.tile.FakeTileItem;
             this._subItemContClass = gn.ui.tile.TileSubItemContainer
-            if( this._details.header ){
+            if(this._details.breadcrumb || this._details.header || this._details.sort || this._details.filter) {
                 this._header = new gn.ui.container.Row( "gn-tileContainerHeader" );
+            }
+            if(this._details.breadcrumb) {
+                this._breadcrumb = new gn.ui.control.Breadcrumb();
+                this._breadcrumb.addEventListener("triggered", this.openGroup, this);
+                this._header.add(this._breadcrumb);
+            }
+            if(this._details.filter) {
+                // ...
             }
             this.add(this._header);
 
@@ -59,6 +68,9 @@ namespace gn.ui.tile {
                 this._model.removeEventListener("decorationChanged", this._onReset, this);
             }
             this._model = value;
+            if(this._breadcrumb){
+                this._breadcrumb.model = value;
+            }
             if( this._model ) {
                 this._model.addEventListener("dataSet", this._onDataSet, this);
                 this._model.addEventListener("dataAdded", this._onDataAdded, this);
@@ -71,10 +83,6 @@ namespace gn.ui.tile {
         }
         get model() {
             return this._model;
-        }
-        set breadcrumb(value){
-            this._breadcrumb = value;
-            this._breadcrumb.addEventListener("triggered", this.openGroup, this)
         }
         get breadcrumb(){
             return this._breadcrumb;
