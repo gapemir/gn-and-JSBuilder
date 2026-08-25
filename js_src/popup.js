@@ -1,10 +1,9 @@
 namespace gn.ui.popup {
-    //TODO popups stay if user scrolls or size of webside is changed
     class PopupBase extends gn.ui.container.Column {
         constructor( classList, blocker = true ) {
             super( "gn-popup-base" );
             this.addClasses( classList );
-            if( blocker ){
+            if( blocker ) {
                 this._blocker = new gn.ui.popup.Blocker();
             }
         }
@@ -31,54 +30,53 @@ namespace gn.ui.popup {
             super.dispose();
         }
     }
-    class Popup extends gn.ui.popup.PopupBase { //TODO bug it shows on top of page(if page is scrolled it wont show in the middle, we should also lock scroll when we have a popup)
-        constructor(buttons, blocker) {
-            super("gn-popup");
-            this._callback = null;
-            this._ctx = null;
+    class Dialog extends gn.ui.popup.PopupBase {
+        /**
+         * @param {String} title
+         * @param {String|gn.ui.basic.Widget} content
+         * @param {gn.ui.popup.Button} buttons 
+         * @param {Boolean} blocker 
+         */
+        constructor(title, content, buttons, blocker = true) {
+            super("gn-dialog", blocker);
             this.header = new gn.ui.container.Row("gn-popup-header");
-            this._title = new gn.ui.basic.Label();
-            this._header.add(this._title);
-            this._content = null;
             this.body = new gn.ui.container.Column("gn-popup-body");
             this.footer = new gn.ui.container.Row("gn-popup-footer");
-            if(buttons & gn.ui.popup.OK) {
+            
+            this.title = title;
+            this.content = content;
+            if(buttons & gn.ui.popup.Button.OK) {
                 let button = new gn.ui.control.Button("OK");
                 button.addEventListener("click", function () {
-                    this.sendEvent("ok", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.OK, this) : null);
-                    this.dispose();
+                    this._return(gn.ui.popup.Button.OK);
                 }, this);
                 this.footer.add(button);
             }
-            if(buttons & gn.ui.popup.CLOSE) {
+            if(buttons & gn.ui.popup.Button.CLOSE) {
                 let close = new gn.ui.basic.Icon(14, "fa-xmark", ["fa-solid"]);
                 close.addEventListener("click", function () {
-                    this.sendEvent("close", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.CLOSE, this) : null);
-                    this.dispose();
+                    this._return(gn.ui.popup.Button.CLOSE);
                 }, this);
                 this.header.add(close);
             }
-            if(buttons & gn.ui.popup.CANCEL) {
+            if(buttons & gn.ui.popup.Button.CANCEL) {
                 let button = new gn.ui.control.Button("CANCEL");
                 button.addEventListener("click", function () {
-                    this.sendEvent("cancel", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.CANCEL, this) : null);
-                    this.dispose();
+                    this._return(gn.ui.popup.Button.CANCEL);
                 }, this);
                 this.footer.add(button);
             }
-            if(buttons & gn.ui.popup.YES) {
+            if(buttons & gn.ui.popup.Button.YES) {
                 let button = new gn.ui.control.Button("YES");
                 button.addEventListener("click", function () {
-                    this.sendEvent("yes", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.YES, this) : null);
-                    this.dispose();
+                    this._return(gn.ui.popup.Button.YES);
                 }, this);
                 this.footer.add(button);
             }
-            if(buttons & gn.ui.popup.NO) {
+            if(buttons & gn.ui.popup.Button.NO) {
                 let button = new gn.ui.control.Button("NO");
                 button.addEventListener("click", function () {
-                    this.sendEvent("no", this._callback ? this._callback.call(this._ctx ? this._ctx : this, gn.ui.popup.NO, this) : null);
-                    this.dispose();
+                    this._return(gn.ui.popup.Button.NO);
                 }, this);
                 this.footer.add(button);
             }
@@ -105,50 +103,59 @@ namespace gn.ui.popup {
             return this._footer;
         }
         set title(value) {
-            this._title.text = value
-        }
-        set callback(value) {
-            this._callback = value;
-        }
-        set ctx(value) {
-            this._ctx = value;
+            this._title = new gn.ui.basic.Label(value);
+            this._header.add(this._title);
         }
         set content(value) {
             this._content = value;
+            if(value instanceof gn.ui.basic.Widget) {
+                this._body.add(value);
+            }
+            else if(gn.lang.Var.isString(value)) {
+                this._body.add(new gn.ui.basic.Label(value));
+            }
         }
         get content() {
             return this._content;
         }
-        static InformationPopup(title, content) {
-            let popup = new gn.ui.popup.Popup(gn.ui.popup.OK|gn.ui.popup.CLOSE);
-            popup.title = title;
-            popup.content = content;
-            if(content instanceof gn.ui.basic.Widget) {
-                popup.body.add(content);
-            }
-            else if(gn.lang.Var.isString(content)) {
-                popup.body.add(new gn.ui.basic.Label(content));
-            }
-            return popup;
+        async show() {
+            return this.exec();
         }
-        static ConfirmationPopup(title, content) {
-            let popup = new gn.ui.popup.Popup(gn.ui.popup.YES|gn.ui.popup.NO|gn.ui.popup.CLOSE);
-            popup.title = title;
-            popup.content = content;
-            if(content instanceof gn.ui.basic.Widget) {
-                popup.body.add(content);
+        async exec() {
+            super.show();
+            return new Promise((resolve) => {
+                this._resolvePromise = resolve;
+            });
+        }
+        static InformationDialog(title, content) {
+            return new gn.ui.popup.Dialog(title, content, gn.ui.popup.Button.OK | gn.ui.popup.Button.CLOSE, true);
+        }
+        static ConfirmationDialog(title, content) {
+            return new gn.ui.popup.Dialog(title, content, gn.ui.popup.Button.YES | gn.ui.popup.Button.NO | gn.ui.popup.Button.CLOSE, true);
+        }
+        _return(button) {
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
             }
-            else if(gn.lang.Var.isString(content)) {
-                popup.body.add(new gn.ui.basic.Label(content));
+            if (this._blocker) {
+                this._blocker.hide();
             }
-            return popup;
+            this.dispose();
+
+            if (this._resolvePromise) {
+                this._resolvePromise(button);
+                this._resolvePromise = null;
+                //TODO dispose????
+            }
         }
     }
-    OK = 1;
-    CANCEL = 2;
-    CLOSE = 4;
-    YES = 8;
-    NO = 16;
+    Button = gn.lang.Enum({
+        OK: 1,
+        CANCEL: 2,
+        CLOSE: 4,
+        YES: 8,
+        NO: 16,
+    });
 
     class Blocker extends gn.ui.basic.Widget{
         constructor() {
