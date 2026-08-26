@@ -24,15 +24,24 @@ def calc_hash(string :str):
         "sha1" : sha1.hexdigest()
     }
 
-def analyze_file(hashes :dict, filename :str, js_src :str):
+def analyze_file(hashes: dict, filename: str, js_src: str, js_folder:str):
     file_path = os.path.join(js_src, filename)
 
-    with open(file_path, 'r') as f:
+    rel_path = os.path.relpath(file_path, js_folder)
+    cache_key = rel_path.replace(os.sep, "__") + ".obj"
+    cache_path = os.path.join(ROOT_DIR, CACHE_FOLDER, cache_key)
+
+    with open(file_path, 'r', encoding='utf-8') as f:
         code = f.read()
 
     new_hash = calc_hash(code)
-    if filename in hashes and hashes[filename]["md5"] == new_hash["md5"] and hashes[filename]["sha1"] == new_hash["sha1"] and os.path.exists(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj")):
-        with open(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj"), 'rb') as f:
+    
+    if rel_path in hashes and \
+       hashes[rel_path]["md5"] == new_hash["md5"] and \
+       hashes[rel_path]["sha1"] == new_hash["sha1"] and \
+       os.path.exists(cache_path):
+        
+        with open(cache_path, 'rb') as f:
             return pickle.load(f)
 
     if VERBOSE:
@@ -40,7 +49,7 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
 
     start_time = time.time()
 
-    hashes[filename] = new_hash
+    hashes[rel_path] = new_hash
 
     pret = parse(code, file_path)
     if not pret:
@@ -64,11 +73,12 @@ def analyze_file(hashes :dict, filename :str, js_src :str):
         "content": code
     }
 
-    with open(os.path.join(ROOT_DIR, CACHE_FOLDER, filename + ".obj"), 'wb') as f:
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+
+    with open(cache_path, 'wb') as f:
         pickle.dump(ret, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     return ret
-
 
 def write_compiled(js_out, file_metadata, ordered_file_paths):
     initialized_namespaces = set()
@@ -127,13 +137,12 @@ def sortFiles(file_metadata):
 def build(hashes: dict, js_folder :str, js_out :str):
     file_metadata = []
 
-    for filename in os.listdir(js_folder):
-        if filename.endswith(".js"):
-            meta = analyze_file(hashes, filename, js_folder)
-            if not meta:
-                return False
-            else:
-                file_metadata.append(meta)
+    for root, dirs, files in os.walk(js_folder):
+        for filename in files:
+            if filename.endswith(".js"):
+                meta = analyze_file(hashes, filename, root, js_folder)
+                if meta:
+                    file_metadata.append(meta)
 
     ordered_file_paths = sortFiles(file_metadata)
 
