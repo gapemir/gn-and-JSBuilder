@@ -5,9 +5,31 @@ namespace gn.core {
             this._disposed = false;
             //gn.core.Object._ObjectMap.set(this._internalId, new WeakRef(this));  //this will correctly handle garbage collection but it requires larger starting memory, also need to run cleanAfterGC periodicly to clean empty WeakRefs
             gn.core.Object._ObjectMap.set(this._internalId, this);
+
+            Object.defineProperty(this, 'dispose', {
+                value: function() {
+                    if (this._disposed) {
+                        return;
+                    }
+                    let currentProto = Object.getPrototypeOf(this);
+                    while (currentProto && currentProto !== Object.prototype) {
+                        const descriptor = Object.getOwnPropertyDescriptor(currentProto, "_destructor");
+                        if (descriptor && typeof descriptor.value === "function") {
+                            descriptor.value.call(this);
+                        }
+                        currentProto = Object.getPrototypeOf(currentProto);
+                    }
+                },
+                writable: false,
+                configurable: false
+            });
         }
 
         _destructor() {
+            gn.event.Emitter.instance().removeAllEventListeners(this);
+            gn.core.Object._ObjectMap.delete(this._internalId);
+            gn.core.Object._idCache.push(this._internalId);
+            this._disposed = true;
         }
 
         get internalId() {
@@ -23,17 +45,6 @@ namespace gn.core {
         
         static tr(messageId, count) {
             return new gn.locale.LocaleString(messageId, messageId, count);
-        }
-        
-        dispose() {
-            if (this._disposed) {
-                return;
-            }
-            gn.event.Emitter.instance().removeAllEventListeners(this);
-            this._destructor();
-            gn.core.Object._ObjectMap.delete(this._internalId);
-            gn.core.Object._idCache.push(this._internalId);
-            this._disposed = true;
         }
 
         get disposed() {

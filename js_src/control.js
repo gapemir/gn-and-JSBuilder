@@ -13,7 +13,6 @@ namespace gn.ui.control {
             if(this._text instanceof gn.locale.LocaleString) {
                 gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
             }
-            super._destructor();
         }
         set text(value) {
             this._text = value;
@@ -184,19 +183,20 @@ namespace gn.ui.control {
             sep.parent = this;
             sep.addEventListener("generateMenu", function(e){
                 let el = e.data;
-                el._menu = new gn.ui.control.Menu(el);
+                el._menu = new gn.ui.control.Menu(el, true);
                 el._menu.setStyle("min-width", "5rem");
                 el._menu.setStyle("min-height", "1rem");
                 let children = this._model.children(idx);
-                if(children){
+                if(children) {
                     for (let i = 0; i < children.length; i++) {
                         let data = this._model.data(children[i], gn.model.Model.DataType.all)
                         if(data.type == gn.model.Model.Type.group) {
-                            let menuItem = new gn.ui.control.MenuItem(data.name, data.name, null, function() {
+                            let action = new gn.core.Action(data.name, data.name);
+                            action.addEventListener("triggered", function() {
                                 this._setIndex(children[i]);
                                 this.triggered( children[i] );
                             }, this);
-                            el._menu.addItem(menuItem);
+                            el._menu.addAction(action)
                         }
                     }
                 }
@@ -215,33 +215,30 @@ namespace gn.ui.control {
         layer : 2
     })
     class Menu extends gn.ui.popup.PopupBase {
-        constructor(menuParent, bParentWide = false, multiSelect = false) {
-            super("gn-popup-menu");
-            this._items = [];
+        constructor(menuParent, closeOnSelected = false, bParentWide = false) {
+            super("gn-popup-menu", true, true);
+            this._items = []; // gn.ui.control.MenuItems
             this._menuParent = menuParent; // we need parent in order to position the menu correctly
             this._selected = [];
             this._bParentWide = bParentWide; // if true menu will be as wide as parent
-            this._multiSelect = multiSelect;
+            this._closeOnSelected = closeOnSelected;
+            this._actions = []; // gn.core.Actions
+            this._constructed = false;
         }
-        addItem(item){
-            if(!(item instanceof gn.ui.control.MenuItem)){
-                throw new Error("Item must be instance of MenuItem");
+        set actions(actions) {
+            this._actions = actions;
+            if(this._constructed) {
+                this._reconstruct();
             }
-            this._items.push(item);
-            this.add(item);
-            item.addEventListener("click", function () {
-                if(this._multiSelect) {
-                    this.hide();
-                }
-                if (item.action) {
-                    item.action();
-                }
-            }, this);
         }
-        get items() {
-            return this._items;
+        addAction(action) {
+            this._actions.push(action);
+            if(this._constructed) {
+                this._reconstruct();
+            }
         }
         show() {
+            this._construct();
             super.show();
             let rect = this._menuParent.rect;
             let trect = this.rect;
@@ -252,74 +249,99 @@ namespace gn.ui.control {
             } else {
                 this.setStyle("left", rect.right - trect.width + "px");
             }
-            this._windowClickBound = this._windowClick.bind(this)
-            document.addEventListener("click", this._windowClickBound);
         }
         hide() {
-            this.sendEvent("aboutToHide");
-            super.hide();
-            this.c = false; // we reset click state so that next click will close the menu
-            document.removeEventListener("click", this._windowClickBound);
-        }
-        walkItems(cb, ctx) {
-            this._items.forEach(item => {
-                cb.call(ctx, item);
-            });
-        }
-        clear() {
-            this._items.forEach(item => {
-                this.remove(item);
-            });
-            this._items = [];
-        }
-        _windowClick(event){ //TODO this works for simple one layer menus, for complex we need to rethink how we handle where user clicked
-            if(!this.c){ // we remove first click it is a bug that would/will be solved by focus manager
-                this.c = true;
+            if(!this._isShown) {
                 return;
             }
-            else if (event.target !== this.element && !this.element.contains(event.target)) {
-                this.hide();
-                document.removeEventListener("click", this._windowClickBound);
+            this.sendEvent("aboutToHide");
+            super.hide();
+            if(this._menuParent instanceof gn.ui.control.Menu) {
+                this._menuParent.hide();
             }
         }
-        createItem(id, label, icon, cb, ctx){
-            let item = new gn.ui.control.MenuItem(id, label, icon, cb, ctx);
-            this.addItem(item);
-            return item;
+        _reconstruct() {
+            this._items.forEach(item => {
+                item.dispose();
+            });
+            this._items = [];
+            this._construct;
+        }
+        _construct() {
+            if(this._constructed){
+                return;
+            }
+            for( let i = 0; i < this._actions.length; i++ ) {
+                let action = this._actions[i];
+                let item = new gn.ui.control.MenuItem(this, action);
+                item.addEventListener("click", this._handleClick, this);
+                this.add(item);
+            }
+            this._constructed = true;
+        }
+        _handleClick(e) {
+            let item = e.sender;
+            if(!item.action.enabled) {
+                return;
+            }
+            if ( item.action.hasSubActions ) {
+                if ( this._childMenu && !this._childMenu.isDisposed ) {
+                    this._childMenu.dispose();
+                    this._childMenu = null;
+                }
+                this._childMenu = new gn.ui.control.Menu(this, this._closeOnSelected, this._bParentWide);
+                this._childMenu.actions = item.action.actions;
+                this._childMenu.position = "right-top";
+                this._childMenu.show();
+                this._childMenu.addEventListener( "triggered", this._handleMenuTriggered, this );
+            }
+            else {
+                if (item.action.checkable) {
+                    item.action.toggle();
+                    item.checkbox.value = item.action.toggleState;
+                }
+                else {
+                    item.action.trigger();
+                }
+                this.sendEvent("triggered", item.action);
+                if ( this._closeOnSelected && !item.action.checkable ) { // TODO should this be controlled by action like final keyword
+                    this.hide();
+                }
+            }
+        }
+        _handleMenuTriggered(e) {
+            this.sendEvent("triggered", e.data);
+            if(this._closeOnSelected && !e.data.checkable) {
+                this.hide();
+            }
+        }
+        _destructor() {
+            while(this._children.length) {
+                this._children[0].dispose();
+            }
         }
     }
     class MenuItem extends gn.ui.container.Row {
-        constructor(id, label, icon, cb, ctx) { //TODO id is new here, it will break things
+        constructor(menu, action) {
             super("gn-popup-menu-item");
-            this._id = id;
-            this._label = label;
-            this._icon = icon;
-            this._cb = cb;
-            this._context = ctx;
-            if(icon){
-                this.add(this._icon);
+            this._menu = menu;
+            this._action = action;
+            this._checkbox = null;
+            if(this._action.icon) {
+                this.add(this._action.icon);
             }
-            if(gn.lang.Var.isString(label)) {
-                this._label = new gn.ui.basic.Label(label);
-            } else if (!label instanceof gn.ui.basic.Label) {
-                throw new Error("Label must be instance of gn.ui.basic.Label or string");
+            if(this._action.checkable) {
+                this._checkbox = new gn.ui.input.CheckBox();
+                this.add(this._checkbox);
             }
+            this._label = new gn.ui.basic.Label(action.label);
             this.add(this._label);
-            this.addEventListener("click", function () {
-                this.sendEvent("selected", this._id);
-                if (this._cb) {
-                    if(this._context) {
-                        this._cb.call(this._context);
-                    } else {
-                        this._cb.call(this);
-                    }
-                }
-            }, this);
-            gn.locale.LocaleManager.instance().addEventListener("localeChange", function () {
-                if(this._label instanceof gn.locale.LocaleString) {
-                    this.label = this._label.translate();
-                }
-            }, this);
+            if(!this._action.enabled) {
+                this.addClass("gn-disabled")
+            }
+        }
+        get action() {
+            return this._action;
         }
         set label(label) {
             this._label = label;
@@ -327,11 +349,8 @@ namespace gn.ui.control {
         get label() {
             return this._label;
         }
-        set icon(icon) {
-            this._icon = icon;
-        }
-        get icon() {
-            return this._icon;
+        get checkbox() {
+            return this._checkbox;
         }
     }
 }

@@ -338,7 +338,7 @@ namespace gn.ui.basic {
                 this.hideTooltip();
             }
         }
-        dispose() {
+        _destructor() {
             if (this._disposed) {
                 return;
             }
@@ -351,7 +351,6 @@ namespace gn.ui.basic {
             while(this._children.length) {
                 this._children[0].dispose();
             }
-            super.dispose();
         }
     }
     class Label extends gn.ui.basic.Widget {
@@ -365,7 +364,6 @@ namespace gn.ui.basic {
             if(this._text instanceof gn.locale.LocaleString) {
                 gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
             }
-            super._destructor();
         }
         set text(value){
             this._text = value;

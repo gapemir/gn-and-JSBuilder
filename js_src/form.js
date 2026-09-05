@@ -1,6 +1,6 @@
 namespace gn.ui.form {
 
-    class Form extends gn.ui.container.Column {
+    class Form extends gn.ui.basic.Widget {
         /**
          * 
          * @param {Array} classList 
@@ -8,7 +8,7 @@ namespace gn.ui.form {
          * @param {gn.ui.layout.direction} direction for how label and input
          */
         constructor(classList, gap = 5, direction = gn.ui.layout.direction.Column) {
-            super(classList, gap);
+            super(new gn.ui.layout.Column(gap), "form", classList);
             this.addClass("gn-form");
 
             this._formElements = {};
@@ -30,6 +30,10 @@ namespace gn.ui.form {
             this._formElements[id]["req"] = required;
             this._formElements[id]["label"] = label;
             let lableEl = null;
+
+            if(element instanceof gn.ui.control.Button) {
+                element.element.type="button";
+            }
         
             if(gn.lang.Var.isString(label) && showLabel) {
                 lableEl = new gn.ui.basic.Label(label, "gn-form-label")

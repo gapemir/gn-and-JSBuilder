@@ -20,7 +20,6 @@ namespace gn.ui.input {
             if(this._plcText instanceof gn.locale.LocaleString) {
                 gn.locale.LocaleManager.instance().removeEventListener("changeLocale", this._onLocaleChanged, this);
             }
-            super._destructor();
         }
         get type() {
             return this._element.type;
@@ -220,8 +219,6 @@ namespace gn.ui.input {
         set value(value) {
             if(gn.lang.Var.isString(value) && value.length == 7){
                 this._element.value = value;
-            }else{
-                throw new TypeError("Color value must be a string in the format '#RRGGBB'");
             }
         }
     }
@@ -360,7 +357,7 @@ namespace gn.ui.input {
             }
             this.add(this._input);
             
-            this._popup = new gn.ui.control.Menu(this, true);
+            this._popup = new gn.ui.control.Menu(this, false, true);
             this._popup.addEventListener("aboutToHide", () => {
                 this._isOpen = false;
             }, this);
@@ -433,6 +430,7 @@ namespace gn.ui.input {
     class MultiComboBox extends gn.ui.input.ComboBox {
         constructor(placeholder = "", nonEditable = false, classList = "") {
             super(placeholder, nonEditable, classList);
+            this._popup.closeOnSelect = false;
             this._value = [];
         }
 

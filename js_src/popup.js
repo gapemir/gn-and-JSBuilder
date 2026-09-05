@@ -1,33 +1,59 @@
 namespace gn.ui.popup {
     class PopupBase extends gn.ui.container.Column {
-        constructor( classList, blocker = true ) {
+        /**
+         * 
+         * @param {String[]} classList 
+         * @param {Boolean} modal 
+         */
+        constructor( classList, modal = false, hideOnModalClick = false ) {
             super( "gn-popup-base" );
             this.addClasses( classList );
-            if( blocker ) {
-                this._blocker = new gn.ui.popup.Blocker();
-            }
+            this._modal = modal;
+            this._isShown = false;
+            this._hideOnBlockerClick = hideOnModalClick;
+            this._blocker = null;
         }
-        hide() {
-            document.body.removeChild( this.element );
-            if( this._blocker ) {
-               this._blocker.hide();
-            }
+        set modal(value) {
+            this._modal = value;
+        }
+        get modal() {
+            return this._modal;
         }
         exclude() {
-            document.body.removeChild( this.element );
-            if( this._blocker ) {
-                this._blocker.exclude();
+            hide();
+            super.exclude();
+        }
+        hide() {
+            if(!this._isShown) {
+                return;
             }
+            this._isShown = false;
+            if(this._blocker) {
+                this._blocker.hide();
+            }
+            this.element.remove();
         }
         show() {
-            if( this._blocker ) {
+            if(this._isShown) {
+                return;
+            }
+            if(this._modal) {
+                if(!this._blocker) {
+                    this._blocker = new gn.ui.popup.Blocker(this, this._hideOnBlockerClick);
+                }
                 this._blocker.show();
             }
             document.body.appendChild( this.element );
+            this._isShown = true;
+            gn.app.App.instance().sendEvent( "popup" );
         }
-        dispose(){
-            this._blocker.dispose();
-            super.dispose();
+        close() {
+            this.dispose();
+        }
+        _destructor() {
+            if(this._blocker) {
+                this._blocker.dispose();
+            }
         }
     }
     class Dialog extends gn.ui.popup.PopupBase {
@@ -39,46 +65,28 @@ namespace gn.ui.popup {
          */
         constructor(title, content, buttons, blocker = true) {
             super("gn-dialog", blocker);
-            this.header = new gn.ui.container.Row("gn-popup-header");
-            this.body = new gn.ui.container.Column("gn-popup-body");
-            this.footer = new gn.ui.container.Row("gn-popup-footer");
+            this.header = new gn.ui.container.Row("gn-dialog-header");
+            this.body = new gn.ui.container.Column("gn-dialog-body");
+            this.footer = new gn.ui.container.Row("gn-dialog-footer");
             
             this.title = title;
             this.content = content;
             if(buttons & gn.ui.popup.Button.OK) {
-                let button = new gn.ui.control.Button("OK");
-                button.addEventListener("click", function () {
-                    this._return(gn.ui.popup.Button.OK);
-                }, this);
-                this.footer.add(button);
+                this._footer.add(new gn.ui.control.Button("OK", null, this._accept, this));
             }
             if(buttons & gn.ui.popup.Button.CLOSE) {
                 let close = new gn.ui.basic.Icon(14, "fa-xmark", ["fa-solid"]);
-                close.addEventListener("click", function () {
-                    this._return(gn.ui.popup.Button.CLOSE);
-                }, this);
+                close.addEventListener("click", this._reject, this);
                 this.header.add(close);
             }
             if(buttons & gn.ui.popup.Button.CANCEL) {
-                let button = new gn.ui.control.Button("CANCEL");
-                button.addEventListener("click", function () {
-                    this._return(gn.ui.popup.Button.CANCEL);
-                }, this);
-                this.footer.add(button);
+                this._footer.add(new gn.ui.control.Button("CANCEL", null, this._reject, this));
             }
             if(buttons & gn.ui.popup.Button.YES) {
-                let button = new gn.ui.control.Button("YES");
-                button.addEventListener("click", function () {
-                    this._return(gn.ui.popup.Button.YES);
-                }, this);
-                this.footer.add(button);
+                this._footer.add(new gn.ui.control.Button("YES", null, this._accept, this));
             }
             if(buttons & gn.ui.popup.Button.NO) {
-                let button = new gn.ui.control.Button("NO");
-                button.addEventListener("click", function () {
-                    this._return(gn.ui.popup.Button.NO);
-                }, this);
-                this.footer.add(button);
+                this._footer.add(new gn.ui.control.Button("NO", null, this._reject, this));
             }
         }
         set header(header) {
@@ -118,9 +126,6 @@ namespace gn.ui.popup {
         get content() {
             return this._content;
         }
-        async show() {
-            return this.exec();
-        }
         async exec() {
             super.show();
             return new Promise((resolve) => {
@@ -133,43 +138,58 @@ namespace gn.ui.popup {
         static ConfirmationDialog(title, content) {
             return new gn.ui.popup.Dialog(title, content, gn.ui.popup.Button.YES | gn.ui.popup.Button.NO | gn.ui.popup.Button.CLOSE, true);
         }
-        _return(button) {
-            if (this.element.parentNode) {
-                this.element.parentNode.removeChild(this.element);
-            }
-            if (this._blocker) {
-                this._blocker.hide();
-            }
+        _accept() {
+            this.hide();
             this.dispose();
-
             if (this._resolvePromise) {
-                this._resolvePromise(button);
+                this._resolvePromise(gn.ui.popup.Dialog.DialogCode.Accepted);
                 this._resolvePromise = null;
-                //TODO dispose????
             }
         }
+        _reject() {
+            this.hide();
+            this.dispose();
+            if (this._resolvePromise) {
+                this._resolvePromise(gn.ui.popup.Dialog.DialogCode.Rejected);
+                this._resolvePromise = null;
+            }
+        }
+        
     }
+    Dialog.DialogCode = gn.lang.Enum({
+        Accepted : 0,
+        Rejected : 1,
+    });
+
     Button = gn.lang.Enum({
         OK: 1,
         CANCEL: 2,
         CLOSE: 4,
         YES: 8,
         NO: 16,
-    });
+    });    
 
-    class Blocker extends gn.ui.basic.Widget{
-        constructor() {
+    class Blocker extends gn.ui.basic.Widget {
+        constructor(popup, closePopupOnClick = false) {
             super();
             this.addClass( "gn-blocker" )
+            this._popup = popup;
+            this._isHideOnActivated = closePopupOnClick;
         }
         hide() {
-            document.body.removeChild( this.element );
-        }
-        exclude() {
-            document.body.removeChild( this.element );
+            this.element.remove();
+            if(this._isHideOnActivated) {
+                this.removeEventListener("click", this._onClicked, this);
+            }
         }
         show() {
             document.body.appendChild( this.element );
+            if(this._isHideOnActivated) {
+                this.addEventListener("click", this._onClicked, this);
+            }
+        }
+        _onClicked() {
+            this._popup.hide();
         }
     }
 }

@@ -3,10 +3,11 @@ namespace gn.event {
         constructor(type, sender, data = null, bubbles = false) {
             this._type = type;
             this._sender = sender;
+            this._originalSender = sender;
             this._data = data;
             this._timestamp = Date.now();
             this._bubbles = bubbles;
-            this._stop = false;
+            this._stopPropagation = false;
         }
         get type() {
             return this._type;
@@ -17,17 +18,23 @@ namespace gn.event {
         get sender() {
             return this._sender;
         }
+        set sender(sender) {
+            this._sender = sender;
+        }
+        get originalSender() {
+            return this._originalSender;
+        }
         get bubbles() {
             return this._bubbles;
         }
         get timestamp() {
             return this._timestamp;
         }
-        get stop() {
-            return this._stop;
+        get stopPropagation() {
+            return this._stopPropagation;
         }
-        stop() {
-            this._stop = true;
+        set stopPropagation(value) {
+            this._stopPropagation = value;
         }
         copyFromNative(domEvent) {
             if( !domEvent ) return;
@@ -55,7 +62,7 @@ namespace gn.event {
         clone() {
             const clone = new gn.event.Event( this._type, this._sender, this._data, this._bubbles );
             clone._timestamp = this._timestamp;
-            clone._stop = this._stop;
+            clone._stopPropagation = this._stopPropagation;
             return clone;
         }
     }
@@ -229,9 +236,10 @@ namespace gn.event {
             if (event.bubbles) {
                 for (let i = 0; i < this._bubblingStack.length; i++) {
                     const target = this._bubblingStack[i];
+                    event.sender = target;
                     this._dispatchToTarget(target, event);
 
-                    if (event.propagationStopped) {
+                    if (event.stopPropagation) {
                         break;
                     }
                 }
@@ -258,10 +266,6 @@ namespace gn.event {
                     entry.listener.call(entry.context || target, event);
                 } catch (error) {
                     console.error(`Error in event listener for ${event.type}:`, error);
-                }
-
-                if (event.immediatePropagationStopped) {
-                    break;
                 }
             }
 
