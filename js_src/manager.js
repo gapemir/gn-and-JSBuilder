@@ -112,10 +112,13 @@ namespace gn.event.manager {
             if (!this._lastPointerDown) {
                 return;
             }
-            this._clickTimer.start();
 
             if (this._lastPointerDown.target === targetObj && domEvent.button !== 2) {
                 const now = Date.now();
+                
+                if(targetObj.rect.pointInside(new gn.geometry.Point(domEvent.clientX, domEvent.clientY))) {
+                    this._clickTimer.start();
+                }
                 
                 if (now - this._lastClickTime < this._DOUBLE_CLICK_THRESHOLD) {
                     this._sendEvent(targetObj, "dblclick", domEvent, null, true);
