@@ -340,6 +340,9 @@ namespace gn.ui.basic {
                 this.hideTooltip();
             }
         }
+        walkChildren(cb, ctx) {
+            this._children.forEach(item => cb.call(ctx, item));
+        }
         _destructor() {
             if (this._disposed) {
                 return;

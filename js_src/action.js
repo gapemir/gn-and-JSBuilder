@@ -1,11 +1,11 @@
 namespace gn.core {
     class Action extends gn.core.Object {
-        constructor(id, label) {
+        constructor(id, label = null, icon = null) {
             super();
-            this._id;
+            this._id = id;
             this._label = label;
             this._checkable = false;
-            this._icon = null;
+            this._icon = icon;
 
             this._enabled = true;
             this._hidden = false;
@@ -18,7 +18,9 @@ namespace gn.core {
         {
             // oc.locale.Manager.instance().removeEventListener( "changeLocale", this._onChangeLocale, this );
         }
-
+        get id() {
+            return this._id;
+        }
         set label(label) {
             this._label = label;
         }

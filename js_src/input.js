@@ -371,11 +371,10 @@ namespace gn.ui.input {
         set options(items) {
             // expects layout format like [{value: 'val1', label: 'Label 1'}, ...]
             this._options = items || [];
-            this._popup.clear();
             this._options.forEach(opt => {
-                let item = new gn.ui.control.MenuItem(opt.value, opt.label || opt.value, opt.icon || null);
-                item.addEventListener("selected", () => this._onOptionSelect(opt), this);
-                this._popup.addItem(item);
+                let action = new gn.core.Action(opt.value, opt.label || opt.value, opt.icon);
+                action.addEventListener("triggered", () => this._onOptionSelect(opt), this);
+                this._popup.addAction(action);
             });
         }
 
@@ -399,8 +398,8 @@ namespace gn.ui.input {
             this._value = val;
             let opt = this.options.find(a => a.value == val);
             this.text = opt ? (opt.label || opt.value) : val;
-            this._popup.walkItems(item => {
-                if(item._id == val) {
+            this._popup.walkChildren(item => {
+                if(item.action.id == val) {
                     item._selected = true;
                     item.addClass("gn-selected");
                 } else {
@@ -441,8 +440,8 @@ namespace gn.ui.input {
             this._value = val;
             let opts = this.options.filter(a => val.includes(a.value));
             this.text = opts.map(o => o.label || o.value).join(", ");
-            this._popup.walkItems(item => {
-                if(this._value.includes(item._id)) {
+            this._popup.walkChildren(item => {
+                if(this._value.includes(item.action.id)) {
                     item._selected = true;
                     item.addClass("gn-selected");
                 } else {
