@@ -53,6 +53,7 @@ namespace gn.ui.popup {
         _destructor() {
             if(this._blocker) {
                 this._blocker.dispose();
+                this._blocker = null;
             }
         }
     }
@@ -190,6 +191,10 @@ namespace gn.ui.popup {
         }
         _onClicked() {
             this._popup.hide();
+        }
+
+        _destructor() {
+            this._popup = null;
         }
     }
 }

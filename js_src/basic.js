@@ -38,19 +38,21 @@ namespace gn.ui.basic {
         get element(){
             return this._element;
         }
-        set layoutManager(value){
-            if(gn.lang.Var.isNull(value)){
-                if(!gn.lang.Var.isNull(this._layoutManager)){
-                    this._layoutManager.dispose();
-                    this._layoutManager = null;
-                }
+        set layoutManager(value) {
+            if (this._layoutManager === value) {
                 return;
             }
-            if(!(value instanceof gn.ui.layout.AbstractLayout)){
+            const isValueNull = gn.lang.Var.isNull(value);
+            if (!isValueNull && !(value instanceof gn.ui.layout.AbstractLayout)) {
                 throw new TypeError("Layout manager must be a subclass of AbstractLayout");
             }
+            if (!gn.lang.Var.isNull(this._layoutManager)) {
+                this._layoutManager.dispose();
+            }
             this._layoutManager = value;
-            this._layoutManager.widget = this;
+            if (!isValueNull) {
+                this._layoutManager.widget = this;
+            }
         }
         get layoutManager(){
             return this._layoutManager;
@@ -350,6 +352,9 @@ namespace gn.ui.basic {
             }
             while(this._children.length) {
                 this._children[0].dispose();
+            }
+            if(this._layoutManager) {
+                this.layoutManager = null; // already handeled in set layoutManager
             }
         }
     }
