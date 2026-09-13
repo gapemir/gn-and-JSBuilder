@@ -155,13 +155,14 @@ namespace gn.ui.tile {
         }
         _makeItem(id){
             let data = this._model.data(id, gn.model.Model.DataType.all);
+            let type = this._model.data(id, gn.model.Model.DataType.type);
             let item = null
-            if(data.type == gn.model.Model.Type.item) {
+            if(type == gn.model.Model.Type.item) {
                 item = new this._tileClass(data, this);
-            }else if(data.type == gn.model.Model.Type.group) {
+            } else if(type == gn.model.Model.Type.group) {
                 item = new this._subItemContClass(data, this);
                 item.addEventListener("openGroup", this.openGroup, this);
-            }else {
+            } else {
                 throw ("Invalid type of item in Tile Container");
             }
             this._idElementMap.set(id, item);
@@ -178,11 +179,12 @@ namespace gn.ui.tile {
             for (let i = 0; i < count; i++) {
                 let index = this._model.index( i, id );
                 let data = this._model.data(index, gn.model.Model.DataType.all);
+                let type = this._model.data(index, gn.model.Model.DataType.type);
                 let item = null
-                if (data.type == gn.model.Model.Type.item) {
+                if (type == gn.model.Model.Type.item) {
                     item = new this._tileClass(data, this);
                     this._itemCreated(item);
-                } else if (data.type == gn.model.Model.Type.group) {
+                } else if (type == gn.model.Model.Type.group) {
                     item = new this._subItemContClass(data, this);
                     item.addEventListener("openGroup", this.openGroup, this);
                     this._groupCreated(item);

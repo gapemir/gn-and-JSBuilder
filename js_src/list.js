@@ -6,6 +6,7 @@ namespace gn.ui.list {
             this._model = null;
             this._idElementMap = new Map(); // id -> listElement
             this._groups = new Map();// id group -> gn.ui.list.Group
+            this._openedGroups = [];
             this._itemRenderer = new gn.ui.list.ItemRenderer();
             this._titleRenderer = new gn.ui.list.TitleRenderer();
             this._currentGroup = null; // id of currently opened group
@@ -69,6 +70,7 @@ namespace gn.ui.list {
             this._idElementMap = new Map();
             this._groups = new Map();
             this._currentGroup = null;
+            this._openedGroups = [];
             this._openGroup();
         }
         _onDecorationChanged() {
@@ -80,6 +82,8 @@ namespace gn.ui.list {
             }
             this._idElementMap = new Map();
             this._groups = new Map();
+            this._currentGroup = null;
+            this._openedGroups = [];
             this._openGroup( this._currentGroup );
         }
         _onRemoveData(e) {
@@ -111,7 +115,7 @@ namespace gn.ui.list {
         }
         _onDataChanged(e) {
             let element = this._idElementMap.get(e.data.index)
-            this._getRenderer(e.data.index).updateElement(element, this.model.data(e.data.index, gn.model.Model.DataType.all), e.data.key);
+            this._getRenderer(e.data.index).updateElement(element, this._createDataForRenderer(e.data.index), e.data.key);
         }
         _toggleGroup(id) {
             let group = this._groups.get(id);
@@ -120,10 +124,14 @@ namespace gn.ui.list {
                 return;
             }
             if(group.isVisible()) {
+                this._openedGroups.splice(this._openedGroups.indexOf(id), 1);
                 group.exclude();
+                this._getRenderer(id).updateElement(this._idElementMap.get(id), this._createDataForRenderer(id));
             }
             else {
+                this._openedGroups.push(id);
                 group.show();
+                this._getRenderer(id).updateElement(this._idElementMap.get(id), this._createDataForRenderer(id));
             }
         }
         _openGroup(id = null) {
@@ -135,6 +143,9 @@ namespace gn.ui.list {
             this.sendEvent("groupOpened", this._currentGroup);
             if(this._breadcrumb){
                 this._breadcrumb.setIndex(this._currentGroup);
+            }
+            if(id !== null) {
+                this._getRenderer(id).updateElement(this._idElementMap.get(id), this._createDataForRenderer(id));
             }
         }
         _makeGroup(id = null) {
@@ -151,6 +162,7 @@ namespace gn.ui.list {
                 group.level = pGroup.level + 1;
             }
             this._groups.set(id, group);
+            this._openedGroups.push(id);
 
             let count = this._model.rowCount( id );
             for (let i = 0; i < count; i++) {
@@ -160,14 +172,15 @@ namespace gn.ui.list {
             return group;
         }
         _makeItem(idx, group) {
-            let data = this._model.data(idx, gn.model.Model.DataType.all);
+            let data = this._createDataForRenderer(idx);
+            let type = this._model.data(idx, gn.model.Model.DataType.type)
 
             let renderer = this._getRenderer(idx);
             let item = renderer.createElement(data);
             renderer.updateElement(item, data);
             item._list = this;
             
-            if (data.type == gn.model.Model.Type.group) {    
+            if (type == gn.model.Model.Type.group) {    
                 item.addEventListener("click", _ => this._toggleGroup(idx), this);
             }
             this._idElementMap.set(idx, item);
@@ -180,6 +193,13 @@ namespace gn.ui.list {
             }
             else {
                 return this._titleRenderer;
+            }
+        }
+        _createDataForRenderer(idx) {
+            return {
+                opened : this._openedGroups.indexOf(idx) != -1,
+                data : this._model.data(idx, gn.model.Model.DataType.all),
+                type : this._model.data(idx, gn.model.Model.DataType.type),
             }
         }
     }
@@ -254,11 +274,10 @@ namespace gn.ui.list {
             el.setStyle("border", "1px solid gray");
             el.setStyle("margin", "3px");
 
-            if(data.icon) {
-                let icon = new gn.ui.basic.Icon()
-                el.icon = icon;
-                icon.setStyle("margin-right", "5px");
-                el.add(icon);
+            if(data.data.icon) {
+                el.icon = new gn.ui.basic.Icon();
+                el.icon.setStyle("margin-right", "5px");
+                el.add(el.icon);
             }
             let label = new gn.ui.basic.Label();
             el.label = label;
@@ -268,11 +287,11 @@ namespace gn.ui.list {
         }
 
         updateElement(element, data) {
-            element.label.text = data.title;
-            if(data.icon) {
-                element.icon.size = data.icon.size;
-                element.icon.iconName = data.icon.iconName;
-                element.icon.iconSet = data.icon.iconSet;
+            element.label.text = data.data.title;
+            if(data.data.icon) {
+                element.icon.size = data.data.icon.size;
+                element.icon.iconName = data.data.icon.iconName;
+                element.icon.iconSet = data.data.icon.iconSet;
             }
         }
 
@@ -292,9 +311,9 @@ namespace gn.ui.list {
             el.expandIcon.setStyle("left", "10px")
             el.add(el.expandIcon);
 
-            if(data.icon) {
+            if(data.data.icon) {
                 el.icon = new gn.ui.basic.Icon()
-                icon.setStyle("margin-right", "5px");
+                el.icon.setStyle("margin-right", "5px");
                 el.add(el.icon);
             }
             el.label = new gn.ui.basic.Label();
@@ -304,11 +323,16 @@ namespace gn.ui.list {
         }
 
         updateElement(element, data) {
-            element.label.text = data.title;
-            if(data.icon) {
-                element.icon.size = data.icon.size;
-                element.icon.iconName = data.icon.iconName;
-                element.icon.iconSet = data.icon.iconSet;
+            element.label.text = data.data.title;
+            if(data.data.icon) {
+                element.icon.size = data.data.icon.size;
+                element.icon.iconName = data.data.icon.iconName;
+                element.icon.iconSet = data.data.icon.iconSet;
+            }
+            if(data.opened) {
+                element.expandIcon.iconName = "fa-caret-up"
+            } else {
+                element.expandIcon.iconName = "fa-caret-down"
             }
         }
 

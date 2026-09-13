@@ -97,9 +97,7 @@ namespace gn.model {
                     this._checkIndex( obj );
                     this._data[ obj[ this._key ] ] = obj;
                     this._mapData[ parent ].push( obj[ this._key ] );
-                    obj.type = gn.model.Model.Type.item;
                     if( obj[ this._subKey ] ) {
-                        obj.type = gn.model.Model.Type.group;
                         this._ensureChildMapping( obj[ this._key ] );
                         this._setData( obj[ this._subKey ], obj[ this._key ] );
                     }
@@ -118,9 +116,7 @@ namespace gn.model {
             this._data[ obj[ this._key ] ] = obj;
             this._ensureChildMapping( parent );
             this._mapData[ parent ].splice( row, 0, obj[ this._key ] );
-            obj.type = gn.model.Model.Type.item;
             if( obj[ this._subKey ] ) {
-                obj.type = gn.model.Model.Type.group;
                 this._ensureChildMapping( obj[ this._key ] )
                 this._setData( obj[ this._subKey ], obj[ this._key ] );
             }
@@ -166,7 +162,7 @@ namespace gn.model {
                     ret = ret[ "display" ] || ret[ this._key ];
                     break;
                 case gn.model.Model.DataType.type:
-                    ret = ret.type;
+                    ret = gn.lang.Var.isNull(ret[this._subKey]) ? gn.model.Model.Type.item : gn.model.Model.Type.group;
                 case gn.model.Model.DataType.all:
                     break;
                 default:
