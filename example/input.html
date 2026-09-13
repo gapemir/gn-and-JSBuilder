@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../gn.js"></script>
+    <link rel="stylesheet" href="../css/gn.css">
+</head>
+<body>
+    <script>
+        var container = new gn.ui.container.Column();
+        document.body.append(container.element);
+
+        ///
+        var lineInput = new gn.ui.input.Line(null, "Line ...");
+        container.add(lineInput);
+
+        var multilineInput = new gn.ui.input.MultiLine(null, "MultiLine ...");
+        container.add(multilineInput);
+
+        var numberInput = new gn.ui.input.Number(null, "Number ...");
+        container.add(numberInput);
+
+        var passwordInput = new gn.ui.input.Password(null, "Password ...");
+        container.add(passwordInput);
+
+        var colorInput = new gn.ui.input.Color();
+        container.add(colorInput);
+
+        var checkboxInput = new gn.ui.input.CheckBox();
+        container.add(checkboxInput);
+
+        var rangeInput = new gn.ui.input.Range();
+        container.add(rangeInput);
+
+        var fileInput = new gn.ui.input.File();
+        container.add(fileInput);
+
+        var dateInput = new gn.ui.input.Date();
+        container.add(dateInput);
+
+        var comboBox = new gn.ui.input.ComboBox("ComboBox ...");
+        comboBox.options = [
+            {value: 'val1', label: 'Label 1'},
+            {value: 'val2', label: 'Label 2'},
+            {value: 'val3', label: 'Label 3'},
+        ];
+        comboBox.addEventListener("change", (e) => {
+            console.log("ComboBox changed:", e);
+        }); 
+        container.add(comboBox);
+
+        var multiComboBox = new gn.ui.input.MultiComboBox("MultiComboBox...");
+        multiComboBox.options = [
+            {value: 'val1', label: 'Label 1'},
+            {value: 'val2', label: 'Label 2'},
+            {value: 'val3', label: 'Label 3'},
+        ];
+        multiComboBox.addEventListener("change", (e) => {
+            console.log("MultiComboBox changed:", e);
+        });
+        container.add(multiComboBox);
+
+        var switchInput = new gn.ui.input.Switch();
+        container.add(switchInput);
+
+    </script>
+    <script src="testApp.js"></script>
+</body>
+</html>

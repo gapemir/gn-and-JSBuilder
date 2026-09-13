@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../gn.js"></script>
+    <link rel="stylesheet" href="../css/gn.css">
+    <link rel="stylesheet" href="../css/font-awesome/all.css">
+</head>
+<body>
+    <script>
+        var list = new gn.ui.list.List();
+        var listModel = new gn.model.TreeModel();
+        list.model = listModel;
+        list.itemClass = gn.ui.list.InfoListItem;
+        list.titleClass = gn.ui.list.InfoListTitle;
+        
+        {
+            listModel.setData([
+                {id: "1", title : "TITLE 1", content : "CONTENT 1", icon : {iconName : "fa-volume", iconSet : ["fa-regular", "fa-slab"]}}, 
+                {id: "2", title : "TITLE 2", content : "CONTENT 2", subitems : [
+                    {id: "3", title : "SUB 1", content : "SUB 1"},
+                    {id: "4", title : "SUB 2", content : "SUB 2", subitems : [
+                        {id: "6", title : "SUB SUB 1", content : "SUB SUB 2"},
+                        {id: "7", title : "SUB SUB 2", content : "SUB SUB 2"},
+                    ]},
+                    {id: "5", title : "SUB 3", content : "SUB 3"},
+                ]}
+            ]);
+        }
+
+        let but1 = new gn.ui.control.Button("add data", null, () => { listModel.insertRow({id: "insId", title : "INSERTED", content : "INSERTED"}) });
+        let but2 = new gn.ui.control.Button("change data", null, () => { listModel.changeData("insId", "title", "CHANGED") });
+        let but3 = new gn.ui.control.Button("remove data", null, () => { listModel.removeData("insId") });
+        let but4 = new gn.ui.control.Button("reset", null, () => { listModel.sendEvent("reset"); });
+
+        document.body.appendChild(list.element);
+        document.body.appendChild(but1.element);
+        document.body.appendChild(but2.element);
+        document.body.appendChild(but3.element);
+        document.body.appendChild(but4.element);
+
+        var list = new gn.ui.list.List();
+        var listModel = new gn.model.TreeModel();
+        list.model = listModel;
+        list.itemClass = gn.ui.list.InfoListItem;
+        list.titleClass = gn.ui.list.InfoListTitle;
+
+
+    </script>
+    <script src="testApp.js"></script>
+</body>
+</html>

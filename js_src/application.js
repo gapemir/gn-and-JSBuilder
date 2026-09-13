@@ -1,10 +1,11 @@
 namespace gn.app {
     class App extends gn.core.Object {
-        constructor() {
+        constructor(headless = false) {
             super();
             this._root = null;
             this._header = null
             this._footer = null;
+            this._headless = headless;
         }
         static instance() {
             if (gn.app.App._instance == null) {
@@ -27,7 +28,9 @@ namespace gn.app {
             return gn.app.App._instance;
         }
         main() {
-            this.root = new gn.ui.window.WindowManager();
+            if(!this._headless) {
+                this.root = new gn.ui.window.WindowManager();
+            }
             window.addEventListener( "resize", function() {
                 this.sendEvent( "resize" )
             }.bind( this ) );
