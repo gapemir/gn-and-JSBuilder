@@ -9,6 +9,7 @@ namespace gn.ui.basic {
             this._tooltip = null;
             this._tooltipContent = null;
             this._children = [];
+            this._visibility = "visible";
 
             this._layoutManager = null;
             this._layoutParent = null;
@@ -269,7 +270,6 @@ namespace gn.ui.basic {
                     case "after":
                         gn.lang.Array.insertAfter( this._children, child, refChild );
                         this._element.insertBefore( child.element, refChild.element.nextSibling );
-                        index++
                         break;
                     default:
                         this._children.push( child );
@@ -293,7 +293,7 @@ namespace gn.ui.basic {
                 this._visibility = value;
                 if ( value == "visible" ) {
                     this.removeClass( "gn-exclude" );
-                    this.setStyle( "visibility", "visible" );
+                    this.setStyle( "visibility" );
                 }
                 else if ( value == "hidden" ) {
                     this.removeClass( "gn-exclude" );
@@ -314,7 +314,7 @@ namespace gn.ui.basic {
             this.visibility = "excluded";
         }
         isVisible() {
-            this.visibility == "visible";
+            return this._visibility == "visible";
         }
         set focusable( value ) {
             if( value === true || value >= 0 ) {

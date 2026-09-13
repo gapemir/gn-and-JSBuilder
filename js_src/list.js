@@ -52,7 +52,6 @@ namespace gn.ui.list {
             let id = e.data;
             let parent = this.model.parent(id);
             if (this._groups.has(parent)) {
-                this._makeItem(id);
                 this._openGroup(parent);
             }
         }
@@ -65,7 +64,7 @@ namespace gn.ui.list {
             this._currentGroup = null;
             this._openGroup();
         }
-                _onDecorationChanged() {
+        _onDecorationChanged() {
             for( let item of this._idElementMap.values() ) {
                 item.dispose();
             }

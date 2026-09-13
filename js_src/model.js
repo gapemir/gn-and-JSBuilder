@@ -52,7 +52,9 @@ namespace gn.model {
                     this._checkIndex( obj[this._key] );
                     this._data[ obj[ this._key ] ] = obj;
                     this._mapData[ parent ].push( obj[ this._key ] );
+                    obj.type = gn.model.Model.Type.item;
                     if( obj[ this._subKey ] ) {
+                        obj.type = gn.model.Model.Type.group;
                         this._ensureChildMapping( obj[ this._key ] );
                         this._setData( obj[ this._subKey ], obj[ this._key ] );
                     }
@@ -71,7 +73,9 @@ namespace gn.model {
             this._data[ obj[ this._key ] ] = obj;
             this._ensureChildMapping( parent );
             this._mapData[ parent ].splice( row, 0, obj[ this._key ] );
+            obj.type = gn.model.Model.Type.item;
             if( obj[ this._subKey ] ) {
+                obj.type = gn.model.Model.Type.group;
                 this._ensureChildMapping( obj[ this._key ] )
                 this._setData( obj[ this._subKey ], obj[ this._key ] );
             }
