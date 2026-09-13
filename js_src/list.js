@@ -1,25 +1,23 @@
 namespace gn.ui.list {
-    class List extends gn.ui.basic.Widget {
+    class List extends gn.ui.container.Column {
         constructor() {
             super();
 
             this._model = null;
-            this._idElementMap = new Map();
-            this._groups = new Map();// id group -> [id elements]
-            this._itemClass = gn.ui.list.ListItem;
-            this._titleClass = gn.ui.list.ListTitle; 
+            this._idElementMap = new Map(); // id -> listElement
+            this._groups = new Map();// id group -> gn.ui.list.Group
+            this._itemRenderer = new gn.ui.list.ItemRenderer();
+            this._titleRenderer = new gn.ui.list.TitleRenderer();
+            this._currentGroup = null; // id of currently opened group
         }
-        set itemClass(value) {
-            this._itemClass = value;
+        set itemRenderer(value) {
+            this._itemRenderer = value;
         }
-        get itemClass() {
-            return this._itemClass;
+        set titleRenderer(value) {
+            this._titleRenderer = value;
         }
-        set titleClass(value) {
-            this._titleClass = value;
-        }
-        get titleClass() {
-            return this._titleClass;
+        _destructor() {
+            this._itemRenderer = null;
         }
         get model() {
             return this._model;
@@ -34,6 +32,9 @@ namespace gn.ui.list {
                 this._model.removeEventListener("dataChanged", this._onDataChanged, this );
                 this._model.removeEventListener("decorationChanged", this._onReset, this);
             }
+            if(!(value instanceof gn.model.AbstractTreeModel)) {
+                throw new TypeError("Wrong model type")
+            }
             this._model = value;
             if( this._model ) {
                 this._model.addEventListener("dataSet", this._onDataSet, this);
@@ -45,6 +46,9 @@ namespace gn.ui.list {
                 this._model.addEventListener("decorationChanged", this._onDecorationChanged, this);
             }
         }
+        openGroup( e ) {
+            this._openGroup(e.data);
+        }
         _onDataSet( e ) {
             this._openGroup();
         }
@@ -52,12 +56,15 @@ namespace gn.ui.list {
             let id = e.data;
             let parent = this.model.parent(id);
             if (this._groups.has(parent)) {
-                this._openGroup(parent);
+                this._makeItem(id, this._groups.get(parent));
             }
         }
         _onReset() {
-            for( let item of this._idElementMap.values() ) {
-                item.dispose();
+            for( let id of this._idElementMap.keys() ) {
+                this._getRenderer(id).disposeElement(this._idElementMap.get(id))
+            }
+            for( let group of this._groups.values() ) {
+                group.dispose();
             }
             this._idElementMap = new Map();
             this._groups = new Map();
@@ -65,8 +72,11 @@ namespace gn.ui.list {
             this._openGroup();
         }
         _onDecorationChanged() {
-            for( let item of this._idElementMap.values() ) {
-                item.dispose();
+            for( let id of this._idElementMap.keys() ) {
+                this._getRenderer(id).disposeElement(this._idElementMap.get(id))
+            }
+            for( let group of this._groups.values() ) {
+                group.dispose();
             }
             this._idElementMap = new Map();
             this._groups = new Map();
@@ -74,102 +84,236 @@ namespace gn.ui.list {
         }
         _onRemoveData(e) {
             let id = e.data;
+            let parent = this.model.parent(id);
             if (this._groups.has(id)) {
-                if(this._groups.get(id).length != 0) {
-                    throw new Error('Group has children, cannot be removed.');
+                let group = this._groups.get(id);
+                this._groups.delete(id)
+                for(let idx of group.itemsKeys()) { 
+                    this._idElementMap.get(idx).dispose();
+                }
+                group.dispose();
+                if (this._groups.has(parent)) {
+                    let pGroup = this._groups.get(parent)
+                    pGroup.removeGroup(id);
                 }
             }
             if (this._idElementMap.has(id)) {
-                this.remove(this._idElementMap.get(id));
+                this._idElementMap.get(id).dispose();
                 this._idElementMap.delete(id);
             }
-            let parent = this.model.parent(id);
             if (this._groups.has(parent)) {
-                let ids = this._groups.get(parent);
-                let index = ids.indexOf(id);
-                if (index > -1) {
-                    ids.splice(index, 1);
-                }
+                let pGroup = this._groups.get(parent)
+                pGroup.removeItem(id);
             }
-            this.genFakeTileItems();
         }
         _onDataRemoved(e) {
+            // nothing is needed here
         }
-        _onDataChanged(e){
-            this._idElementMap.get(e.data.index).updateItem(this.model.data(e.data.index, gn.model.Model.DataType.all), e.data.key);
+        _onDataChanged(e) {
+            let element = this._idElementMap.get(e.data.index)
+            this._getRenderer(e.data.index).updateElement(element, this.model.data(e.data.index, gn.model.Model.DataType.all), e.data.key);
         }
-        _makeGroup(id) {
-            if (gn.lang.Var.isNull(id)) {
-                id = null;
-            }
-            this._groups.set(id, []);
-
-            let count = this._model.rowCount( id );
-            for (let i = 0; i < count; i++) {
-                let index = this._model.index( i, id );
-                let data = this._model.data(index, gn.model.Model.DataType.all);
-                let item = null
-                if (data.type == gn.model.Model.Type.item) {
-                    item = new this._itemClass(data, this);
-                } else if (data.type == gn.model.Model.Type.group) {
-                    item = new this._titleClass(data, this);
-                    item.addEventListener("openGroup", this.openGroup, this);
-                } else {
-                    throw ("Invalid type of item in List");
-                }
-                this._idElementMap.set(index, item);
-                this._groups.get(id).push(index);
-                this.add(item);
-            }
-        }
-        _openGroup(id) {
-            if (gn.lang.Var.isNull(id)) {
-                id = null;
-            }
-            if (!this._groups.has(this._currentGroup)) {
-                this._makeGroup(this._currentGroup);
+        _toggleGroup(id) {
+            let group = this._groups.get(id);
+            if(gn.lang.Var.isNull(group)) {
+                this._openGroup(id);
                 return;
             }
-            let ids = this._groups.get(this._currentGroup)
-            for (let i = 0; i < ids.length; i++) {
-                this._idElementMap.get(ids[i]).exclude();
+            if(group.isVisible()) {
+                group.exclude();
             }
+            else {
+                group.show();
+            }
+        }
+        _openGroup(id = null) {
             this._currentGroup = id;
-            if (this._groups.has(this._currentGroup)) {
-                ids = this._groups.get(this._currentGroup)
-                for (let i = 0; i < ids.length; i++) {
-                    this._idElementMap.get(ids[i]).show();
-                }
-            } else {
-                this._makeGroup(this._currentGroup);
+            let group = this._groups.get(this._currentGroup)
+            if (gn.lang.Var.isNull(group)) {
+                group = this._makeGroup(this._currentGroup);
             }
             this.sendEvent("groupOpened", this._currentGroup);
             if(this._breadcrumb){
                 this._breadcrumb.setIndex(this._currentGroup);
             }
         }
-        openGroup( e ) {
-            this._openGroup(e.data);
+        _makeGroup(id = null) {
+            let group = new gn.ui.list.Group(id);
+            if(id == null) {
+                this.add(group);
+            } else {
+                let pId = this.model.parent(id);
+                let pGroup = this._groups.get(pId);
+                if(gn.lang.Var.isNull(pGroup)) {
+                    this._makeGroup(pId);
+                }
+                pGroup.addGroup(id, group);
+                group.level = pGroup.level + 1;
+            }
+            this._groups.set(id, group);
+
+            let count = this._model.rowCount( id );
+            for (let i = 0; i < count; i++) {
+                let index = this._model.index( i, id );
+                this._makeItem(index, group);
+            }
+            return group;
+        }
+        _makeItem(idx, group) {
+            let data = this._model.data(idx, gn.model.Model.DataType.all);
+
+            let renderer = this._getRenderer(idx);
+            let item = renderer.createElement(data);
+            renderer.updateElement(item, data);
+            item._list = this;
+            
+            if (data.type == gn.model.Model.Type.group) {    
+                item.addEventListener("click", _ => this._toggleGroup(idx), this);
+            }
+            this._idElementMap.set(idx, item);
+            group.add(idx, item);
+        }
+        _getRenderer(idx) {
+            let type = this._model.data(idx, gn.model.Model.DataType.type);
+            if (type == gn.model.Model.Type.item) {
+                return this._itemRenderer;
+            }
+            else {
+                return this._titleRenderer;
+            }
         }
     }
-    class ListItem extends gn.ui.basic.Widget {
-        constructor( data ) {
-            super( null, "div", "gn-listItem" );
-            this._data = data;
+    class Group extends gn.ui.container.Column {
+        constructor(id) {
+            super("gn-list-group");
+            this._id = id;
+            this._mapItems = {};
+            this._mapGroups = {};
+            this._level = 0;
         }
-        updateItem( data, key ){
-            this._data = data;
-            //TODO
+        _distructor() {
+            this._mapItems = {};
+            this._mapGroups = {};
+        }
+
+        get level() {
+            return this._level;
+        }
+
+        set level(value) {
+            this._level = value;
+            this.setStyle("padding-left", this._level * 20 + "px");
+        }
+
+        add(index, item) {
+            this._mapItems[index] = item;
+            super.add(item);
+        }
+        itemsKeys() {
+            return Object.keys(this._mapItems);
+        }
+        item(idx) {
+            return this._mapItems[idx];
+        }
+        removeItem(idx) {
+            delete this._mapItems[idx];
+        }
+
+        addGroup(index, group) {
+            this._mapGroups[index] = group;
+            let title = this._mapItems[index];
+            super.addAfter(group, title);
+        }
+        groupsKeys() {
+            return Object.keys(this._mapGroups);
+        }
+        groupe(idx) {
+            return this._mapGroups[idx];
+        }
+        removeGroup() {
+            delete this._mapGroups[idx];
         }
     }
-    class ListTitle extends gn.ui.basic.Widget {
-        constructor( data ) {
-            super( null, "div", "gn-listTitle" );
-            this._data = data;
+
+    class Renderer {
+        createElement(data) {
+            throw new TypeError("Abstract class");
         }
-        updateItem( data, key ){
-            this._data = data;
-            //TODO
+
+        updateElement(element, data) {
+            throw new TypeError("Abstract class");
+        }
+
+        disposeElement(element) {
+            throw new TypeError("Abstract class");
+        }
+    }
+    class ItemRenderer extends gn.ui.list.Renderer {
+        createElement(data) {
+            let el = new gn.ui.container.Row();
+            el.setStyle("border", "1px solid gray");
+            el.setStyle("margin", "3px");
+
+            if(data.icon) {
+                let icon = new gn.ui.basic.Icon()
+                el.icon = icon;
+                icon.setStyle("margin-right", "5px");
+                el.add(icon);
+            }
+            let label = new gn.ui.basic.Label();
+            el.label = label;
+            el.add(label);
+
+            return el;
+        }
+
+        updateElement(element, data) {
+            element.label.text = data.title;
+            if(data.icon) {
+                element.icon.size = data.icon.size;
+                element.icon.iconName = data.icon.iconName;
+                element.icon.iconSet = data.icon.iconSet;
+            }
+        }
+
+        disposeElement(element) {
+            element.dispose();
+        }
+    }
+    class TitleRenderer extends gn.ui.list.Renderer {
+        createElement(data) {
+            let el = new gn.ui.container.Row();
+            el.setStyle("border", "1px solid gray");
+            el.setStyle("margin", "3px");
+            el.setStyle("position", "relative");
+
+            el.expandIcon = new gn.ui.basic.Icon(12, "fa-caret-down", ["fa-solid"]);
+            el.expandIcon.setStyle("position", "absolute ")
+            el.expandIcon.setStyle("left", "10px")
+            el.add(el.expandIcon);
+
+            if(data.icon) {
+                el.icon = new gn.ui.basic.Icon()
+                icon.setStyle("margin-right", "5px");
+                el.add(el.icon);
+            }
+            el.label = new gn.ui.basic.Label();
+            el.add(el.label);
+
+            return el;
+        }
+
+        updateElement(element, data) {
+            element.label.text = data.title;
+            if(data.icon) {
+                element.icon.size = data.icon.size;
+                element.icon.iconName = data.icon.iconName;
+                element.icon.iconSet = data.icon.iconSet;
+            }
+        }
+
+        disposeElement(element) {
+            element.dispose();
         }
     }
 }
