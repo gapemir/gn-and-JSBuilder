@@ -1,11 +1,56 @@
 namespace gn.model {
-    class TreeModel extends gn.core.Object {
-        constructor() {
+    class AbstractTreeModel extends gn.core.Object {
+        set key(value) {
+            throw new TypeError("Abstract AbstractTreeModel::key");
+        }
+        set subKey(value) {
+            throw new TypeError("Abstract AbstractTreeModel::subKey");
+        }
+        rowCount( row = null ){
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        index( row, parent = null ) {
+            throw new TypeError("Abstract AbstractTreeModel::index");
+        }
+        setDataFromFlat( data, parentKey ) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        setData( data ) { // param array
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        insertRow( obj, row = this.rowCount(), parent = null ) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        changeData( index, key, value ){
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        moveRow(){
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        removeData( index ) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        data(index, role = gn.model.Model.DataType.display) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        reset() {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        parent( index ) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+        children( index ) {
+            throw new TypeError("Abstract AbstractTreeModel::rowCount");
+        }
+    }
+    class TreeModel extends gn.model.AbstractTreeModel {
+        constructor(autoIndex = false) {
             super();
             this._data = {}; // index -> value
             this._mapData = { null : [] }; // parent mappings
             this._key = "id"
             this._subKey = "subitems";
+            this._autoIndex = autoIndex;
         }
         set key(value) {
             this._key = value;
@@ -49,7 +94,7 @@ namespace gn.model {
         _setData(data, parent = null) {
             if(gn.lang.Var.isArray(data)) {
                 data.forEach( obj => {
-                    this._checkIndex( obj[this._key] );
+                    this._checkIndex( obj );
                     this._data[ obj[ this._key ] ] = obj;
                     this._mapData[ parent ].push( obj[ this._key ] );
                     obj.type = gn.model.Model.Type.item;
@@ -68,7 +113,7 @@ namespace gn.model {
             if( row < 0 || row > this.rowCount() ){
                 row = this.rowCount()
             }
-            this._checkIndex( obj[ this._key ] );
+            this._checkIndex( obj );
             //this.sendEvent('beforeDataAdded');
             this._data[ obj[ this._key ] ] = obj;
             this._ensureChildMapping( parent );
@@ -120,6 +165,8 @@ namespace gn.model {
                 case gn.model.Model.DataType.display:
                     ret = ret[ "display" ] || ret[ this._key ];
                     break;
+                case gn.model.Model.DataType.type:
+                    ret = ret.type;
                 case gn.model.Model.DataType.all:
                     break;
                 default:
@@ -141,12 +188,23 @@ namespace gn.model {
                 this._mapData[ index ] = [];
             }
         }
-        _checkIndex( index ) {
-            if ( gn.lang.Var.isNull( index ) ) {
-                throw new Error('Data item does not have identifier');
+        _checkIndex(data) {
+            if ( gn.lang.Var.isNull( data[this._key] ) ) {
+                if(this._autoIndex) {
+                    data[this._key] = gn.util.UUID.new();
+                }
+                else {
+                    throw new Error('Data item does not have identifier');
+                }
             }
-            else if( !gn.lang.Var.isNull( this._data[index] ) ) {
-                throw new Error('Every item must have a unique id');
+            else if( !gn.lang.Var.isNull( this._data[data[this._key]] ) ) {
+                if(this._autoIndex) {
+                    data[this._key] = gn.util.UUID.new();
+                    this._checkIndex(data);
+                }
+                else {
+                    throw new Error('Every item must have a unique id');
+                }
             }
         }
         parent( index ){
@@ -173,7 +231,7 @@ namespace gn.model {
             throw new TypeError("Not implemented yet");
         }
     }
-    class FilterSortTreeModel extends gn.core.Object { // for now filterSortModel will only work on TreeModel not on table model
+    class FilterSortTreeModel extends gn.model.AbstractTreeModel { // for now filterSortModel will only work on TreeModel not on table model
         constructor( model ) {
             super();
             this._source = null;
@@ -384,7 +442,8 @@ namespace gn.model {
     Model = {};
     Model.DataType = gn.lang.Enum({
         display: 1,
-        all: 2,
+        type: 2,    // gn.model.Model.Type
+        all: 3,
     });
     Model.Type = gn.lang.Enum({
         item: 1,
